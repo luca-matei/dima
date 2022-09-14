@@ -1,8 +1,11 @@
 import sys, os, subprocess, getpass
 from app.modules.utils.utils import utils, cmd as utils_cmd
 
+src_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
+version = src_dir.split('/')[-3]    # -1 is '', -2 is 'src' and -3 is '0.1'
+lmid = "lm1"
 help = """
-    Modes: main, pm, vm
+    Help
     """
 
 def cmd(*args, **kwargs):
@@ -19,10 +22,11 @@ class Init:
         #self.install_dependencies()
         #self.create_sudo()
         self.create_dir_tree()
-        self.download_resources()
         self.create_env()
         self.create_cmd()
         self.place_hal()
+
+        cmd(f"sudo -u hal {utils.projects_dir + lmid}/{version}/src/make")
 
     def create_user(self):
         # https://manpages.debian.org/jessie/adduser/adduser.8.en.html
@@ -39,20 +43,23 @@ class Init:
     def add_to_group(self):
         users = ', '.join([x.split(':')[-1] for x in cmd("getent group hal", catch=True).split('\n')])
         if users:
-            print(f"Users already in Hal's group: {users}. Run '$ hal add user <user>' to add more users.")
-        else:
-            user = ""
-            output = "does not exist"
+            print(f"Users already in Hal's group: {users}.")
+            yes = utils.yes_no("Add another one?")
+            if not yes:
+                return
 
-            while "does not exist" in output:
-                user = input("Enter an user to access Hal's files: ")
-                output = cmd(f"usermod -a -G hal {user}", catch=True)
+        user = ""
+        output = "does not exist"
 
-            print("You have to logout and login again to have access Hal's files!")
+        while "does not exist" in output:
+            user = input("Enter an user to access Hal: ")
+            output = cmd(f"usermod -a -G hal {user}", catch=True)
+
+        print(f"{user} has to logout and login again to have access Hal's files!")
 
     def install_dependencies(self):
         print("Installing dependencies ...")
-        packages = "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip", "sudo", "openssl", "postgresql", "libpq-dev", "nginx", "supervisor", "gnupg2",
+        packages = "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip", "sudo", "openssl", "postgresql", "libpq-dev", "nginx", "supervisor", "gnupg2", "openssh-client",
 
         for package in packages:
             if not "ok installed" in cmd(f"dpkg -s {package} | grep Status", catch=True):
@@ -116,33 +123,17 @@ class Init:
         cmd("chmod +x /usr/local/bin/hal")
 
     def place_hal(self):
-        pass
-        #cmd("sudo -u hal git clone https://gitlab.com/lucamatei/lm1.git") # git@gitlab.com:lucamatei/lm1.git
+        print("Placing Hal to its right place ...")
+        cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{lmid}.git {utils.projects_dir + lmid}/")
 
+args = sys.argv[1:] + ['']
+if args[0] in ("-h", "help"):
+    print(help)
+    sys.exit()
 
 is_root = getpass.getuser() == "root"
-modes = "main", "pm", "vm"
-mode = None
-args = sys.argv[1:]
-if args:
-    if args[0] in modes:
-        mode = args[0]
-
-    elif args[0] in ("-h", "help"):
-        print(help)
-        sys.exit()
-
-if mode:
-    if is_root:
-        src_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
-        version = src_dir.split('/')[-3]    # -1 is '', -2 is 'src' and -3 is '0.1'
-
-        init = Init()
-        init.start()
-    else:
-        print("You have to run this script with sudo priviledges!")
-
+if is_root:
+    init = Init()
+    init.start()
 else:
-    print("You have to initialize Hal with a mode! Run './init -h' for details.")
-    if not is_root:
-        print("You also have to run this script with root priviledges!")
+    print("You have to run this script with sudo priviledges!")

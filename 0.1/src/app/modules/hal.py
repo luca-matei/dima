@@ -1,0 +1,2 @@
+class Hal:
+    pass
