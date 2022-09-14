@@ -17,16 +17,16 @@ def abort(msg):
 
 class Init:
     def start(self):
-        #self.create_user()
-        #self.add_to_group()
-        #self.install_dependencies()
-        #self.create_sudo()
+        self.create_user()
+        self.add_to_group()
+        self.install_dependencies()
+        self.create_sudo()
         self.create_dir_tree()
         self.create_env()
         self.create_cmd()
         self.place_hal()
 
-        cmd(f"sudo -u hal {utils.projects_dir + lmid}/{version}/src/make")
+        cmd(f"sudo -u hal {utils.projects_dir + lmid}/{version}/make")
 
     def create_user(self):
         # https://manpages.debian.org/jessie/adduser/adduser.8.en.html
