@@ -9,6 +9,7 @@ def cmd(*args, **kwargs):
 modules = \
     "utils/utils.py",\
     "hal.py",\
+    "main.py",
 
 print("Making app.py ...")
 utils.write(src_dir + "app/app.py", "")

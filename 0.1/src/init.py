@@ -118,11 +118,19 @@ class Init:
 
     def create_cmd(self):
         print("Creating 'hal' command ...")
-        hal_bash = utils.read(src_dir + "assets/tpls/hal-bash.tpl").replace("%VERSION", version)
+        hal_bash = utils.read(src_dir + "assets/tpls/hal-bash.tpl").replace("%SRC_DIR", src_dir)
         utils.write("/usr/local/bin/hal", hal_bash)
         cmd("chmod +x /usr/local/bin/hal")
 
     def place_hal(self):
+        if os.path.isdir(utils.projects_dir + lmid):
+            print(f"Hal already is in the right place!")
+            yes = utils.yes_no("Purge it?")
+            if yes:
+                cmd(f"rm -r {utils.projects_dir + lmid}")
+            else:
+                return
+
         print("Placing Hal to its right place ...")
         cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{lmid}.git {utils.projects_dir + lmid}/")
 
