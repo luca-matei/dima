@@ -80,9 +80,8 @@ class Init:
 
         if not os.path.isdir(utils.hal_dir):
             cmd(f"mkdir {utils.hal_dir}")
-
-        cmd(f"chown -R hal:hal {utils.hal_dir}")
-        cmd(f"chmod g+rwx {utils.hal_dir}")
+            cmd(f"chown hal:hal {utils.hal_dir}")
+            cmd(f"chmod g+rwx {utils.hal_dir}")
 
         for node in dir_tree:
             # It's a directory
