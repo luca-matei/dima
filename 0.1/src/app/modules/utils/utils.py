@@ -42,9 +42,11 @@ class Utils:
         return self.debian_version
 
     def get_src_dir(self):
-        print(__name__)
         utils_path = os.path.dirname(os.path.abspath(__file__)).split('/')
-        return '/'.join(utils_path[:-3]) + '/'
+        if __name__ == "__main__": slice = -1
+        else: slice = -3
+
+        return '/'.join(utils_path[:slice]) + '/'
 
     def print_dict(self, d):
         pp = pprint.PrettyPrinter(indent=4)
