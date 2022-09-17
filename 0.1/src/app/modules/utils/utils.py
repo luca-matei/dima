@@ -43,6 +43,7 @@ class Utils:
 
     def get_src_dir(self):
         utils_path = os.path.dirname(os.path.abspath(__file__)).split('/')
+        print(utils_path[:-3])
         return '/'.join(utils_path[:-3]) + '/'
 
     def print_dict(self, d):

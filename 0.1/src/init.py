@@ -117,7 +117,7 @@ class Init:
 
     def create_cmd(self):
         print("Creating 'hal' command ...")
-        hal_bash = utils.read(src_dir + "assets/tpls/hal-bash.tpl").replace("%SRC_DIR", src_dir)
+        hal_bash = utils.read(src_dir + "assets/tpls/hal-bash.tpl").replace("%LMID", lmid).replace("%VERSION", version)
         utils.write("/usr/local/bin/hal", hal_bash)
         cmd("chmod +x /usr/local/bin/hal")
 
