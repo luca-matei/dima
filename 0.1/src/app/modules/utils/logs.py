@@ -23,7 +23,7 @@ class LogUtils:
             self.create_record(call_info, level, message)
 
         if console and not self.quiet:
-            print(util.color(*self.levels[level]) + ": " + message)
+            print(utils.color(*self.levels[level]) + ": " + message)
 
         if level == 5: app.stop()
 
@@ -32,12 +32,12 @@ class LogUtils:
         if function == "execute" and level == 2 and len(message) > 256:
             message = message[:253] + "..."
 
-        record = f"{util.now()} {filename.split('/')[-1]} l{lineno} {function}() {self.levels[level][0]}: {message}\n"
+        record = f"{utils.now()} {filename.split('/')[-1]} l{lineno} {function}() {self.levels[level][0]}: {message}\n"
 
-        util.write(self.log_file, record, mode='a')
+        utils.write(self.log_file, record, mode='a')
 
     def reset(self):
         # To do: save old log files
-        util.write(self.log_file, "")
+        utils.write(self.log_file, "")
 
 utils.logs = LogUtils()
