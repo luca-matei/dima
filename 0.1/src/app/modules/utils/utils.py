@@ -1,10 +1,12 @@
-import inspect, subprocess, string, pprint, ast, json, secrets
+import sys, os, inspect, subprocess, string, pprint, ast, json, secrets
 from datetime import datetime
 
 class Utils:
     localhost = "127.0.0.1"
     abc = string.ascii_lowercase
+
     debian_version = None
+    src_dir = None
 
     hal_dir = "/home/hal/"
     projects_dir = hal_dir + "projects/"
@@ -29,6 +31,7 @@ class Utils:
 
     def __init__(self):
         self.get_debian_version()
+        self.src_dir = self.get_src_dir()
 
     def get_debian_version(self):
         debian_version = self._cmd(None, "cat /etc/debian_version", catch=True, no_logs=True).split('.')
@@ -37,6 +40,10 @@ class Utils:
 
         self.debian_version = '.'.join(debian_version)
         return self.debian_version
+
+    def get_src_dir(self):
+        utils_path = os.path.dirname(os.path.abspath(__file__)).split('/')
+        return '/'.join(utils_path[:-3]) + '/'
 
     def print_dict(self, d):
         pp = pprint.PrettyPrinter(indent=4)
@@ -207,3 +214,6 @@ def cmd(*args, **kwargs):
     a = inspect.currentframe()
     call_info = inspect.getframeinfo(a.f_back)[:3]
     return utils._cmd(call_info, *args, **kwargs)
+
+def no_logs_cmd(*args, **kwargs):
+    return utils._cmd(call_info=None, no_logs=True, *args, **kwargs)

@@ -1,15 +1,15 @@
 import sys, os, subprocess, getpass
-from app.modules.utils.utils import utils, cmd as utils_cmd
+from app.modules.utils.utils import utils, no_logs_cmd as cmd
 
-src_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
-version = src_dir.split('/')[-3]    # -1 is '', -2 is 'src' and -3 is '0.1'
-lmid = "lm1"
+src_dir = utils.src_dir
+settings = utils.read(src_dir + "app/settings.ast")
+
+lmid = settings["lmid"]
+version = settings["version"]
+
 help = """
     Help
     """
-
-def cmd(*args, **kwargs):
-    return utils_cmd(no_logs=True, *args, **kwargs)
 
 def abort(msg):
     print(f"{msg} Aborting ...")

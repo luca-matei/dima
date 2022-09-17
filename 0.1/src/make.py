@@ -1,14 +1,11 @@
-import os
-from app.modules.utils.utils import utils, cmd as utils_cmd
+from app.modules.utils.utils import utils, no_logs_cmd as cmd
 
-src_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
-
-def cmd(*args, **kwargs):
-    return utils_cmd(no_logs=True, *args, **kwargs)
+src_dir = utils.src_dir
 
 modules = \
     "utils/utils.py",\
     "hal.py",\
+    "utils/logs.py",\
     "main.py",
 
 print("Making app.py ...")
