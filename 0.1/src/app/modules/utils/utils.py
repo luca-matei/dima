@@ -216,4 +216,4 @@ def cmd(*args, **kwargs):
     return utils._cmd(call_info, *args, **kwargs)
 
 def no_logs_cmd(*args, **kwargs):
-    return utils._cmd(call_info=None, no_logs=True, *args, **kwargs)
+    return utils._cmd(None, no_logs=True, *args, **kwargs)
