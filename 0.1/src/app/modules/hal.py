@@ -4,6 +4,7 @@ class App:
 
     def __init__(self):
         # Load core settings
+        print(utils.src_dir)
         settings = utils.read(utils.src_dir + "app/settings.ast")
         for attr in ("lmid", "version"):
             setattr(self, attr, settings.get(attr))
