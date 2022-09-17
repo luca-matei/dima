@@ -42,7 +42,7 @@ class Utils:
         return self.debian_version
 
     def get_src_dir(self):
-        # Only for init.py and make.py
+        print(__name__)
         utils_path = os.path.dirname(os.path.abspath(__file__)).split('/')
         return '/'.join(utils_path[:-3]) + '/'
 
