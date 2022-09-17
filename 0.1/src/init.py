@@ -132,6 +132,7 @@ class Init:
 
         print("Placing Hal to its right place ...")
         cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{lmid}.git {utils.projects_dir + lmid}/")
+        cmd(f"sudo -u hal git config --global credential.helper 'cache --timeout=3600'")
 
 args = sys.argv[1:] + ['']
 if args[0] in ("-h", "help"):
