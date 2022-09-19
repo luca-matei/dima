@@ -41,3 +41,8 @@ class LogUtils:
         utils.write(self.log_file, "")
 
 utils.logs = LogUtils()
+
+def log(*args, **kwargs):
+    a = inspect.currentframe()
+    call_info = inspect.getframeinfo(a.f_back)[:3]
+    utils.logs._log(call_info, *args, **kwargs)

@@ -4,6 +4,12 @@
 Description.  
 Visit [lucamatei.net/hal](https://) for more.
 
+## Temp
+```
+$ git commit -am "Updated files"; git push
+$ sudo -u hal git pull; sudo -u hal ./0.1/make; hal
+```
+
 ## Prerequisites
 Create a Gitlab REST API token from your [Gitlab profile](https://gitlab.com/-/profile/personal_access_tokens). Save it as you have to feed it later when it prompts.
 
