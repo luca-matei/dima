@@ -1,6 +1,6 @@
 from app.modules.utils.utils import utils, no_logs_cmd as cmd
 
-src_dir = utils.src_dir
+src_dir = utils.get_src_dir()
 
 modules = \
     "utils/utils.py",\

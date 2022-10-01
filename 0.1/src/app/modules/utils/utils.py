@@ -6,7 +6,6 @@ class Utils:
     abc = string.ascii_lowercase
 
     debian_version = None
-    src_dir = None
 
     hal_dir = "/home/hal/"
     projects_dir = hal_dir + "projects/"
@@ -31,7 +30,6 @@ class Utils:
 
     def __init__(self):
         self.get_debian_version()
-        self.src_dir = self.get_src_dir()
 
     def get_debian_version(self):
         debian_version = self._cmd(None, "cat /etc/debian_version", catch=True, no_logs=True).split('.')
@@ -42,11 +40,9 @@ class Utils:
         return self.debian_version
 
     def get_src_dir(self):
-        utils_path = os.path.dirname(os.path.abspath(__file__)).split('/')
-        if __name__ == "__main__": slice = -1
-        else: slice = -3
-
-        return '/'.join(utils_path[:slice]) + '/'
+        file_path = os.path.dirname(os.path.abspath(__file__))
+        print(file_path)
+        return file_path.split('src/')[0] + 'src/'
 
     def print_dict(self, d):
         pp = pprint.PrettyPrinter(indent=4)

@@ -1,7 +1,7 @@
 import sys, os, subprocess, getpass
 from app.modules.utils.utils import utils, no_logs_cmd as cmd
 
-src_dir = utils.src_dir
+src_dir = utils.get_src_dir()
 settings = utils.read(src_dir + "app/settings.ast")
 
 lmid = settings["lmid"]
@@ -52,7 +52,7 @@ class Init:
         output = "does not exist"
 
         while "does not exist" in output:
-            user = input("Enter an user to access Hal: ")
+            user = input("Enter an user to access Hal's files: ")
             output = cmd(f"usermod -a -G hal {user}", catch=True)
 
         print(f"{user} has to logout and login again to have access Hal's files!")
@@ -92,6 +92,7 @@ class Init:
             elif not os.path.isfile(node):
                 cmd(f"sudo -u hal touch {node}")
 
+    # This will go somewhere else
     def download_resources(self):
         print("Downloading resources ...")
         if not os.path.isfile(f"{utils.res_dir}debian-{utils.debian_version}.iso"):
