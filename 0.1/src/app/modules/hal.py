@@ -11,7 +11,7 @@ class Hal:
 
     def __init__(self):
         # Load core settings
-        settings = utils.read(self.app_dir + "app/settings.ast")
+        settings = utils.read(self.app_dir + "settings.ast")
         for attr in ("lmid", "version"):
             setattr(self, attr, settings.get(attr))
 

@@ -6,8 +6,8 @@ Visit [lucamatei.net/hal](https://) for more.
 
 ## Temp
 ```
-$ git commit -am "Updated files"; git push
-$ sudo -u hal git pull; sudo -u hal ./0.1/make; hal
+$ git add *; git commit -m "Updated files"; git push
+$ sudo -u hal git pull; hal
 ```
 
 ## Prerequisites
