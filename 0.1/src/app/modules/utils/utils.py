@@ -93,7 +93,10 @@ class Utils:
 
         if final_path:
             cmd(f"sudo mv {hal.bay_dir}tmp {final_path}")
-            cmd(f"sudo chown {owner}:{owner} {final_path}")
+            if not owner:
+                log(f"No owner specified for '{final_path}'!", level=4, console=True)
+            else:
+                cmd(f"sudo chown {owner}:{owner} {final_path}")
 
     def color(self, txt, name):
         colors = {
@@ -182,11 +185,8 @@ class Utils:
         while resp not in yes + no:
             resp = input(f"{question} y(es) / n(o): ")
 
-        if resp in yes:
-            return 1
-
-        elif resp in no:
-            return 0
+        if resp in yes: return 1
+        elif resp in no: return 0
 
     def _cmd(self, call_info, command, catch=False, no_logs=False):
         output = subprocess.run([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

@@ -230,7 +230,7 @@ class Hal:
 
     def __init__(self):
         # Load core settings
-        settings = utils.read(self.app_dir + "app/settings.ast")
+        settings = utils.read(self.app_dir + "settings.ast")
         for attr in ("lmid", "version"):
             setattr(self, attr, settings.get(attr))
 
@@ -248,6 +248,7 @@ class LogUtils:
     # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
     log_file = utils.logs_dir + utils.get_src_dir().split('/')[-4] + ".log"
+    print(log_file)
 
     levels = {
         1: ("Debug", "blue"),
@@ -319,7 +320,7 @@ utils.dbs = DbUtils()
 
 def main():
     cl = sys.argv[1:]
-    app.start()
+    hal.start()
 
     if cl:
         print("No interface")
@@ -330,3 +331,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

@@ -1,6 +1,6 @@
 def main():
     cl = sys.argv[1:]
-    app.start()
+    hal.start()
 
     if cl:
         print("No interface")

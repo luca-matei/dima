@@ -4,10 +4,8 @@ if __name__ != "__main__":
 class LogUtils:
     # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
-    if __name__ != "__main__":
-        log_file = utils.logs_dir + utils.get_src_dir().split('/')[-4] + ".log"
-    else:
-        log_file = utils.logs_dir + hal.lmid + ".log"
+    log_file = utils.logs_dir + utils.get_src_dir().split('/')[-4] + ".log"
+    print(log_file)
 
     levels = {
         1: ("Debug", "blue"),
