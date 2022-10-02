@@ -27,8 +27,6 @@ class Init:
         self.place_hal()
         self.create_db_user()
 
-        cmd(f"sudo -u hal {utils.projects_dir + lmid}/{version}/make")
-
     def create_user(self):
         # https://manpages.debian.org/jessie/adduser/adduser.8.en.html
         if not cmd("getent passwd hal", catch=True):
