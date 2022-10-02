@@ -6,6 +6,7 @@ modules = \
     "utils/utils.py",\
     "hal.py",\
     "utils/logs.py",\
+    "utils/dbs.py",\
     "main.py",
 
 print("Making app.py ...")

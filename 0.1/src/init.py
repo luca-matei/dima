@@ -25,6 +25,7 @@ class Init:
         self.create_env()
         self.create_cmd()
         self.place_hal()
+        self.create_db_user()
 
         cmd(f"sudo -u hal {utils.projects_dir + lmid}/{version}/make")
 
@@ -92,15 +93,6 @@ class Init:
             elif not os.path.isfile(node):
                 cmd(f"sudo -u hal touch {node}")
 
-    # This will go somewhere else
-    def download_resources(self):
-        print("Downloading resources ...")
-        if not os.path.isfile(f"{utils.res_dir}debian-{utils.debian_version}.iso"):
-            print(f"Downloading Debian {utils.debian_version} ...")
-            cmd(f"sudo -u hal wget https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-{utils.debian_version}-amd64-netinst.iso -q -O {utils.res_dir}debian-{utils.debian_version}.iso")
-        else:
-            print(f"Debian {utils.debian_version} is already installed!")
-
     def create_env(self):
         if os.path.isdir(f"{utils.projects_dir}venv/"):
             print("There's already a Virtual Env!")
@@ -134,6 +126,12 @@ class Init:
         print("Placing Hal to its right place ...")
         cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{lmid}.git {utils.projects_dir + lmid}/")
         cmd(f"sudo -u hal git config --global credential.helper 'cache --timeout=3600'")
+
+    def create_db_user(self):
+        print("Creating Hal PostgreSQL user ...")
+        # https://www.postgresql.org/docs/current/sql-createrole.html
+        cmd(f"""sudo -u postgres psql -tAc \"create role hal with login createdb createrole password '{utils.new_pass(64)}';\"""")
+        cmd(f"""sudo -u postgres psql -tAc \"create database hal owner hal encoding 'utf-8';\"""")
 
 args = sys.argv[1:] + ['']
 if args[0] in ("-h", "help"):

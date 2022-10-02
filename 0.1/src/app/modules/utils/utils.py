@@ -41,7 +41,6 @@ class Utils:
 
     def get_src_dir(self):
         file_path = os.path.dirname(os.path.abspath(__file__))
-        print(file_path)
         return file_path.split('src/')[0] + 'src/'
 
     def print_dict(self, d):

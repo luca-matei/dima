@@ -6,7 +6,6 @@ class Utils:
     abc = string.ascii_lowercase
 
     debian_version = None
-    src_dir = None
 
     hal_dir = "/home/hal/"
     projects_dir = hal_dir + "projects/"
@@ -31,7 +30,6 @@ class Utils:
 
     def __init__(self):
         self.get_debian_version()
-        self.src_dir = self.get_src_dir()
 
     def get_debian_version(self):
         debian_version = self._cmd(None, "cat /etc/debian_version", catch=True, no_logs=True).split('.')
@@ -42,9 +40,8 @@ class Utils:
         return self.debian_version
 
     def get_src_dir(self):
-        print(__name__)
-        utils_path = os.path.dirname(os.path.abspath(__file__)).split('/')
-        return '/'.join(utils_path[:-3]) + '/'
+        file_path = os.path.dirname(os.path.abspath(__file__))
+        return file_path.split('src/')[0] + 'src/'
 
     def print_dict(self, d):
         pp = pprint.PrettyPrinter(indent=4)
@@ -96,7 +93,10 @@ class Utils:
 
         if final_path:
             cmd(f"sudo mv {hal.bay_dir}tmp {final_path}")
-            cmd(f"sudo chown {owner}:{owner} {final_path}")
+            if not owner:
+                log(f"No owner specified for '{final_path}'!", level=4, console=True)
+            else:
+                cmd(f"sudo chown {owner}:{owner} {final_path}")
 
     def color(self, txt, name):
         colors = {
@@ -185,11 +185,8 @@ class Utils:
         while resp not in yes + no:
             resp = input(f"{question} y(es) / n(o): ")
 
-        if resp in yes:
-            return 1
-
-        elif resp in no:
-            return 0
+        if resp in yes: return 1
+        elif resp in no: return 0
 
     def _cmd(self, call_info, command, catch=False, no_logs=False):
         output = subprocess.run([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -220,13 +217,20 @@ def no_logs_cmd(*args, **kwargs):
     return utils._cmd(None, no_logs=True, *args, **kwargs)
 
 
-class App:
+class Hal:
     lmid = None
     version = None
 
+    src_dir = utils.get_src_dir()
+    app_dir = src_dir + "app/"
+
+    modules = {}
+    lmobjs = {}
+    pools = {}
+
     def __init__(self):
         # Load core settings
-        settings = utils.read(utils.src_dir + "app/settings.ast")
+        settings = utils.read(self.app_dir + "app/settings.ast")
         for attr in ("lmid", "version"):
             setattr(self, attr, settings.get(attr))
 
@@ -234,17 +238,17 @@ class App:
         # Reset logs
         utils.logs.reset()
 
-    def stop(self):
-        log("Exiting ...", console=True)
-        sys.exit()
+hal = Hal()
 
-app = App()
 
+if __name__ != "__main__":
+    from utils import utils
 
 class LogUtils:
     # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
-    log_file = utils.logs_dir + app.lmid + ".log"
+    log_file = utils.logs_dir + utils.get_src_dir().split('/')[-4] + ".log"
+
     levels = {
         1: ("Debug", "blue"),
         2: ("Info", "green"),
@@ -266,7 +270,7 @@ class LogUtils:
             self.create_record(call_info, level, message)
 
         if console and not self.quiet:
-            print(util.color(*self.levels[level]) + ": " + message)
+            print(utils.color(*self.levels[level]) + ": " + message)
 
         if level == 5: app.stop()
 
@@ -275,22 +279,54 @@ class LogUtils:
         if function == "execute" and level == 2 and len(message) > 256:
             message = message[:253] + "..."
 
-        record = f"{util.now()} {filename.split('/')[-1]} l{lineno} {function}() {self.levels[level][0]}: {message}\n"
+        record = f"{utils.now()} {filename.split('/')[-1]} l{lineno} {function}() {self.levels[level][0]}: {message}\n"
 
-        util.write(self.log_file, record, mode='a')
+        utils.write(self.log_file, record, mode='a')
 
     def reset(self):
         # To do: save old log files
-        util.write(self.log_file, "")
+        utils.write(self.log_file, "")
 
 utils.logs = LogUtils()
 
+def log(*args, **kwargs):
+    a = inspect.currentframe()
+    call_info = inspect.getframeinfo(a.f_back)[:3]
+    utils.logs._log(call_info, *args, **kwargs)
+
+
+class DbUtils:
+    query = """sudo -u hal psql -tAc \"{}\""""
+
+    def create_role(self, lmid, host=""):
+        password = utils.new_pass(64)
+
+        # Check if role's to be created on another machine
+        if host: return 0
+        # Create the role if it doesn't already exist
+        else:
+            output = cmd(self.query.format(f"create role {lmid} with login password '{password}';"), catch=True)
+
+        if "already exists" in output:
+            log(f"Role {lmid + ' on host ' + host if host else lmid} already exists! Drop the databases that use it to recreate it.", level=4, console=True)
+        else:
+            return password
+
+        return 0
+
+utils.dbs = DbUtils()
+
 
 def main():
-    print(sys.argv)
+    cl = sys.argv[1:]
     app.start()
+
+    if cl:
+        print("No interface")
+        #cli.process(' '.join(cl))
+    else:
+        print("CLI")
+        #cli.start()
 
 if __name__ == "__main__":
     main()
-
-
