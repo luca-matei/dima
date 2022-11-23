@@ -1,0 +1,13 @@
+{
+"lmid": "lm1",
+"nickname": None,
+"is_main": True,
+"has_dns": None,
+"has_dhcp": None,
+"has_ssh_server": True,
+"has_ssh_client": False,
+"has_vms": True,
+"has_web": True,
+"has_db": True,
+"has_firewall": True,
+}

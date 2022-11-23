@@ -1,0 +1,17 @@
+#!/bin/bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+GIT_PARAMS="--git-dir=$SCRIPT_DIR/.git/ --work-tree=$SCRIPT_DIR/"
+HAL_DIR="/home/hal/projects/lm1"
+
+echo "git $GIT_PARAMS add $SCRIPT_DIR/*"
+git $GIT_PARAMS add $SCRIPT_DIR/*
+
+#echo "git $GIT_PARAMS commit -m "
+git $GIT_PARAMS commit -m "$@"
+
+#echo "git $GIT_PARAMS push"
+git $GIT_PARAMS push
+
+#echo "sudo -u hal git --git-dir=$HAL_DIR.git/ --work-tree=$HAL_DIR/ pull"
+sudo -u hal git --git-dir=$HAL_DIR.git/ --work-tree=$HAL_DIR/ pull
