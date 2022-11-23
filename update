@@ -4,8 +4,8 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 GIT_PARAMS="--git-dir=$SCRIPT_DIR/.git/ --work-tree=$SCRIPT_DIR/"
 HAL_DIR="/home/hal/projects/lm1"
 
-echo "git $GIT_PARAMS add $SCRIPT_DIR/*"
-git $GIT_PARAMS add $SCRIPT_DIR/*
+echo "git $GIT_PARAMS add -A"
+git $GIT_PARAMS add -A
 
 #echo "git $GIT_PARAMS commit -m "
 git $GIT_PARAMS commit -m "$@"
