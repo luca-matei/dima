@@ -32,7 +32,7 @@ class Utils:
         self.get_debian_version()
 
     def get_debian_version(self):
-        debian_version = self._cmd(None, "cat /etc/debian_version", catch=True, no_logs=True).split('.')
+        debian_version = self._cmd(None, "cat /etc/debian_version", catch=True).split('.')
         if len(debian_version) < 3:
             debian_version += ['0']
 

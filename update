@@ -15,3 +15,5 @@ git $GIT_PARAMS push
 
 #echo "sudo -u hal git --git-dir=$HAL_DIR/.git/ --work-tree=$HAL_DIR/ pull"
 sudo -u hal git --git-dir=$HAL_DIR/.git/ --work-tree=$HAL_DIR/ pull
+
+$HAL_DIR/make
