@@ -1,11 +1,3 @@
-'''
-def create_db_user(self):
-    print("Creating Hal PostgreSQL user ...")
-    # https://www.postgresql.org/docs/current/sql-createrole.html
-    cmd(f"""sudo -u postgres psql -tAc \"create role hal with login createdb createrole password '{utils.new_pass(64)}';\"""")
-    cmd(f"""sudo -u postgres psql -tAc \"create database hal owner hal encoding 'utf-8';\"""")
-'''
-
 import sys, os, subprocess, getpass
 from app.modules.utils.utils import utils, no_logs_cmd as cmd
 
@@ -20,17 +12,25 @@ help = """
 class Install:
     def start(self):
         self.create_sudo()
+        print()
         self.install_deps()
+        print()
         self.create_user()
+        print()
         self.add_to_group()
+        print()
         self.create_dir_tree()
+        print()
         self.create_env()
+        print()
         self.create_cmd()
+        print()
 
         if opts['is_main']:
             self.place_hal()
 
         cmd(f"/home/hal/projects/{lmid}/make")
+        self.config_pg()
 
         if opts['has_web']:
             # to do: download snapbot
@@ -85,7 +85,7 @@ class Install:
 
         for package in packages:
             if not "ok installed" in cmd(f"dpkg -s {package} | grep Status", catch=True):
-                cmd("sudo -u hal apt install " + package)
+                cmd(f"apt install {package} -y", catch=True)
 
     def create_user(self):
         # https://manpages.debian.org/jessie/adduser/adduser.8.en.html
@@ -119,7 +119,7 @@ class Install:
     def create_dir_tree(self):
         print("Creating Hal's directory tree ...")
 
-        dir_tree = utils.projects_dir, utils.ssl_dir, utils.vms_dir, utils.mnt_dir, utils.ssh_dir, utils.logs_dir, utils.res_dir,
+        dir_tree = utils.logs_dir, utils.mnt_dir, utils.projects_dir, utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir, utils.vms_dir,
 
         if not os.path.isdir(utils.hal_dir):
             cmd(f"mkdir {utils.hal_dir}")
@@ -175,6 +175,13 @@ class Install:
         print("Placing Hal in the right place ...")
         cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{lmid}.git {utils.projects_dir + lmid}/")
         cmd(f"sudo -u hal git config --global credential.helper 'cache --timeout=3600'")
+
+    def config_pg(self):
+        # https://www.postgresql.org/docs/current/sql-createrole.html
+        print("Configuring PostgreSQL ...")
+        cmd("hal create pgrole hal")
+        cmd("hal create pgrole " + lmid)
+        cmd("hal create pgdb " + lmid)
 
 args = sys.argv[1:] + ['']
 if args[0] in ("-h", "help"):

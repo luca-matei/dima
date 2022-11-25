@@ -32,7 +32,7 @@ class Utils:
         self.get_debian_version()
 
     def get_debian_version(self):
-        debian_version = self._cmd(None, "cat /etc/debian_version", catch=True, no_logs=True).split('.')
+        debian_version = self._cmd(None, "cat /etc/debian_version", catch=True).split('.')
         if len(debian_version) < 3:
             debian_version += ['0']
 
@@ -179,8 +179,8 @@ class Utils:
 
     def yes_no(self, question):
         resp = ""
-        yes = "y", "yes",
-        no = "n", "no",
+        yes = "y", "yes", "1",
+        no = "n", "no", "0",
 
         while resp not in yes + no:
             resp = input(f"{question} y(es) / n(o): ")
@@ -188,18 +188,18 @@ class Utils:
         if resp in yes: return 1
         elif resp in no: return 0
 
-    def _cmd(self, call_info, command, catch=False, no_logs=False):
+    def _cmd(self, call_info, command, catch=False):
         output = subprocess.run([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         output.stdout = output.stdout.strip('\n')
         output.stderr = output.stderr.strip('\n')
 
-        if no_logs:
-            if output.stderr: print(self.color("Error: ", "lred") + output.stderr)
-        else:
+        if call_info:
             self.logs._log(call_info, f"{hal.user}@{hal.host} {command}")
             self.logs._log(call_info, output.stdout, level=1)
             if output.stderr: self.logs._log(call_info, output.stderr, level=4)
+        else:
+            if output.stderr: print(self.color("Error: ", "lred") + output.stderr)
 
         if catch:
             response = '\n'.join([output.stdout, output.stderr]).strip('\n')
@@ -214,7 +214,7 @@ def cmd(*args, **kwargs):
     return utils._cmd(call_info, *args, **kwargs)
 
 def no_logs_cmd(*args, **kwargs):
-    return utils._cmd(None, no_logs=True, *args, **kwargs)
+    return utils._cmd(None, *args, **kwargs)
 
 
 class Hal:
@@ -238,17 +238,22 @@ class Hal:
         # Reset logs
         utils.logs.reset()
 
+        log("Phase 1: Loading modules ...")
+        lib_path = utils.projects_dir + "venv/lib/"
+        packages_path = lib_path + os.listdir(lib_path)[0] + "/site-packages"
+        sys.path.append(packages_path)
+
+        for module in ('psycopg2', 'yaml'):
+            globals()[module] = __import__(module)
+
+
 hal = Hal()
 
-
-if __name__ != "__main__":
-    from utils import utils
 
 class LogUtils:
     # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
     log_file = utils.logs_dir + utils.get_src_dir().split('/')[-4] + ".log"
-    print(log_file)
 
     levels = {
         1: ("Debug", "blue"),

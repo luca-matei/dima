@@ -8,13 +8,14 @@ class Utils:
     debian_version = None
 
     hal_dir = "/home/hal/"
-    projects_dir = hal_dir + "projects/"
-    ssl_dir = hal_dir + "ssl/"
-    vms_dir = hal_dir + "vms/"
-    mnt_dir = hal_dir + "mnt/"
-    ssh_dir = hal_dir + "ssh/"
     logs_dir = hal_dir + "logs/"
+    mnt_dir = hal_dir + "mnt/"
+    projects_dir = hal_dir + "projects/"
     res_dir = hal_dir + "res/"
+    ssh_dir = hal_dir + "ssh/"
+    ssl_dir = hal_dir + "ssl/"
+    tmp_dir = hal_dir + "tmp/"
+    vms_dir = hal_dir + "vms/"
 
     logs = None
     dbs = None

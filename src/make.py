@@ -7,6 +7,9 @@ modules = (
     "hal.py",
     "utils/logs.py",
     "utils/dbs.py",
+    "utils/ssh.py",
+    "utils/web.py",
+    "cli.py",
     "main.py",
     )
 

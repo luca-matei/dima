@@ -1,15 +1,7 @@
 {
 "lmid": "lm1",
 "version": "0.1",
-"host": {
-    "net": "lm2",
-    "lmid": "lm3",
-    "ip": "127.0.0.1",
-    },
-"db": {
-    "host": "lm3",
-    "port": None,
-    "lmid": "lm4",
-    "pass": None
-    },
+"db_port": None,
+"db_pass": None,
+"log_level": 1,
 }
