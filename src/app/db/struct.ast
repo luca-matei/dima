@@ -16,6 +16,38 @@
     "alias varchar unique"
     )),
 
+("domains", (
+    "id serial primary key",
+    "name varchar unique"
+    )),
+
+("nets", (
+    "id serial primary key",
+    "lmid int references lmobjs (id)",
+    "domain varchar not null",
+    "netmask inet not null",
+    "gateway inet not null",
+    "lease_start inet not null",
+    "lease_end inet not null",
+    "vacant smallint not null",
+    )),
+
+("hosts", (
+    "id serial primary key",
+    "lmid int references lmobjs (id)",
+    "mac macaddr",
+    "storage int",
+    "cpus smallint",
+    "memory int",
+    "net int",
+    "ip inet",
+    "client int",
+    "env smallint",
+    "ssh_port int",
+    "pg_port int",
+    "pm int",
+    )),
+
 ("command", (
     ("acts", (
         "id serial primary key",
@@ -42,39 +74,6 @@
         )),
     )),
 
-("net", (
-    ("nets", (
-        "id serial primary key",
-        "lmid int references lmobjs (id)",
-        "netmask inet not null",
-        "gateway inet not null",
-        "lease_start inet not null",
-        "lease_end inet not null",
-        "vacant smallint not null",
-        )),
-
-    ("domains", (
-        "id serial primary key",
-        "name varchar unique"
-        )),
-    )),
-
-("hosts", (
-    "id serial primary key",
-    "lmid int references lmobjs (id)",
-    "mac macaddr",
-    "is_vm boolean",
-    "storage int",
-    "cpus smallint",
-    "memory int",
-    "net int",
-    "ip inet",
-    "client int",
-    "env smallint",
-    "ssh_port int",
-    "pg_port int",
-    )),
-
 ("project", (
     ("projects", (
         "id serial primary key",
@@ -86,8 +85,8 @@
 
     ("dbs", (
         "id serial primary key",
-        "host int references lmobjs (id)",
-        "project int references lmobjs (id)",
+        "host int",
+        "project int",
         )),
 
     ("langs", (
@@ -100,15 +99,17 @@
         "id serial primary key",
         "code varchar",
         )),
+    )),
 
-    ("web_modules", (
+("web", (
+    ("modules", (
         "id serial primary key",
         "name varchar",
         )),
 
     ("webs", (
         "id serial primary key",
-        "lmobj int references lmobjs (id)",
+        "lmid int",
         "domain int",
         "port int",
         "ssl_last_gen date",
@@ -124,13 +125,13 @@
 
     ("apps", (
         "id serial primary key",
-        "lmobj int references lmobjs (id)",
+        "lmid int",
         "port int",
         )),
 
     ("softs", (
         "id serial primary key",
-        "lmobj int references lmobjs (id)",
+        "lmid int",
         )),
     )),
 )

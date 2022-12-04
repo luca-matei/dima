@@ -33,12 +33,43 @@
         ("lmid", "module", "alias"),
         ("", "id:name:modules", ""),
         ("lm1", "App", "hal"),
-        ("lm2", "App", "portal"),
+        #("lm2", "App", "portal"),
         ("lm3", "Net", "gravity"),
         ("lm4", "Host", "astatin"),
-        ("lm5", "Host", "quasar"),
-        ("lm6", "Web", "assets"),
+        #("lm5", "Host", "quasar"),
+        #("lm6", "Web", "assets"),
         ("lm7", "Web", "hello"),
+        )),
+
+    ("domains", (
+        ("name",),
+        ("",),
+        ("lucamatei.net",),
+        ("home.lucamatei.net",),
+        ("nebula.lucamatei.net",),
+        ("assets.lucamatei.net",),
+        ("hello.lucamatei.net",),
+        ("hal.lucamatei.net",),
+        ("accounts.lucamatei.net",),
+        ("gitlab.lucamatei.net",),
+        ("qr.lucamatei.net",),
+        ("lucamatei.eu",),
+        ("lucamatei.org",),
+        ("lucamatei.xyz",),
+        ("lucamatei.shop",),
+        ("lucamatei.store",),
+        )),
+
+    ("nets", (
+        ("lmid", "domain", "netmask", "gateway", "lease_start", "lease_end", "autolaunch", "state", "vacant"),
+        ("id:lmid:lmobjs", "id:name:domains", "", "", "", "", "", ""),
+        ("lm3", "home.lucamatei.net", "255.255.255.0", "192.168.1.1", "192.168.1.4", "192.168.1.254", True, 1, 0),
+        )),
+
+    ("hosts", (
+        ("lmid", "mac", "storage", "cpus", "memory", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
+        ("id:lmid:lmobjs", "", "", "", "", "id:lmid:lmobjs", "", "", "id:name:envs", "", "", "id:lmid:lmobjs"),
+        ("lm4", "40:8d:5c:e4:fd:46", "", "", "", "lm3", "192.168.1.8", "", "dev", "", "", ""),
         )),
     )),
 
@@ -104,23 +135,51 @@
         )),
     )),
 
-("net", (
-    ("domains", (
+("project", (
+    ("projects", (
+        ("lmid", "host", "name", "description"),
+        ("id:lmid:lmobjs", "id:lmid:lmobjs", "", ""),
+        ("lm1", "lm4", "Hal", ""),
+        #("lm2", "lm4", "Hal Web", ""),
+        #("lm6", "lm5", "Assets", ""),
+        ("lm7", "lm5", "Hello World", ""),
+        )),
+
+    ("dbs", (
+        ("host", "project"),
+        ("id:lmid:lmobjs", "id:lmid:lmobjs"),
+        )),
+
+    ("langs", (
+        ("code", "name"),
+        ("", ""),
+        ("en", "English"),
+        ("ro", "Română"),
+        )),
+
+    ("themes", (
+        ("code",),
+        ("",),
+        ("light",),
+        ("dark",),
+        )),
+
+    )),
+
+("web", (
+    ("modules", (
         ("name",),
         ("",),
-        ("lucamatei.net",),
-        ("home.lucamatei.net",),
-        ("nebula.lucamatei.net",),
-        ("accounts.lucamatei.net",),
-        ("hal.lucamatei.net",),
-        ("assets.lucamatei.net",),
-        ("gitlab.lucamatei.net",),
-        ("qr.lucamatei.net",),
-        ("lucamatei.eu",),
-        ("lucamatei.org",),
-        ("lucamatei.xyz",),
-        ("lucamatei.shop",),
-        ("lucamatei.store",),
+        ("static",),
+        ("blog",),
+        ("gallery",),
+        )),
+
+    ("webs", (
+        ("lmid", "domain", "port", "ssl_last_gen", "modules", "langs", "themes", "default_lang", "default_theme", "has_top", "has_animations", "has_domain_in_title"),
+        ("id:lmid:lmobjs", "id:name:domains", "", "", "id[]:name:projects.web_modules", "id[]:code:projects.langs", "id[]:code:projects.themes", "id:code:projects.langs", "id:code:projects.themes", "", "", ""),
+        #("lm2", "hal.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
+        #("lm6", "assets.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
+        ("lm7", "hello.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
         )),
     )),
-)
