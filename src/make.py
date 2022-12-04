@@ -9,6 +9,7 @@ modules = (
     "utils/dbs.py",
     "utils/ssh.py",
     "utils/web.py",
+    "db.py",
     "cli.py",
     "main.py",
     )

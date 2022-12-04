@@ -1,0 +1,11 @@
+("modules", (
+    "id serial primary key",
+    "name varchar unique not null",                 # e.g. hutil, dutil
+    )),
+
+("lmobjs", (
+    "id serial primary key",
+    "lmid varchar unique not null",
+    "module smallint not null",
+    "alias varchar unique"
+    )),

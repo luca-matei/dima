@@ -28,15 +28,17 @@ class Install:
 
         if opts['is_main']:
             self.place_hal()
+            print()
 
         cmd(f"/home/hal/projects/{lmid}/make")
-        self.config_pg()
+
+        if opts['has_db']:
+            self.config_pg()
+            print()
 
         if opts['has_web']:
-            # to do: download snapbot
-            # create ssl certs for hal.lucamatei.net
-            cmd("hal generate dh")
-            cmd("hal config nginx")
+            self.config_web()
+            print()
 
     def abort(self, msg):
         print(f"{msg} Aborting ...")
@@ -180,8 +182,16 @@ class Install:
         # https://www.postgresql.org/docs/current/sql-createrole.html
         print("Configuring PostgreSQL ...")
         cmd("hal create pgrole hal")
-        cmd("hal create pgrole " + lmid)
-        cmd("hal create pgdb " + lmid)
+
+        if opts['is_main']:
+            cmd("hal create pgrole " + lmid)
+            cmd("hal create pgdb " + lmid)
+
+    def config_web(self):
+        # to do: download snapbot
+        # create ssl certs for hal.lucamatei.net
+        cmd("hal generate dh")
+        cmd("hal config nginx")
 
 args = sys.argv[1:] + ['']
 if args[0] in ("-h", "help"):

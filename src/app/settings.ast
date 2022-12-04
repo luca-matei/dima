@@ -1,7 +1,5 @@
 {
 "lmid": "lm1",
 "version": "0.1",
-"db_port": None,
-"db_pass": None,
 "log_level": 1,
 }

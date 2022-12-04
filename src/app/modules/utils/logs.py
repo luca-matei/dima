@@ -1,7 +1,7 @@
 class LogUtils:
     # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
-    log_file = utils.logs_dir + utils.get_src_dir().split('/')[-4] + ".log"
+    log_file = utils.logs_dir + utils.get_src_dir().split('/')[-3] + ".log"
 
     levels = {
         1: ("Debug", "blue"),

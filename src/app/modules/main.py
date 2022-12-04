@@ -4,10 +4,10 @@ def main():
 
     if cl:
         print("No interface")
-        #cli.process(' '.join(cl))
+        cli.process(' '.join(cl))
     else:
         print("CLI")
-        #cli.start()
+        cli.start()
 
 if __name__ == "__main__":
     main()
