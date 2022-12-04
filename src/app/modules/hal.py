@@ -1,6 +1,8 @@
 class Hal:
     lmid = None
     version = None
+    db = None
+    cli = None
 
     src_dir = utils.get_src_dir()
     app_dir = src_dir + "app/"

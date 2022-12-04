@@ -1,4 +1,3 @@
-
 class CLI:
     receive_command = True
     command = {
@@ -104,3 +103,5 @@ class CLI:
         # Action to 'hal' isn't defined.
         else:
             return self.invalid(a=act)
+
+hal.cli = CLI()
