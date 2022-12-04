@@ -1,3 +1,4 @@
+(
 ("modules", (
     "id serial primary key",
     "name varchar unique not null",                 # e.g. hutil, dutil
@@ -9,3 +10,4 @@
     "module smallint not null",
     "alias varchar unique"
     )),
+)
