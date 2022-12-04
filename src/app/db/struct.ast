@@ -1,7 +1,12 @@
 (
+("envs", (
+    "id serial primary key",
+    "name varchar unique not null",
+    )),
+
 ("modules", (
     "id serial primary key",
-    "name varchar unique not null",                 # e.g. hutil, dutil
+    "name varchar unique not null",                 # e.g. utils.webs
     )),
 
 ("lmobjs", (
@@ -9,5 +14,123 @@
     "lmid varchar unique not null",
     "module smallint not null",
     "alias varchar unique"
+    )),
+
+("command", (
+    ("acts", (
+        "id serial primary key",
+        "name varchar unique not null",             # e.g. config, list, check
+        "alias varchar",                            # e.g. cfg, ls
+        )),
+
+    ("objs", (
+        "id serial primary key",
+        "module smallint not null",
+        "name varchar not null",                    # e.g. dhcp (global); lmg1 (dynamic)
+        "acts smallint[]",                          # Actions that can be performed on this object
+        "args smallint[]",                          # Arguments that can be added to this object
+        )),
+
+    ("args", (
+        "id serial primary key",
+        "name varchar unique not null",
+        "act smallint not null",
+        "req boolean not null",                     # 1 = positional; 0 = flag
+        "regex varchar",                            # Regex expression for validating argument value
+        "short varchar not null",                   # e.g. -q, -v for type 1 or 2 and load-file for type 0
+        "long varchar",                             # e.g. --quiet for -q, --verbose for -v or None for type 0
+        )),
+    )),
+
+("net", (
+    ("nets", (
+        "id serial primary key",
+        "lmid int references lmobjs (id)",
+        "netmask inet not null",
+        "gateway inet not null",
+        "lease_start inet not null",
+        "lease_end inet not null",
+        "vacant smallint not null",
+        )),
+
+    ("domains", (
+        "id serial primary key",
+        "name varchar unique"
+        )),
+    )),
+
+("hosts", (
+    "id serial primary key",
+    "lmid int references lmobjs (id)",
+    "mac macaddr",
+    "is_vm boolean",
+    "storage int",
+    "cpus smallint",
+    "memory int",
+    "net int",
+    "ip inet",
+    "client int",
+    "env smallint",
+    "ssh_port int",
+    "pg_port int",
+    )),
+
+("project", (
+    ("projects", (
+        "id serial primary key",
+        "lmid int references lmobjs (id)",
+        "host int references lmobjs (id)",
+        "name varchar",
+        "description varchar",
+        )),
+
+    ("dbs", (
+        "id serial primary key",
+        "host int references lmobjs (id)",
+        "project int references lmobjs (id)",
+        )),
+
+    ("langs", (
+        "id serial primary key",
+        "code varchar(2)",
+        "name varchar",
+        )),
+
+    ("themes", (
+        "id serial primary key",
+        "code varchar",
+        )),
+
+    ("web_modules", (
+        "id serial primary key",
+        "name varchar",
+        )),
+
+    ("webs", (
+        "id serial primary key",
+        "lmobj int references lmobjs (id)",
+        "domain int",
+        "port int",
+        "ssl_last_gen date",
+        "modules smallint[]",
+        "langs smallint[]",
+        "themes smallint[]",
+        "default_lang smallint",
+        "default_theme smallint",
+        "has_top boolean",
+        "has_animations boolean",
+        "has_domain_in_title boolean",
+        )),
+
+    ("apps", (
+        "id serial primary key",
+        "lmobj int references lmobjs (id)",
+        "port int",
+        )),
+
+    ("softs", (
+        "id serial primary key",
+        "lmobj int references lmobjs (id)",
+        )),
     )),
 )

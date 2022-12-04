@@ -11,7 +11,7 @@ class CLI:
 
         command = ""
         while self.receive_command:
-            command = input(f"> ")
+            command = input(f" > ")
 
             if command in ("q", "exit"):
                 self.stop()
