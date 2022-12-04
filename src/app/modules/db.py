@@ -28,7 +28,7 @@ class Db:
             details = utils.read(hal.app_dir + "db/details.ast")
             host = details['host']
             port = details['port']
-            password = details['password']
+            password = details['pass']
 
         self.conn = psycopg2.connect(
             dbname = self.lmid,
