@@ -4,7 +4,7 @@ class Web(Project):
 
         query = "select a.id, c.name, c.description, b.name, d.port, d.modules, d.langs, d.themes, d.default_lang, d.default_theme, d.has_top, d.has_animations, d.has_domain_in_title from lmobjs a, domains b, project.projects c, web.webs d where a.id=c.host and d.domain=b.id and c.lmobj=%s;"
         params = dbid,
-        self.host, self.name, self.description, self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_top, self.has_animations, self.has_domain_in_title = hal.db.execute(query, params)[0]
+        self.host_id, self.name, self.description, self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_top, self.has_animations, self.has_domain_in_title = hal.db.execute(query, params)[0]
 
         #self.domain = hal.envs.get(hal.pools[self.host].env) + "." + self.domain # PROBLEM
         self.modules = [utils.webs.modules[m] for m in self.module_ids]

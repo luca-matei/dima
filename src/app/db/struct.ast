@@ -18,7 +18,7 @@
 
 ("nets", (
     "id serial primary key",
-    "lmobj int references lmobjs (id)",
+    "lmobj int",
     "domain varchar not null",
     "netmask inet not null",
     "gateway inet not null",
@@ -45,6 +45,7 @@
         "env smallint",
         "ssh_port int",
         "pg_port int",
+        "pm int",
         )),
     )),
 
@@ -77,8 +78,8 @@
 ("project", (
     ("projects", (
         "id serial primary key",
-        "lmobj int references lmobjs (id)",
-        "host int references lmobjs (id)",
+        "lmobj int",
+        "host int",
         "name varchar",
         "description varchar",
         )),
