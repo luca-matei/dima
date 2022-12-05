@@ -1,0 +1,26 @@
+class GPG:
+    def create_gpgkey(self, email):
+        log(f"Generating GPG key for '{email}'. This may take a while ...", console=True)
+
+        key_config = util.read(hal.tpl_dir + "gpg-key.tpl") \
+            .replace("%USER", email.split('@')[0]) \
+            .replace("%EMAIL", email)
+        util.write(hal.bay_dir + "gpg", key_config)
+
+        cmd(f"gpg2 --batch --gen-key {hal.bay_dir}gpg")
+
+        return self.get_privkey_id(email)
+
+    def get_privkey_id(self, email):
+        privkey_id = cmd(f"gpg2 --list-secret-keys --keyid-format LONG {email}", catch=True)
+        if not "No secret key" in privkey_id:
+            return re.findall(r'\bsec   rsa4096/\w+', privkey_id)[0].split('/')[1]
+        else:
+            log(f"Couldn't find GPG key for '{email}'!", level=4, console=True)
+            return 0
+
+    def delete_gpgkey(self, host):
+        cmd(f"gpg2 --batch --delete-secret-keys {email}")
+        cmd(f"gpg2 --batch --delete-keys {email}")
+
+gpg = GPG()

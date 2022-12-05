@@ -61,15 +61,15 @@
         )),
 
     ("nets", (
-        ("lmid", "domain", "netmask", "gateway", "lease_start", "lease_end", "autolaunch", "state", "vacant"),
-        ("id:lmid:lmobjs", "id:name:domains", "", "", "", "", "", ""),
-        ("lm3", "home.lucamatei.net", "255.255.255.0", "192.168.1.1", "192.168.1.4", "192.168.1.254", True, 1, 0),
+        ("lmid", "domain", "netmask", "gateway", "lease_start", "lease_end", "autolaunch", "state"),
+        ("id:lmid:lmobjs", "id:name:domains", "", "", "", "", ""),
+        ("lm3", "home.lucamatei.net", "255.255.255.0", "192.168.1.1", "192.168.1.4", "192.168.1.254", True, 1),
         )),
 
     ("hosts", (
         ("lmid", "mac", "storage", "cpus", "memory", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
         ("id:lmid:lmobjs", "", "", "", "", "id:lmid:lmobjs", "", "", "id:name:envs", "", "", "id:lmid:lmobjs"),
-        ("lm4", "40:8d:5c:e4:fd:46", "", "", "", "lm3", "192.168.1.8", "", "dev", "", "", ""),
+        ("lm4", "40:8d:5c:e4:fd:46", "", "", "", "lm3", "192.168.1.8", "", "prod", "", "", ""),
         )),
     )),
 
@@ -148,6 +148,7 @@
     ("dbs", (
         ("host", "project"),
         ("id:lmid:lmobjs", "id:lmid:lmobjs"),
+        ("lm4", "lm1"),
         )),
 
     ("langs", (

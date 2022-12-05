@@ -29,7 +29,6 @@
     "gateway inet not null",
     "lease_start inet not null",
     "lease_end inet not null",
-    "vacant smallint not null",
     )),
 
 ("hosts", (

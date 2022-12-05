@@ -1,10 +1,8 @@
 class CLI:
     receive_command = True
-    command = {
-        'acts': {},
-        'objs': {},
-        'args': {}
-        }
+    acts = {}
+    objs = {}
+    args = {}
 
     def start(self):
         log("Starting CLI ...")
@@ -104,4 +102,4 @@ class CLI:
         else:
             return self.invalid(a=act)
 
-hal.cli = CLI()
+cli = CLI()
