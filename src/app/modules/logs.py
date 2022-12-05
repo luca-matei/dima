@@ -43,7 +43,7 @@ class Logs:
         # To do: save old log files
         utils.write(self.log_file, "")
 
-logs = LogUtils()
+logs = Logs()
 
 def log(*args, **kwargs):
     a = inspect.currentframe()
