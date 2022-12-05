@@ -11,7 +11,7 @@ if len(sys.argv) > 1:
             "install.py",
             )
         print("Making install.py ...")
-        utils.write(src_dir + "app/app.py", "")
+        utils.write(src_dir + "install.py", "")
         for module in modules:
             utils.write(src_dir + "install.py", utils.read(src_dir + "app/modules/" + module) + "\n\n", mode='a')
 
