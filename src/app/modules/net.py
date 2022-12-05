@@ -3,12 +3,12 @@ class Net:
         self.dbid = dbid
         self.lmid = hal.lmobjs[dbid][0]
 
-        query = "select netmask, domain, gateway, lease_start, lease_end, autolaunch, state from nets where lmobj=%s;"
+        query = "select netmask, domain, gateway, lease_start, lease_end from nets where lmobj=%s;"
         params = dbid,
-        self.netmask, self.domain, self.gateway, self.lease_start, self.lease_end, self.autolaunch, self.state = hal.db.execute(query, params)[0]
+        self.netmask, self.domain, self.gateway, self.lease_start, self.lease_end = hal.db.execute(query, params)[0]
 
         print("\nNET")
-        print('\n'.join([self.netmask, self.domain, self.gateway, self.lease_start, self.lease_end, self.autolaunch, self.state]))
+        print('\n'.join([self.netmask, self.domain, self.gateway, self.lease_start, self.lease_end]))
 
         #self.check()
 
