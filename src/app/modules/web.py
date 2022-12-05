@@ -9,7 +9,6 @@ class Web(Project):
         dev_domain = self.domain.split('.')
         dev_domain.insert(-2, 'dev')
         self.dev_domain = '.'.join(dev_domain)
-        print(self.dev_domain)
 
         self.modules = [utils.webs.modules[m] for m in self.module_ids]
         self.langs = [utils.projects.langs[l] for l in self.lang_ids]

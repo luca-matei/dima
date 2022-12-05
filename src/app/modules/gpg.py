@@ -2,12 +2,13 @@ class GPG:
     def create_gpgkey(self, email):
         log(f"Generating GPG key for '{email}'. This may take a while ...", console=True)
 
-        key_config = util.read(hal.tpl_dir + "gpg-key.tpl") \
-            .replace("%USER", email.split('@')[0]) \
-            .replace("%EMAIL", email)
-        util.write(hal.bay_dir + "gpg", key_config)
+        key_config = utils.format_tpl("gpg-key.tpl", {
+            "user": email.split('@')[0],
+            "email": email
+            })
+        utils.write(utils.tmp_dir + "gpg", key_config)
 
-        cmd(f"gpg2 --batch --gen-key {hal.bay_dir}gpg")
+        cmd(f"gpg2 --batch --gen-key {utils.tmp_dir}gpg")
 
         return self.get_privkey_id(email)
 

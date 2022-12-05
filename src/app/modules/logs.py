@@ -1,4 +1,4 @@
-class LogUtils:
+class Logs:
     # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
     log_file = utils.logs_dir + utils.get_src_dir().split('/')[-3] + ".log"
@@ -26,7 +26,9 @@ class LogUtils:
         if console and not self.quiet:
             print(utils.color(*self.levels[level]) + ": " + message)
 
-        if level == 5: hal.stop()
+        if level == 5:
+            print("Exiting ...")
+            sys.exit()
 
     def create_record(self, call_info, level, message):
         filename, lineno, function = call_info
@@ -41,9 +43,9 @@ class LogUtils:
         # To do: save old log files
         utils.write(self.log_file, "")
 
-utils.logs = LogUtils()
+logs = LogUtils()
 
 def log(*args, **kwargs):
     a = inspect.currentframe()
     call_info = inspect.getframeinfo(a.f_back)[:3]
-    utils.logs._log(call_info, *args, **kwargs)
+    logs._log(call_info, *args, **kwargs)

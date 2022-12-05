@@ -9,7 +9,7 @@ class Gitlab:
             return 0
 
         headers = {'private-token': self.get_token()}
-        url = "https://gitlab.com/api/v4" + endpoint
+        url = f"https://{self.domain}/api/v4{endpoint}"
 
         response = getattr(requests, method)(
             url,
@@ -18,14 +18,6 @@ class Gitlab:
             )
 
         return response.json()
-
-    def config_git(self):
-        log("Configuring Git ...")
-        config = util.read(hal.tpl_dir + "gitconfig.tpl") \
-            .replace("%USER", hal.host_lmid) \
-            .replace("%EMAIL", f"{hal.host_lmid}@{self.domain}") \
-            .replace("%GPG_KEY", hal.gpg.get_privkey_id(hal.host_lmid))
-        util.write(f"/home/{hal.user}/.gitconfig", config)
 
     def add_ssh_key(self, host):
         if hal.ssh.create_sshkey(host + "-gitlab"):

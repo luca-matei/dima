@@ -1,4 +1,4 @@
-import sys, os, inspect, subprocess, string, pprint, ast, json, secrets
+import sys, os, inspect, subprocess, string, pprint, ast, json, secrets, re
 from datetime import datetime
 
 class Utils:
@@ -6,6 +6,7 @@ class Utils:
     abc = string.ascii_lowercase
 
     debian_version = None
+    hostname = os.uname()[1]
 
     hal_dir = "/home/hal/"
     logs_dir = hal_dir + "logs/"
@@ -17,7 +18,6 @@ class Utils:
     tmp_dir = hal_dir + "tmp/"
     vms_dir = hal_dir + "vms/"
 
-    logs = None
     dbs = None
     nets = None
     hosts = None
@@ -171,7 +171,7 @@ class Utils:
         return 0
 
     def format_tpl(self, tpl, keys):
-        tpl = self.read(hal.tpl_dir + tpl)
+        tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl)
 
         for key in self.get_keys(keys):
             tpl = tpl.replace("%" + key.upper(), keys[key])
@@ -196,9 +196,9 @@ class Utils:
         output.stderr = output.stderr.strip('\n')
 
         if call_info:
-            self.logs._log(call_info, f"{hal.user}@{hal.host} {command}")
-            self.logs._log(call_info, output.stdout, level=1)
-            if output.stderr: self.logs._log(call_info, output.stderr, level=4)
+            #logs._log(call_info, f"{hal.user}@{hal.host} {command}")
+            logs._log(call_info, output.stdout, level=1)
+            if output.stderr: logs._log(call_info, output.stderr, level=4)
         else:
             if output.stderr: print(self.color("Error: ", "lred") + output.stderr)
 

@@ -20,7 +20,7 @@ class Hal:
 
     def start(self):
         # Reset logs
-        utils.logs.reset()
+        logs.reset()
 
         log("Phase 1: Checking integrity ...")
 
@@ -40,7 +40,7 @@ class Hal:
         for attr in ("lmid", "version"):
             setattr(self, attr, settings.get(attr))
 
-        utils.logs.level = settings.get("log_level", 1)
+        logs.level = settings.get("log_level", 1)
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)

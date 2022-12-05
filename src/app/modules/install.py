@@ -1,16 +1,9 @@
-import sys, os, subprocess, getpass
-from app.modules.utils.utils import utils, no_logs_cmd as cmd
-
-src_dir = utils.get_src_dir()
-opts = utils.read(src_dir + "install.ast")
-lmid = opts['lmid']
-
-help = """
-    Help
-    """
-
 class Install:
     def start(self):
+        self.src_dir = utils.get_src_dir()
+        self.opts = utils.read(src_dir + "install.ast")
+        self.lmid = self.opts['lmid']
+
         self.create_sudo()
         print()
         self.install_deps()
@@ -26,18 +19,20 @@ class Install:
         self.create_cmd()
         print()
 
-        if opts['is_main']:
+        if self.opts['is_main']:
             self.place_hal()
             print()
 
-        cmd(f"/home/hal/projects/{lmid}/make")
+        #self.config_git()
 
-        if opts['has_db']:
-            self.config_pg()
+        cmd(utils.projects_dir + self.lmid + "/make")
+
+        if self.opts['has_db']:
+            #self.config_pg()
             print()
 
-        if opts['has_web']:
-            self.config_web()
+        if self.opts['has_web']:
+            #self.config_web()
             print()
 
     def abort(self, msg):
@@ -60,29 +55,29 @@ class Install:
         print("Installing dependencies ...")
         packages = "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip", "gnupg2",
 
-        if opts['has_web']:
+        if self.opts['has_web']:
             packages += "openssl", "nginx", "supervisor",
 
-        if opts['has_web'] or opts['has_db']:
+        if self.opts['has_web'] or self.opts['has_db']:
             packages += "postgresql", "libpq-dev",
 
-        if opts['has_ssh_server']:
+        if self.opts['has_ssh_server']:
             packages += "openssh-server",
 
-        if opts['has_ssh_client']:
+        if self.opts['has_ssh_client']:
             packages += "openssh-client",
 
-        if opts['has_vms']:
+        if self.opts['has_vms']:
             # packages +=
             pass
 
-        if opts['has_dhcp']:
+        if self.opts['has_dhcp']:
             packages += "isc-dhcp-server"
 
-        if opts['has_dns']:
+        if self.opts['has_dns']:
             packages += "bind9"
 
-        if opts['has_firewall']:
+        if self.opts['has_firewall']:
             packages += "nftables",
 
         for package in packages:
@@ -149,10 +144,10 @@ class Install:
         cmd(f"sudo -u hal python3 -m venv {utils.projects_dir}venv")
 
         packages = "wheel",
-        if opts['has_web']:
+        if self.opts['has_web']:
             packages += "uwsgi", "libsass", "pyyaml",
 
-        if opts['has_web'] or opts['has_db']:
+        if self.opts['has_web'] or self.opts['has_db']:
             packages += "psycopg2",
 
         for package in packages:
@@ -160,38 +155,51 @@ class Install:
 
     def create_cmd(self):
         print("Creating 'hal' command ...")
-        hal_bash = utils.read(f"{src_dir}assets/tpls/hal-bash.tpl").replace("%LMID", lmid)
+        hal_bash = utils.format_tpl("hal-bash.tpl", {"lmid": self.lmid})
         utils.write("/usr/local/bin/hal", hal_bash)
         cmd("chmod +x /usr/local/bin/hal")
 
     def place_hal(self):
         # To do: download lm1-versions, lm2, lm2-versions
-        if os.path.isdir(utils.projects_dir + lmid):
+        if os.path.isdir(utils.projects_dir + self.lmid):
             print(f"Hal already is in the right place!")
             yes = utils.yes_no("Purge it?")
             if yes:
-                cmd(f"sudo -u hal rm -r {utils.projects_dir + lmid}")
+                cmd(f"sudo -u hal rm -r {utils.projects_dir + self.lmid}")
             else:
                 return
 
         print("Placing Hal in the right place ...")
-        cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{lmid}.git {utils.projects_dir + lmid}/")
+        cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{self.lmid}.git {utils.projects_dir + self.lmid}/")
         cmd(f"sudo -u hal git config --global credential.helper 'cache --timeout=3600'")
+
+    def config_git(self):
+        log("Configuring Git ...")
+        config = utils.format_tpl("gitconfig.tpl", {
+            "user": utils.hostname,
+            "email": f"{utils.hostname}@{self.opts['gitlab']}",
+            "gpg_key": gpg.get_privkey_id(utils.hostname)
+            })
+        utils.write(f"/home/hal/.gitconfig", config)
 
     def config_pg(self):
         # https://www.postgresql.org/docs/current/sql-createrole.html
         print("Configuring PostgreSQL ...")
         cmd("hal create pgrole hal")
 
-        if opts['is_main']:
-            cmd("hal create pgrole " + lmid)
-            cmd("hal create pgdb " + lmid)
+        if self.opts['is_main']:
+            cmd("hal create pgrole " + self.lmid)
+            cmd("hal create pgdb " + self.lmid)
 
     def config_web(self):
         # to do: download snapbot
         # create ssl certs for hal.lucamatei.net
         cmd("hal generate dh")
         cmd("hal config nginx")
+
+help = """
+    Help
+    """
 
 args = sys.argv[1:] + ['']
 if args[0] in ("-h", "help"):

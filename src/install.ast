@@ -1,6 +1,7 @@
 {
 "lmid": "lm1",
 "nickname": None,
+"gitlab": "gitlab.com",
 "is_main": True,
 "has_dns": None,
 "has_dhcp": None,
