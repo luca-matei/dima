@@ -1,7 +1,7 @@
 class Install:
     def start(self):
         self.src_dir = utils.get_src_dir()
-        self.opts = utils.read(src_dir + "install.ast")
+        self.opts = utils.read(self.src_dir + "install.ast")
         self.lmid = self.opts['lmid']
 
         self.create_sudo()
