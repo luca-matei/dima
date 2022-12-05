@@ -23,16 +23,16 @@ class Install:
             self.place_hal()
             print()
 
-        #self.config_git()
+        self.config_git()
 
         cmd(utils.projects_dir + self.lmid + "/make")
 
         if self.opts['has_db']:
-            #self.config_pg()
+            self.config_pg()
             print()
 
         if self.opts['has_web']:
-            #self.config_web()
+            self.config_web()
             print()
 
     def abort(self, msg):
