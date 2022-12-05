@@ -45,7 +45,6 @@
         "env smallint",
         "ssh_port int",
         "pg_port int",
-        "pm int",
         )),
     )),
 
