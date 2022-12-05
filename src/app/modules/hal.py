@@ -94,8 +94,8 @@ class Hal:
             cli.args[arg[0]] = arg[1:]    # id = act, req etc.
 
         log("Phase 5: Checking services ...")
-        ssh.check()
-        gitlab.check()
+        #ssh.check()
+        #gitlab.check()
 
         log("Phase 6: Loading objects ...")
         # Load lm objects
