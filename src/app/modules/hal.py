@@ -58,7 +58,7 @@ class Hal:
             self.domains[d[1]] = d[0]
 
         log("Phase 4.3: Loading host environments ...")
-        for e in self.db.execute("select id, name from envs;"):
+        for e in self.db.execute("select id, name from hosts.envs;"):
             utils.hosts.envs[e[0]] = e[1]
             utils.hosts.envs[e[1]] = e[0]
 
@@ -73,7 +73,7 @@ class Hal:
             utils.projects.themes[t[1]] = t[0]   # light = 1
 
         log("Phase 4.6: Loading web modules ...")
-        for m in self.db.execute("select id, name from project.modules;"):
+        for m in self.db.execute("select id, name from web.modules;"):
             utils.webs.modules[m[0]] = m[1]    # 1 = static
             utils.webs.modules[m[1]] = m[0]    # static = 1
 

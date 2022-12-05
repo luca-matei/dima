@@ -1,13 +1,5 @@
 (
 ("public", (
-    ("envs", (
-        ("name",),
-        ("",),
-        ("dev",),
-        ("test",),
-        ("prod",),
-        )),
-
     ("modules", (
         ("name",),
         ("",),
@@ -64,6 +56,16 @@
         ("lmid", "domain", "netmask", "gateway", "lease_start", "lease_end"),
         ("id:lmid:lmobjs", "id:name:domains", "", "", "", ""),
         ("lm3", "home.lucamatei.net", "255.255.255.0", "192.168.1.1", "192.168.1.4", "192.168.1.254"),
+        )),
+    )),
+
+("host", (
+    ("envs", (
+        ("name",),
+        ("",),
+        ("dev",),
+        ("test",),
+        ("prod",),
         )),
 
     ("hosts", (

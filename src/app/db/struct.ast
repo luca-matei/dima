@@ -1,9 +1,4 @@
 (
-("envs", (
-    "id serial primary key",
-    "name varchar unique not null",
-    )),
-
 ("modules", (
     "id serial primary key",
     "name varchar unique not null",                 # e.g. utils.webs
@@ -31,20 +26,27 @@
     "lease_end inet not null",
     )),
 
-("hosts", (
-    "id serial primary key",
-    "lmid int references lmobjs (id)",
-    "mac macaddr",
-    "storage int",
-    "cpus smallint",
-    "memory int",
-    "net int",
-    "ip inet",
-    "client int",
-    "env smallint",
-    "ssh_port int",
-    "pg_port int",
-    "pm int",
+("host", (
+    ("envs", (
+        "id serial primary key",
+        "name varchar unique not null",
+        )),
+
+    ("hosts", (
+        "id serial primary key",
+        "lmid int references lmobjs (id)",
+        "mac macaddr",
+        "storage int",
+        "cpus smallint",
+        "memory int",
+        "net int",
+        "ip inet",
+        "client int",
+        "env smallint",
+        "ssh_port int",
+        "pg_port int",
+        "pm int",
+        )),
     )),
 
 ("command", (
