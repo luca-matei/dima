@@ -28,7 +28,7 @@
         #("lm2", "App", "portal"),
         ("lm3", "Net", "gravity"),
         ("lm4", "Host", "astatin"),
-        #("lm5", "Host", "quasar"),
+        ("lm5", "Host", "quasar"),
         #("lm6", "Web", "assets"),
         ("lm7", "Web", "hello"),
         )),
