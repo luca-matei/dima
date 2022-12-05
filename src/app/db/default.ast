@@ -184,3 +184,4 @@
         ("lm7", "hello.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
         )),
     )),
+)
