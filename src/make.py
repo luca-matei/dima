@@ -2,18 +2,18 @@ import sys
 from app.modules.utils.utils import utils, no_logs_cmd as cmd
 
 src_dir = utils.get_src_dir()
-print(sys.argv)
-if sys.argv[0] == "install":
-    modules = (
-        "utils/utils.py",
-        "logs.py",
-        "gpg.py",
-        "install.py",
-        )
-    print("Making install.py ...")
-    utils.write(src_dir + "app/app.py", "")
-    for module in modules:
-        utils.write(src_dir + "install.py", utils.read(src_dir + "app/modules/" + module) + "\n\n", mode='a')
+if len(sys.argv) > 1:
+    if sys.argv[1] == "--install":
+        modules = (
+            "utils/utils.py",
+            "logs.py",
+            "gpg.py",
+            "install.py",
+            )
+        print("Making install.py ...")
+        utils.write(src_dir + "app/app.py", "")
+        for module in modules:
+            utils.write(src_dir + "install.py", utils.read(src_dir + "app/modules/" + module) + "\n\n", mode='a')
 
 else:
     modules = (
