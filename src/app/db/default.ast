@@ -72,6 +72,7 @@
         ("lmobj", "mac", "storage", "cpus", "memory", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
         ("id:lmid:lmobjs", "", "", "", "", "id:lmid:lmobjs", "", "", "id:name:host.envs", "", "", ""),
         ("lm4", "40:8d:5c:e4:fd:46", "", "", "", "lm3", "192.168.1.8", "", "prod", "", "", ""),
+        ("lm5", "40:8d:5c:e4:fd:46", "", "", "", "lm3", "192.168.1.9", "", "dev", "", "", ""),
         )),
     )),
 
