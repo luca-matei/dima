@@ -42,7 +42,7 @@ class Utils:
 
     def get_src_dir(self):
         file_path = os.path.dirname(os.path.abspath(__file__))
-        return file_path.split('src/')[0] + 'src/'
+        return file_path.split('src')[0] + 'src/'
 
     def print_dict(self, d):
         pp = pprint.PrettyPrinter(indent=4)
