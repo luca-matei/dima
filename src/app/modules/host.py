@@ -3,7 +3,7 @@ class Host:
         self.dbid = dbid
         self.lmid = hal.lmobjs[dbid][0]
 
-        query = "select mac, storage, cpus, memory, net, ip, client, env, ssh_port, pg_port, pm from host.hosts where lmobj=%s;"
+        query = "select mac, storage, cpus, memory, net, ip, client, env, ssh_port, pg_port from host.hosts where lmobj=%s;"
         params = dbid,
 
         self.mac, self.storage, self.cpus, self.memory, self.net_dbid, self.ip, self.client_id, self.env, self.ssh_port, self.pg_port, self.pm_id = hal.db.execute(query, params)[0]
