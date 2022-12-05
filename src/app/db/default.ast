@@ -62,7 +62,7 @@
 
     ("nets", (
         ("lmid", "domain", "netmask", "gateway", "lease_start", "lease_end", "autolaunch", "state"),
-        ("id:lmid:lmobjs", "id:name:domains", "", "", "", "", ""),
+        ("id:lmid:lmobjs", "id:name:domains", "", "", "", "", "", ""),
         ("lm3", "home.lucamatei.net", "255.255.255.0", "192.168.1.1", "192.168.1.4", "192.168.1.254", True, 1),
         )),
 
@@ -97,7 +97,7 @@
         ("generate", "gen"),
         ("build", ""),
         ("update", ""),
-        ("save", "")
+        ("save", ""),
         )),
 
     ("args", (
