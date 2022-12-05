@@ -17,8 +17,6 @@ class Web(Project):
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
 
-        print("\nWEB")
-        print('\n'.join([self.host_id, self.name, self.description, self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_top, self.has_animations, self.has_domain_in_title]))
         #self.db = Db(self.lmid, self.dbid, self.host)
         #self.check()
 

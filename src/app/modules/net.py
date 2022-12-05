@@ -7,9 +7,6 @@ class Net:
         params = dbid,
         self.netmask, self.domain, self.gateway, self.lease_start, self.lease_end = hal.db.execute(query, params)[0]
 
-        print("\nNET")
-        print('\n'.join([self.netmask, self.domain, self.gateway, self.lease_start, self.lease_end]))
-
         #self.check()
 
     def start(self):
