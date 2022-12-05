@@ -34,7 +34,7 @@
 
     ("hosts", (
         "id serial primary key",
-        "lmobj int references lmobjs (id)",
+        "lmobj int",
         "mac macaddr",
         "storage int",
         "cpus smallint",
