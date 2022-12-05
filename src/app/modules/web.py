@@ -2,22 +2,27 @@ class Web(Project):
     def __init__(self, dbid):
         Project.__init__(self, dbid)
 
-        query = "select a.id, c.name, c.description, b.name, d.port, d.modules, d.langs, d.themes, d.default_lang, d.default_theme, d.has_top, d.has_animations, d.has_domain_in_title from lmobjs a, domains b, project.projects c, web.webs d where a.id=c.host and d.domain=b.id and d.lmobj=%s;"
+        query = "select a.id, b.dev_version, c.id, b.prod_version, b.name, b.description, d.name, e.port, e.modules, e.langs, e.themes, e.default_lang, e.default_theme, e.has_top, e.has_animations, e.has_domain_in_title from lmobjs a, project.projects b, lmobjs c, domains d, web.webs e where a.id=b.dev_host and c.id=b.prod_host and e.domain=d.id and e.lmobj=%s;"
         params = dbid,
-        self.host_id, self.name, self.description, self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_top, self.has_animations, self.has_domain_in_title = hal.db.execute(query, params)[0]
+        self.dev_host_id, self.dev_version, self.prod_host_id, self.prod_version, self.name, self.description, self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_top, self.has_animations, self.has_domain_in_title = hal.db.execute(query, params)[0]
 
-        #self.domain = hal.envs.get(hal.pools[self.host].env) + "." + self.domain # PROBLEM
+        dev_domain = self.domain.split('.')
+        dev_domain.insert(-2, 'dev')
+        self.dev_domain = '.'.join(dev_domain)
+        print(self.dev_domain)
+
         self.modules = [utils.webs.modules[m] for m in self.module_ids]
         self.langs = [utils.projects.langs[l] for l in self.lang_ids]
         self.themes = [utils.projects.themes[t] for t in self.theme_ids]
         self.default_lang = utils.projects.langs[self.default_lang_id]
         self.default_theme = utils.projects.themes[self.default_theme_id]
 
-        #self.ssl_dir = utils.ssl_dir + self.lmid + "." + self.domain + '/' # PROBLEM
+        self.ssl_dir = utils.ssl_dir + self.domain
+        self.dev_ssl_dir = utils.ssl_dir + self.dev_domain
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
 
-        #self.db = Db(self.lmid, self.dbid, self.host)
+        #self.db = Db(self.dbid)
         #self.check()
 
     def default(self):

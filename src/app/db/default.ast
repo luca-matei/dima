@@ -139,12 +139,12 @@
 
 ("project", (
     ("projects", (
-        ("lmobj", "host", "name", "description"),
-        ("id:lmid:lmobjs", "id:lmid:lmobjs", "", ""),
-        ("lm1", "lm4", "Hal", ""),
-        #("lm2", "lm4", "Hal Web", ""),
-        #("lm6", "lm5", "Assets", ""),
-        ("lm7", "lm5", "Hello World", ""),
+        ("lmobj", "dev_host", "dev_version", "prod_host", "prod_version", "name", "description"),
+        ("id:lmid:lmobjs", "id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", ""),
+        ("lm1", "lm4", 0.1, "", "", "Hal", ""),
+        #("lm2", "lm4", 0.1, "", "", "Hal Web", ""),
+        #("lm6", "lm4", 0.1, "", "", "Assets", ""),
+        ("lm7", "lm4", 0.1, "", "", "Hello World", ""),
         )),
 
     ("dbs", (

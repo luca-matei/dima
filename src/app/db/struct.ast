@@ -79,7 +79,10 @@
     ("projects", (
         "id serial primary key",
         "lmobj int",
-        "host int",
+        "dev_host int",
+        "dev_version float",
+        "prod_host int",
+        "prod_version float",
         "name varchar",
         "description varchar",
         )),
