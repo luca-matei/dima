@@ -108,6 +108,11 @@ class Hal:
 
             self.create_pool(lmobj[0])
 
+    def stop(self):
+        log("Exiting ...", console=True)
+        cli.stop()
+        sys.exit()
+
     def save_settings(self):
         utils.write(self.app_dir + "settings.ast", self.settings)
 

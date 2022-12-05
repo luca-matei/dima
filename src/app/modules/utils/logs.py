@@ -26,7 +26,7 @@ class LogUtils:
         if console and not self.quiet:
             print(utils.color(*self.levels[level]) + ": " + message)
 
-        if level == 5: app.stop()
+        if level == 5: hal.stop()
 
     def create_record(self, call_info, level, message):
         filename, lineno, function = call_info
