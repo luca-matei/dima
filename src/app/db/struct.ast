@@ -18,7 +18,7 @@
 
 ("nets", (
     "id serial primary key",
-    "lmid int references lmobjs (id)",
+    "lmobj int references lmobjs (id)",
     "domain varchar not null",
     "netmask inet not null",
     "gateway inet not null",
@@ -34,7 +34,7 @@
 
     ("hosts", (
         "id serial primary key",
-        "lmid int references lmobjs (id)",
+        "lmobj int references lmobjs (id)",
         "mac macaddr",
         "storage int",
         "cpus smallint",
@@ -78,7 +78,7 @@
 ("project", (
     ("projects", (
         "id serial primary key",
-        "lmid int references lmobjs (id)",
+        "lmobj int references lmobjs (id)",
         "host int references lmobjs (id)",
         "name varchar",
         "description varchar",
@@ -110,7 +110,7 @@
 
     ("webs", (
         "id serial primary key",
-        "lmid int",
+        "lmobj int",
         "domain int",
         "port int",
         "ssl_last_gen date",
@@ -126,13 +126,13 @@
 
     ("apps", (
         "id serial primary key",
-        "lmid int",
+        "lmobj int",
         "port int",
         )),
 
     ("softs", (
         "id serial primary key",
-        "lmid int",
+        "lmobj int",
         )),
     )),
 )

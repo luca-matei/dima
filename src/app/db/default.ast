@@ -53,7 +53,7 @@
         )),
 
     ("nets", (
-        ("lmid", "domain", "netmask", "gateway", "lease_start", "lease_end"),
+        ("lmobj", "domain", "netmask", "gateway", "lease_start", "lease_end"),
         ("id:lmid:lmobjs", "id:name:domains", "", "", "", ""),
         ("lm3", "home.lucamatei.net", "255.255.255.0", "192.168.1.1", "192.168.1.4", "192.168.1.254"),
         )),
@@ -69,7 +69,7 @@
         )),
 
     ("hosts", (
-        ("lmid", "mac", "storage", "cpus", "memory", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
+        ("lmobj", "mac", "storage", "cpus", "memory", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
         ("id:lmid:lmobjs", "", "", "", "", "id:lmid:lmobjs", "", "", "id:name:host.envs", "", "", "id:lmid:lmobjs"),
         ("lm4", "40:8d:5c:e4:fd:46", "", "", "", "lm3", "192.168.1.8", "", "prod", "", "", ""),
         )),
@@ -139,7 +139,7 @@
 
 ("project", (
     ("projects", (
-        ("lmid", "host", "name", "description"),
+        ("lmobj", "host", "name", "description"),
         ("id:lmid:lmobjs", "id:lmid:lmobjs", "", ""),
         ("lm1", "lm4", "Hal", ""),
         #("lm2", "lm4", "Hal Web", ""),
@@ -179,7 +179,7 @@
         )),
 
     ("webs", (
-        ("lmid", "domain", "port", "ssl_last_gen", "modules", "langs", "themes", "default_lang", "default_theme", "has_top", "has_animations", "has_domain_in_title"),
+        ("lmobj", "domain", "port", "ssl_last_gen", "modules", "langs", "themes", "default_lang", "default_theme", "has_top", "has_animations", "has_domain_in_title"),
         ("id:lmid:lmobjs", "id:name:domains", "", "", "id[]:name:web.modules", "id[]:code:project.langs", "id[]:code:project.themes", "id:code:project.langs", "id:code:project.themes", "", "", ""),
         #("lm2", "hal.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
         #("lm6", "assets.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
