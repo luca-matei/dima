@@ -174,7 +174,7 @@ class Utils:
         tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl)
 
         for key in self.get_keys(keys):
-            tpl = tpl.replace("%" + key.upper(), keys[key])
+            tpl = tpl.replace("%" + key.upper(), str(keys[key]))
 
         return tpl
 
