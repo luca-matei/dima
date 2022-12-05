@@ -178,7 +178,7 @@
 
     ("webs", (
         ("lmid", "domain", "port", "ssl_last_gen", "modules", "langs", "themes", "default_lang", "default_theme", "has_top", "has_animations", "has_domain_in_title"),
-        ("id:lmid:lmobjs", "id:name:domains", "", "", "id[]:name:projects.web_modules", "id[]:code:projects.langs", "id[]:code:projects.themes", "id:code:projects.langs", "id:code:projects.themes", "", "", ""),
+        ("id:lmid:lmobjs", "id:name:domains", "", "", "id[]:name:web.modules", "id[]:code:project.langs", "id[]:code:project.themes", "id:code:project.langs", "id:code:project.themes", "", "", ""),
         #("lm2", "hal.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
         #("lm6", "assets.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
         ("lm7", "hello.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
