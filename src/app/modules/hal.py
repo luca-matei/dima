@@ -58,7 +58,7 @@ class Hal:
             self.domains[d[1]] = d[0]
 
         log("Phase 4.3: Loading host environments ...")
-        for e in self.db.execute("select id, name from hosts.envs;"):
+        for e in self.db.execute("select id, name from host.envs;"):
             utils.hosts.envs[e[0]] = e[1]
             utils.hosts.envs[e[1]] = e[0]
 
