@@ -70,7 +70,7 @@
 
     ("hosts", (
         ("lmid", "mac", "storage", "cpus", "memory", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
-        ("id:lmid:lmobjs", "", "", "", "", "id:lmid:lmobjs", "", "", "id:name:hosts.envs", "", "", "id:lmid:lmobjs"),
+        ("id:lmid:lmobjs", "", "", "", "", "id:lmid:lmobjs", "", "", "id:name:host.envs", "", "", "id:lmid:lmobjs"),
         ("lm4", "40:8d:5c:e4:fd:46", "", "", "", "lm3", "192.168.1.8", "", "prod", "", "", ""),
         )),
     )),
