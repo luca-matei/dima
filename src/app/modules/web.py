@@ -2,7 +2,7 @@ class Web(Project):
     def __init__(self, dbid):
         Project.__init__(self, dbid)
 
-        query = "select a.id, b.dev_version, c.id, b.prod_version, b.name, b.description, d.name, e.port, e.modules, e.langs, e.themes, e.default_lang, e.default_theme, e.has_top, e.has_animations, e.has_domain_in_title from lmobjs a, project.projects b, lmobjs c, domains d, web.webs e where a.id=b.dev_host and (c.id=b.prod_host or b.prod_host is null) and e.domain=d.id and e.lmobj=%s;"
+        query = "select a.id, b.dev_version, c.id, b.prod_version, b.name, b.description, d.name, e.port, e.modules, e.langs, e.themes, e.default_lang, e.default_theme, e.has_top, e.has_animations, e.has_domain_in_title from lmobjs a, project.projects b, lmobjs c, domains d, web.webs e where a.id=b.dev_host and c.id=b.prod_host and e.domain=d.id and e.lmobj=%s;"
         params = dbid,
         self.dev_host_id, self.dev_version, self.prod_host_id, self.prod_version, self.name, self.description, self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_top, self.has_animations, self.has_domain_in_title = hal.db.execute(query, params)[0]
 
