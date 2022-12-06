@@ -102,7 +102,7 @@ class CLI:
             # Find object id from global command
             for m_id in module_ids:
                 obj_id = self.objs[m_id].get(obj, 0)
-                print(m_id, self.modules[m_id])
+                print(m_id, hal.modules[m_id])
                 if obj_id:
                     module_id = m_id
                     break
