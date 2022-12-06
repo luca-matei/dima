@@ -59,7 +59,7 @@
     ("objs", (
         "id serial primary key",
         "module smallint not null",
-        "name varchar not null",                    # e.g. dhcp (global); lmg1 (dynamic)
+        "name varchar",                             # e.g. dhcp (global); lmg1 (dynamic)
         "acts smallint[]",                          # Actions that can be performed on this object
         "args smallint[]",                          # Arguments that can be added to this object
         )),
