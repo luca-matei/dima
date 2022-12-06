@@ -95,9 +95,10 @@ class Hal:
                 cli.objs[module_id] = {}
                 module_ids.append(module_id)
 
-            if obj[2] == None: obj[2] = ""
+            if obj[2] == None: name = ""
+            else: name = obj[2]
             cli.objs[module_id][obj[0]] = obj[2:]    # id = name, acts, args
-            cli.objs[module_id][obj[2]] = obj[0]     # name = id
+            cli.objs[module_id][name] = obj[0]     # name = id
 
         log("Phase 4.9: Loading command arguments ...")
         for arg in hal.db.execute("select id, act, req, regex, short, long from command.args;"):
