@@ -45,7 +45,6 @@ class CLI:
     def process(self, command):
         log("Issued command: " + command)
         if not self.validate(command): return
-        print("VALIDATED")
 
         command = [p for p in re.split("( |\\\".*?\\\"|'.*?')", command) if p.strip()] + ['']    # Split by spaces unless surrounded by quotes
 
@@ -87,6 +86,7 @@ class CLI:
                 getattr(hal.pools[lmobj_id], act + '_' + obj)(**params)
 
         else:
+            print("VALIDATED")
             # act obj    ===    create net
             # obj        ===    status
 
