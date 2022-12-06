@@ -152,7 +152,7 @@
         ("App", "", ("start", "stop", "restart", "save"), ()),
         ("App", "alias", ("set", "remove"), ("alias",)),
 
-        ("Web", "", ("start", "stop", "restart", "save",))
+        ("Web", "", ("start", "stop", "restart", "save",), ()),
         ("Web", "alias", ("set", "remove"), ("alias",)),
         ("Web", "nginx", ("config",), ()),
         ("Web", "ssl", ("renew",), ()),
