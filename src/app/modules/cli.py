@@ -107,9 +107,9 @@ class CLI:
                     break
 
             if not obj_id:
+                print(f"{act}:{act_id}, {obj}:{obj_id}")
                 return self.invalid(o=obj)
 
-            print(f"{act}:{act_id}, {obj}:{obj_id}")
             # Get command object details
             obj_data = self.objs[module_id][obj_id]
 
