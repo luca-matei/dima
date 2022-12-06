@@ -109,6 +109,7 @@ class CLI:
             if not obj_id:
                 return self.invalid(o=obj)
 
+            print(f"{act}:{act_id}, {obj}:{obj_id}, {params}")
             # Get command object details
             obj_data = self.objs[module_id][obj_id]
 
@@ -122,7 +123,6 @@ class CLI:
 
             params = self.process_params(params)
 
-            print(f"{act}:{act_id}, {obj}:{obj_id}, {params}")
             # Call the method
             if obj == '':
                 getattr(hal, act)(**params)
