@@ -96,7 +96,7 @@ class CLI:
                 return self.invalid(ao=act)
 
             module_id = 0
-            module_ids = [x for x if self.modules[x][0].islower() in utils.get_keys(self.objs)]
+            module_ids = [x for x in utils.get_keys(self.objs) if hal.modules[x][0].islower()]
             obj_id = 0
 
             # Find object id from global command
