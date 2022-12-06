@@ -122,9 +122,9 @@ class CLI:
 
             params = self.process_params(params)
 
+            print(f"{act}:{act_id}, {obj}:{obj_id}, {params}")
             # Call the method
             if obj == '':
-                print("VALIDATED")
                 getattr(hal, act)(**params)
             else:
                 getattr(getattr(globals(), module), act + '_' + obj)(**params)
