@@ -45,6 +45,7 @@ class CLI:
     def process(self, command):
         log("Issued command: " + command)
         if not self.validate(command): return
+        print("VALIDATED")
 
         command = [p for p in re.split("( |\\\".*?\\\"|'.*?')", command) if p.strip()] + ['']    # Split by spaces unless surrounded by quotes
 
