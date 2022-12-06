@@ -70,7 +70,7 @@ class CLI:
             obj_data = self.objs[module_id][obj_id]
 
             # Check if action is valid
-            if act_id not in obj_data[2]:
+            if act_id not in obj_data[1]:
                 return self.invalid(a=act, o=lmobj)
 
             # Solve parameters
@@ -102,7 +102,6 @@ class CLI:
             # Find object id from global command
             for m_id in module_ids:
                 obj_id = self.objs[m_id].get(obj, 0)
-                print(m_id, hal.modules[m_id])
                 if obj_id:
                     module_id = m_id
                     break
@@ -114,8 +113,7 @@ class CLI:
             obj_data = self.objs[module_id][obj_id]
 
             # Check if action is valid
-            if act_id not in obj_data[2]:
-                print(f"{act}:{act_id}, {obj}:{obj_id}")
+            if act_id not in obj_data[1]:
                 return self.invalid(a=act, o=obj)
 
             # Solve parameters
