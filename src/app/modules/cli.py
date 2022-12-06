@@ -86,7 +86,6 @@ class CLI:
                 getattr(hal.pools[lmobj_id], act + '_' + obj)(**params)
 
         else:
-            print("VALIDATED")
             # act obj    ===    create net
             # obj        ===    status
 
@@ -125,6 +124,7 @@ class CLI:
 
             # Call the method
             if obj == '':
+                print("VALIDATED")
                 getattr(hal, act)(**params)
             else:
                 getattr(getattr(globals(), module), act + '_' + obj)(**params)
