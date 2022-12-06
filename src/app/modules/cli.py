@@ -127,8 +127,8 @@ class CLI:
             if obj == '':
                 getattr(hal, act)(**params)
             elif module.startswith("utils"):
-                getattr(getattr(globals(), getattr(utils, module.split('.')[1])), act + '_' + obj)(**params)
+                getattr(getattr(utils, module.split('.')[1]), act + '_' + obj)(**params)
             else:
-                getattr(getattr(globals(), module), act + '_' + obj)(**params)
+                getattr(module, act + '_' + obj)(**params)
 
 cli = CLI()
