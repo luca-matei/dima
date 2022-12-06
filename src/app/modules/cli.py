@@ -104,6 +104,7 @@ class CLI:
                 obj_id = self.objs[m_id].get(obj, 0)
                 if obj_id:
                     module_id = m_id
+                    module = hal.modules[m_id]
                     break
 
             if not obj_id:
