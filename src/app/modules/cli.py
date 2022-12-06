@@ -106,8 +106,8 @@ class CLI:
                     module_id = m_id
                     break
 
-            print(f"{act}:{act_id}, {obj}:{obj_id}, {params}")
             if not obj_id:
+                print(f"{act}:{act_id}, {obj}:{obj_id}, {params}")
                 return self.invalid(o=obj)
 
             # Get command object details
