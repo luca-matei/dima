@@ -3,6 +3,7 @@
     ("modules", (
         ("name",),
         ("",),
+        ("hal",),
         ("utils.logs",),
         ("utils.dbs",),
         ("utils.nets",),
