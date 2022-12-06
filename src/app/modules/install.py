@@ -171,7 +171,6 @@ class Install:
 
         print("Placing Hal in the right place ...")
         cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{self.lmid}.git {utils.projects_dir + self.lmid}/")
-        cmd(f"sudo -u hal git config --global credential.helper 'cache --timeout=3600'")
 
     def config_git(self):
         log("Configuring Git ...")
@@ -181,6 +180,13 @@ class Install:
             "gpg_key": gpg.get_privkey_id(utils.hostname)
             })
         utils.write(f"/home/hal/.gitconfig", config)
+
+        if not self.opts['gitlab_token']:
+            print("Please enter Gitlab REST API token.")
+            token = getpass.getpass("Token: ")
+            settings = utils.read(self.src_dir + "app/settings.ast")
+            settings['gitlab_token'] = token
+            utils.write(self.src_dir + "app/settings.ast", settings)
 
     def config_pg(self):
         # https://www.postgresql.org/docs/current/sql-createrole.html

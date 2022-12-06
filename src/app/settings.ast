@@ -3,4 +3,5 @@
 "version": "0.1",
 "log_level": 1,
 "gitlab": "gitlab.com",
+"gitlab_token": None,
 }

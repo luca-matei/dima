@@ -2,6 +2,7 @@
 "lmid": "lm1",
 "nickname": None,
 "gitlab": "gitlab.com",
+"gilab_token": None,
 "is_main": True,
 "has_dns": None,
 "has_dhcp": None,
