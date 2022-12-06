@@ -18,6 +18,9 @@ class Hal:
     lmobjs = {}
     pools = {}
 
+    def status(self):
+        print("STATUS")
+
     def start(self):
         # Reset logs
         logs.reset()
@@ -85,9 +88,16 @@ class Hal:
                 cli.acts[act[2]] = act[0]    # alias = id
 
         log("Phase 4.8: Loading command objects ...")
+        module_ids = []
         for obj in hal.db.execute("select id, module, name, acts, args from command.objs;"):
-            cli.objs[obj[0]] = obj[1:]    # id = module, name etc.
-            cli.objs[obj[2]] = obj[0]     # name = id
+            module_id = obj[1]
+            if module_id not in module_ids:
+                cli.objs[module_id] = {}
+                module_ids.append(module_id)
+
+            if obj[2] in ("", None): print("CMD OBJ: " + obj[2])
+            cli.objs[module_id][obj[0]] = obj[2:]    # id = name, acts, args
+            cli.objs[module_id][obj[2]] = obj[0]     # name = id
 
         log("Phase 4.9: Loading command arguments ...")
         for arg in hal.db.execute("select id, act, req, regex, short, long from command.args;"):

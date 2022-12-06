@@ -18,6 +18,9 @@ class GPG:
             return re.findall(r'\bsec   rsa4096/\w+', privkey_id)[0].split('/')[1]
         else:
             log(f"Couldn't find GPG key for '{email}'!", level=4, console=True)
+            yes = utils.yes_no("Create one?")
+            if yes:
+                return self.create_gpgkey(email)
             return 0
 
     def delete_gpgkey(self, host):

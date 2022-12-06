@@ -44,7 +44,7 @@ class Host:
             log(f"Restarting {service} for {self.lmid} ...", console=True)
             cmd(f"sudo systemctl restart " + service)
         else:
-            log(f"Can't restart service '{service}'!")
+            log(f"Can't restart service '{service}'!", console=True)
 
     def is_mounted(self):
         # Warning! self.mnt_dir may not exist!

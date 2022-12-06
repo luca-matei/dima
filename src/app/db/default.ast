@@ -86,12 +86,11 @@
         ("check", ""),
         ("next", ""),
         ("status", ""),
-        ("create", ""),
+        ("create", "generate"),
         ("start", ""),
         ("stop", ""),
         ("delete", "del"),
         ("restart", ""),
-        ("alias", ""),
         ("mount", "mnt"),
         ("unmount", "umnt"),
         ("load", ""),
@@ -118,23 +117,50 @@
     ("objs", (
         ("module", "name", "acts", "args"),
         ("id:name:modules", "", "id[]:name:command.acts", "id[]:name:command.args"),
+
+        ("hal", "", ("status",), ()),
+
         ("utils.dbs", "db", ("load", "export"), ("load-file", "output-file")),
+
         ("utils.nets", "net", ("list", "create", "next"), ("opt-alias",)),
         ("utils.nets", "ip", ("next",), ()),
-        ("utils.nets", "dhcp", ("config", "restart", "status"), ()),
+        ("utils.nets", "dhcp", ("set", "config", "restart", "status"), ()),
+
         ("utils.hosts", "host", ("create",), ("opt-alias",)),
+
         ("utils.webs", "web", ("create", "config", "restart",), ()),
+
         ("utils.apps", "app", ("create",), ()),
+
         ("utils.softs", "soft", ("create",), ()),
+
         ("gitlab", "git", ("config",), ()),
+
         ("ssh", "ssh", ("config",), ()),
         ("ssh", "sshkey", ("create", "delete"), ()),
+
         ("gpg", "gpgkey", ("create",), ()),
-        ("Net", "Net", ("alias", "start", "stop", "autostart", "delete",), ("alias",)),        # Dynamic module
-        ("Host", "Host", ("alias", "mount", "unmount", "config",), ("alias", "service")),
-        ("App", "App", ("start", "stop", "restart", "config", "save",), ()),
-        ("Web", "Web", ("config", "restart", "ssl", "default", "build", "start", "stop", "update", "save"), ()),
-        ("Soft", "Soft", (), ()),
+
+        ("Net", "", ("start", "stop", "delete"), ()),
+        ("Net", "alias", ("set", "remove"), ("alias",)),
+
+        ("Host", "", ("mount", "unmount"), ()),
+        ("Host", "alias", ("set", "remove"), ("alias",)),
+        ("Host", "nginx", ("reload", "restart", "start", "stop"), ()),
+        ("Host", "postgres", ("restart", "start", "stop"), ()),
+
+        ("App", "", ("start", "stop", "restart", "save"), ()),
+        ("App", "alias", ("set", "remove"), ("alias",)),
+
+        ("Web", "", ("start", "stop", "restart", "save",))
+        ("Web", "alias", ("set", "remove"), ("alias",)),
+        ("Web", "nginx", ("config",), ()),
+        ("Web", "ssl", ("renew",), ()),
+        ("Web", "default", ("set",), ()),
+        ("Web", "html", ("update",), ()),
+
+        ("Soft", "", ("save",), ()),
+        ("Soft", "alias", ("set", "remove"), ("alias",)),
         )),
     )),
 

@@ -9,7 +9,7 @@ class CLI:
 
         command = ""
         while self.receive_command:
-            command = input(f" > ")
+            command = input(" > ")
 
             if command in ("q", "exit"):
                 self.stop()
@@ -22,13 +22,15 @@ class CLI:
         log("Stopping CLI ...")
         self.receive_command = False
 
-    def invalid(self, a=None, o=None):
+    def invalid(self, a=None, o=None, ao=None):
         if a and o:
             log(f"Invalid action '{a}' on object '{o}'!", level=4, console=True)
         elif a:
             log(f"Invalid action '{a}'!", level=4, console=True)
         elif o:
             log(f"Invalid object '{o}'!", level=4, console=True)
+        elif ao:
+            log(f"Invalid action or object '{ao}'!", level=4, console=True)
 
     def validate(self, command):
         # To do: Validate command
@@ -37,69 +39,93 @@ class CLI:
             return 0
         return 1
 
+    def process_params(self, params):
+        return {}
+
     def process(self, command):
         log("Issued command: " + command)
         if not self.validate(command): return
 
         command = [p for p in re.split("( |\\\".*?\\\"|'.*?')", command) if p.strip()] + ['']    # Split by spaces unless surrounded by quotes
 
-        act_id = self.command['acts'].get(command[0], 0)
+        lmobj_id = hal.lmobjs.get(command[0], 0)    # Try to get a lmobj
+        if lmobj_id:
+            # lmobj act obj    ===    lm1 restart nginx
+            # lmobj act        ===    lm3 save
 
-        if act_id:
-            obj = command[1]
+            lmobj, act, obj = command[:3]
+            act_id = self.acts.get(act, 0)
 
-            # Code's a bit redundant, but it's more organised than doing both
-            if obj:
-                # Check if it's a lm object (lm1, lmg2 etc.)
-                if obj.startswith("lm"):
-                    obj_id = app.lmobjs.get(obj, 0)    # This is lm1's id
-                    if obj_id:
-                        lmobj_id = obj_id
-                        # Get module name based on its id found in lmobjs dict, match case from database and get the command object id
-                        obj_id = self.command['objs'][app.modules[app.lmobjs[lmobj_id][1]]]     # This is 'lmapp' id
-                        obj_data = self.command['objs'][obj_id]                                 # module, name, acts, args, help
-                    else:
-                        return self.invalid(o=obj)
+            if not act_id:
+                return self.invalid(a=act)
 
-                    # Check if action exists for object
-                    if act_id not in obj_data[2]:
-                        return self.invalid(a=act, o=obj)
+            # Find object id from particular command
+            module_id = hal.lmobjs[lmobj_id][1]      # Get Host module id
+            obj_id = self.objs[module_id].get(obj, 0)    # Get nginx object id
 
-                    # To do: Check params
-                    try: params = command[2:]
-                    except: params = []
+            if obj_id == 0:    # It can be ''
+                return self.invalid(o=obj)
 
-                    # Call the method
-                    getattr(app.pools[lmobj_id], act)(*params)
+            # Get command object details
+            obj_data = self.objs[module_id][obj_id]
 
-                # Check if it's a global object
-                else:
-                    obj_id = self.command['objs'].get(obj, 0)
-                    if obj_id:
-                        obj_data = self.command['objs'][obj_id]
-                    else:
-                        return self.invalid(o=obj)
+            # Check if action is valid
+            if act_id not in obj_data[2]:
+                return self.invalid(a=act, o=lmobj)
 
-                    # Check if action exists
-                    if act_id in obj_data[2]:
-                        module_id = obj_data[0]
-                        module = app.modules[module_id]
-                    else:
-                        return self.invalid(a=act, o=obj)
+            # Solve parameters
+            try: params = command[2:]
+            except: params = []
 
-                    # To do: Check params
-                    try: params = command[2:]
-                    except: params = []
+            params = self.process_params(params)
 
-                    # Call the method
-                    getattr(getattr(app, module), act + '_' + obj)(*params)
+            # Call the method
+            if obj == '':
+                getattr(hal.pools[lmobj_id], act)(**params)
+            else:
+                getattr(hal.pools[lmobj_id], act + '_' + obj)(**params)
 
-        # Command like 'hal init', no positional parameters
-        elif act_id in self.command['objs']['hal']:
-            getattr(hal, act)()
-
-        # Action to 'hal' isn't defined.
         else:
-            return self.invalid(a=act)
+            # act obj    ===    create net
+            # obj        ===    status
+
+            act, obj = command[:2]
+            act_id = self.acts.get(act, 0)
+
+            if not act_id:
+                return self.invalid(ao=act)
+
+            module_id = 0
+            module_ids = [x if self.modules[x][0].islower() for x in utils.get_keys(self.objs)]
+            obj_id = 0
+
+            # Find object id from global command
+            for m_id in module_ids:
+                obj_id = self.objs[m_id].get(obj, 0)
+                if obj_id:
+                    module_id = m_id
+                    break
+
+            if not obj_id:
+                return self.invalid(o=obj)
+
+            # Get command object details
+            obj_data = self.objs[module_id][obj_id]
+
+            # Check if action is valid
+            if act_id not in obj_data[2]:
+                return self.invalid(a=act, o=lmobj)
+
+            # Solve parameters
+            try: params = command[2:]
+            except: params = []
+
+            params = self.process_params(params)
+
+            # Call the method
+            if obj == '':
+                getattr(hal, act)(**params)
+            else:
+                getattr(getattr(globals(), module), act + '_' + obj)(**params)
 
 cli = CLI()

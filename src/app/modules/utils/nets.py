@@ -10,6 +10,6 @@ class NetUtils:
 
     def set_dhcp(self):
         # To do: nmap scan, display available hosts, make install script for one
-        pass
+        print("SET DHCP")
 
 utils.nets = NetUtils()
