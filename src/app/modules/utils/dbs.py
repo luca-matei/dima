@@ -38,8 +38,8 @@ class DbUtils:
             return password
 
         else:
-            log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
             utils.write(utils.tmp_dir + "db_pass.tmp", password)
+            log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
 
     def create_pgdb(self, lmid, host=None):
         log(f"Creating {lmid} database ...", console=True)

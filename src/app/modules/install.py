@@ -173,7 +173,7 @@ class Install:
         cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{self.lmid}.git {utils.projects_dir + self.lmid}/")
 
     def config_git(self):
-        log("Configuring Git ...")
+        log("Configuring Git ...", console=True)
         config = utils.format_tpl("gitconfig.tpl", {
             "user": utils.hostname,
             "email": f"{utils.hostname}@{self.opts['gitlab']}",
@@ -191,17 +191,11 @@ class Install:
     def config_pg(self):
         # https://www.postgresql.org/docs/current/sql-createrole.html
         print("Configuring PostgreSQL ...")
-        cmd("hal create pgrole hal")
+        utils.dbs.create_pgrole("hal")
 
         if self.opts['is_main']:
-            cmd("hal create pgrole " + self.lmid)
-            cmd("hal create pgdb " + self.lmid)
-
-    def config_web(self):
-        # to do: download snapbot
-        # create ssl certs for hal.lucamatei.net
-        cmd("hal generate dh")
-        cmd("hal config nginx")
+            utils.dbs.create_pgrole(self.lmid)
+            utils.dbs.create_pgdb(self.lmid)
 
 help = """
     Help

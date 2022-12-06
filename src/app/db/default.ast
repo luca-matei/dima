@@ -149,6 +149,7 @@
         ("Host", "alias", ("set", "remove"), ("alias",)),
         ("Host", "nginx", ("reload", "restart", "start", "stop"), ()),
         ("Host", "postgres", ("restart", "start", "stop"), ()),
+        ("Host", "supervisor", ("restart", "start", "stop"), ()),
 
         ("App", "", ("start", "stop", "restart", "save"), ()),
         ("App", "alias", ("set", "remove"), ("alias",)),

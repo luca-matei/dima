@@ -29,23 +29,52 @@ class Host:
 
         return port
 
-    def config(self, service=""):
-        if service in ("postgresql", "nginx"):
-            getattr(self, "config_" + service)()
+    def manage_service(self, action, service):
+        log(f"Restarting {service} for {self.lmid} ...", console=True)
+        cmd(f"sudo systemctl {action} {service} ")
 
+    # Nginx
     def config_nginx(self):
         log(f"Configuring Nginx for {self.lmid} ...")
-        cmd(f"sudo cp {hal.tpl_dir}web/nginx.tpl /etc/nginx/nginx.conf")
-        self.restart("nginx")
+        cmd(f"sudo cp {hal.src_dir}assets/tpls/web/nginx.tpl /etc/nginx/nginx.conf")
+        self.manage_service("restart", "nginx")
 
-    def restart(self, service=""):
-        services = ("postgresql", "nginx", "supervisor")
-        if service in services:
-            log(f"Restarting {service} for {self.lmid} ...", console=True)
-            cmd(f"sudo systemctl restart " + service)
-        else:
-            log(f"Can't restart service '{service}'!", console=True)
+    def reload_nginx(self):
+        self.manage_service("reload", "nginx")
 
+    def start_nginx(self):
+        self.manage_service("start", "nginx")
+
+    def stop_nginx(self):
+        self.manage_service("stop", "nginx")
+
+    def restart_nginx(self):
+        self.manage_service("restart", "nginx")
+
+    # Postgres
+    def config_postgres(self):
+        pass
+
+    def start_postgres(self):
+        self.manage_service("start", "postgres")
+
+    def stop_postgres(self):
+        self.manage_service("stop", "postgres")
+
+    def restart_postgres(self):
+        self.manage_service("restart", "postgres")
+
+    # Supervisor
+    def start_supervisor(self):
+        self.manage_service("start", "supervisor")
+
+    def stop_supervisor(self):
+        self.manage_service("stop", "supervisor")
+
+    def restart_supervisor(self):
+        self.manage_service("restart", "supervisor")
+
+    # Mount
     def is_mounted(self):
         # Warning! self.mnt_dir may not exist!
         # To do: Handle exception
