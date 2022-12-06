@@ -116,7 +116,7 @@ class CLI:
 
             # Check if action is valid
             if act_id not in obj_data[2]:
-                return self.invalid(a=act, o=lmobj)
+                return self.invalid(a=act, o=obj)
 
             # Solve parameters
             try: params = command[2:]
