@@ -108,7 +108,6 @@ class CLI:
                     break
 
             if not obj_id:
-                print(f"{act}:{act_id}, {obj}:{obj_id}")
                 return self.invalid(o=obj)
 
             # Get command object details
@@ -116,6 +115,7 @@ class CLI:
 
             # Check if action is valid
             if act_id not in obj_data[2]:
+                print(f"{act}:{act_id}, {obj}:{obj_id}")
                 return self.invalid(a=act, o=obj)
 
             # Solve parameters
