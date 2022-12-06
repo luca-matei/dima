@@ -95,7 +95,7 @@ class Hal:
                 cli.objs[module_id] = {}
                 module_ids.append(module_id)
 
-            if obj[2] in == None: obj[2] = ""
+            if obj[2] == None: obj[2] = ""
             cli.objs[module_id][obj[0]] = obj[2:]    # id = name, acts, args
             cli.objs[module_id][obj[2]] = obj[0]     # name = id
 
