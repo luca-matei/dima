@@ -47,8 +47,8 @@ class Hal:
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
-        #self.db.erase()
-        #self.db.build()
+        self.db.erase()
+        self.db.build()
 
         log("Phase 4.1: Loading modules ...")
         for m in self.db.execute("select id, name from modules;"):
