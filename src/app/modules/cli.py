@@ -99,6 +99,7 @@ class CLI:
             module_ids = [x for x in utils.get_keys(self.objs) if hal.modules[x][0].islower()]
             obj_id = 0
 
+            print(f"{act}:{act_id}, {obj}:{obj_id}, {params}")
             # Find object id from global command
             for m_id in module_ids:
                 obj_id = self.objs[m_id].get(obj, 0)
@@ -109,7 +110,6 @@ class CLI:
             if not obj_id:
                 return self.invalid(o=obj)
 
-            print(f"{act}:{act_id}, {obj}:{obj_id}, {params}")
             # Get command object details
             obj_data = self.objs[module_id][obj_id]
 
