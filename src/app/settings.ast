@@ -1,6 +1,6 @@
 {
 'lmid': 'lm1',
-'version': '0.1'
+'version': '0.1',
 'log_level': 1,
 'gitlab': 'gitlab.com',
 "dhcp": None,
