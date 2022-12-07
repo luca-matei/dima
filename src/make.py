@@ -7,8 +7,6 @@ if len(sys.argv) > 1:
         modules = (
             "utils/utils.py",
             "logs.py",
-            "utils/dbs.py",
-            "gpg.py",
             "install.py",
             )
         print("Making install.py ...")

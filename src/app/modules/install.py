@@ -23,16 +23,16 @@ class Install:
             self.place_hal()
             print()
 
-        self.config_git()
+        cmd(f"hal {utils.hostname} config git")
 
         cmd(utils.projects_dir + self.lmid + "/make")
 
         if self.opts['has_db']:
-            self.config_pg()
+            cmd(f"hal {utils.hostname} config postgres")
             print()
 
         if self.opts['has_web']:
-            self.config_web()
+            cmd(f"hal {utils.hostname} config nginx")
             print()
 
     def abort(self, msg):
@@ -171,31 +171,6 @@ class Install:
 
         print("Placing Hal in the right place ...")
         cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{self.lmid}.git {utils.projects_dir + self.lmid}/")
-
-    def config_git(self):
-        log("Configuring Git ...", console=True)
-        config = utils.format_tpl("gitconfig.tpl", {
-            "user": utils.hostname,
-            "email": f"{utils.hostname}@{self.opts['gitlab']}",
-            "gpg_key": gpg.get_privkey_id(utils.hostname)
-            })
-        utils.write(f"/home/hal/.gitconfig", config)
-
-        if not self.opts['gitlab_token']:
-            print("Please enter Gitlab REST API token.")
-            token = getpass.getpass("Token: ")
-            settings = utils.read(self.src_dir + "app/settings.ast")
-            settings['gitlab_token'] = token
-            utils.write(self.src_dir + "app/settings.ast", settings)
-
-    def config_pg(self):
-        # https://www.postgresql.org/docs/current/sql-createrole.html
-        print("Configuring PostgreSQL ...")
-        utils.dbs.create_pgrole("hal")
-
-        if self.opts['is_main']:
-            utils.dbs.create_pgrole(self.lmid)
-            utils.dbs.create_pgdb(self.lmid)
 
 help = """
     Help

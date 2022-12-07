@@ -1,36 +1,26 @@
 class DbUtils:
-    query = """sudo -u hal psql -tAc \"{}\""""
+    query = """sudo -u postgres psql -tAc \"{}\""""
 
     def create_db(self, host=None):
         pass
 
-    def config_pg(self, host=None):
-        pass
-
     def create_pgrole(self, lmid, host=None):
+        # https://www.postgresql.org/docs/current/sql-createrole.html
         log(f"Creating '{lmid}' role ...", console=True)
         password = utils.new_pass(64)
 
-        if lmid == "hal":
-            query = self.query.replace("hal", "postgres")
-        else:
-            query = self.query
-
-        role_query = query.format(f"create role {lmid} with login {'createdb createrole ' if lmid == 'hal' else ''}password '{password}';")
+        role_query = self.query.format(f"create role {lmid} with login {'createdb createrole ' if lmid == 'hal' else ''}password '{password}';")
         output = cmd(role_query, catch=True)
         if "already exists" in output:
             log(f"'{lmid}' role already exists!", console=True)
             yes = utils.yes_no("Purge it?")
 
-            if yes: cmd(query.format(f"drop database {lmid} if exists; drop role {lmid};"))
+            if yes: cmd(self.query.format(f"drop database {lmid} if exists; drop role {lmid};"))
             else: return
 
             cmd(role_query)
 
-        if lmid == "hal":
-            return
-
-        elif lmid.startswith("lm"):
+        if lmid.startswith("lm"):
             details_path = utils.projects_dir + lmid + "/src/app/db/details.ast"
             details = utils.read(details_path)
             details['pass'] = password

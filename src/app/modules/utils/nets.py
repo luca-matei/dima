@@ -1,4 +1,7 @@
 class NetUtils:
+    dhcp = None
+    dns = None
+    
     def in_subnets(self):
         subnets = []
 

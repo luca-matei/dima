@@ -2,13 +2,14 @@ class Host:
     def __init__(self, dbid):
         self.dbid = dbid
         self.lmid = hal.lmobjs[dbid][0]
+        self.alias = hal.lmobjs[dbid][3]
 
         query = "select mac, storage, cpus, memory, net, ip, client, env, ssh_port, pg_port from host.hosts where lmobj=%s;"
         params = dbid,
 
         self.mac, self.storage, self.cpus, self.memory, self.net_dbid, self.ip, self.client_id, self.env, self.ssh_port, self.pg_port = hal.db.execute(query, params)[0]
 
-        self.mnt_dir = utils.mnt_dir + self.lmid + "/"
+        self.mnt_dir = utils.mnt_dir + self.alias if self.alias else self.lmid + "/"
         #self.check()
 
     def next_port(self, service=False):
@@ -53,16 +54,48 @@ class Host:
 
     # Postgres
     def config_postgres(self):
-        pass
+        """
+        :public
+        Manages /etc/postgresql/13/main/postgresql.conf
+                /etc/postgresql/13/main/hba_conf.conf
+        Assigns a new port to the PostgreSQL server.
+        """
+
+        log(f"Configuring PostgreSQL for {self.lmid} ...", console=True)
+        port = random.randint(4096, 8192)
+
+        pg_dir = f"/etc/postgresql/{os.listdir('/etc/postgresql/')[-1]}/main/"
+        config_file = pg_dir + "postgresql.conf"
+
+        # Create backup for default config
+        if not utils.isfile(config_file + ".bak"):
+            cmd(f"sudo cp {config_file} {config_file}.bak")
+            cmd(f"sudo chown postgres:postgres {config_file}.bak")
+
+        # Modify port in config file
+        config = utils.read(config_file, True)
+        for i, line in enumerate(config):
+            if line.startswith('port ='):
+                config[i] = f"port = {port}\n"
+                break
+
+        # Write new config file and restart service
+        utils.write(config_file, config, lines=True, owner="postgres")
+        self.manage_service("restart", "postgresql")
+
+        # Update ports in project files and in db
+        hal.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
+        project_ids = hal.db.execute("select project from project.dbs where host=%s", (self.dbid,))
+        print(project_ids)
 
     def start_postgres(self):
-        self.manage_service("start", "postgres")
+        self.manage_service("start", "postgresql")
 
     def stop_postgres(self):
-        self.manage_service("stop", "postgres")
+        self.manage_service("stop", "postgresql")
 
     def restart_postgres(self):
-        self.manage_service("restart", "postgres")
+        self.manage_service("restart", "postgresql")
 
     # Supervisor
     def start_supervisor(self):
@@ -73,6 +106,16 @@ class Host:
 
     def restart_supervisor(self):
         self.manage_service("restart", "supervisor")
+
+    # Git
+    def config_git(self):
+        log(f"Configuring Git for {self.lmid} ...", console=True)
+        config = utils.format_tpl("gitconfig.tpl", {
+            "user": self.lmid,
+            "email": f"{self.lmid}@{self.opts['gitlab']}",
+            "gpg_key": gpg.get_privkey_id(self.lmid)
+            })
+        utils.write(f"/home/hal/.gitconfig", config)
 
     # Mount
     def is_mounted(self):

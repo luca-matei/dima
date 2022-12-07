@@ -44,6 +44,8 @@ class Hal:
             setattr(self, attr, settings.get(attr))
 
         logs.level = settings.get("log_level", 1)
+        utils.nets.dhcp = settings.get("dhcp")
+        utils.nets.dns = settings.get("dns")
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
@@ -104,20 +106,23 @@ class Hal:
         for arg in hal.db.execute("select id, act, req, regex, short, long from command.args;"):
             cli.args[arg[0]] = arg[1:]    # id = act, req etc.
 
-        log("Phase 5: Checking services ...")
-        #ssh.check()
-        #gitlab.check()
-
-        log("Phase 6: Loading objects ...")
+        log("Phase 4.10: Loading objects data ...")
         # Load lm objects
         for lmobj in self.db.execute("select id, lmid, module, alias from lmobjs order by id;"):
-            self.lmobjs[lmobj[0]] = lmobj[1:-1]    # 1 = lm1, 10 ('app' module id)
+            self.lmobjs[lmobj[0]] = lmobj[1:]    # 1 = lm1, 10 ('app' module id), astatin
             self.lmobjs[lmobj[1]] = lmobj[0]       # lm1 = 1
 
             if lmobj[3]:
                 self.lmobjs[lmobj[3]] = lmobj[0]   # alias = id
 
-            self.create_pool(lmobj[0])
+        log("Phase 5: Checking services ...")
+        #ssh.check()
+        #gitlab.check()
+
+        log("Phase 6: Creating object pools ...")
+        for dbid in util.get_keys(self.lmobjs):
+            if isinstance(dbid, int):
+                self.create_pool(dbid)
 
     def stop(self):
         log("Exiting ...", console=True)

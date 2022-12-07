@@ -21,8 +21,7 @@ class Db:
                 host, port, password = details[0]
             else:
                 utils.dbs.create_database(self.lmid, self.dbid, self.host_dbid)
-                self.connect()
-                return
+                return self.connect()
         else:
             # Hal's database
             details = utils.read(hal.app_dir + "db/details.ast")

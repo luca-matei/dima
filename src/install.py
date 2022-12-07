@@ -281,7 +281,7 @@ class DbUtils:
         pass
 
     def create_pgrole(self, lmid, host=None):
-        log(f"Creating {lmid} role ...", console=True)
+        log(f"Creating '{lmid}' role ...", console=True)
         password = utils.new_pass(64)
 
         if lmid == "hal":
@@ -292,7 +292,7 @@ class DbUtils:
         role_query = query.format(f"create role {lmid} with login {'createdb createrole ' if lmid == 'hal' else ''}password '{password}';")
         output = cmd(role_query, catch=True)
         if "already exists" in output:
-            log(f"{lmid} role already exists!", console=True)
+            log(f"'{lmid}' role already exists!", console=True)
             yes = utils.yes_no("Purge it?")
 
             if yes: cmd(query.format(f"drop database {lmid} if exists; drop role {lmid};"))
@@ -307,7 +307,7 @@ class DbUtils:
             details_path = utils.projects_dir + lmid + "/src/app/db/details.ast"
             details = utils.read(details_path)
             details['pass'] = password
-            utils.write(details_path, settings)
+            utils.write(details_path, details)
             return password
 
         else:

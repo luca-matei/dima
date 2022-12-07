@@ -1,5 +1,8 @@
-{'gitlab': 'gitlab.com',
- 'gitlab_token': 'glpat-NfxTLAZn3M3d49KmE8-m',
- 'lmid': 'lm1',
- 'log_level': 1,
- 'version': '0.1'}
+{
+'lmid': 'lm1',
+'version': '0.1'
+'log_level': 1,
+'gitlab': 'gitlab.com',
+"dhcp": None,
+"dns": None,
+}

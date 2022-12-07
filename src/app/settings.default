@@ -3,5 +3,6 @@
 "version": "0.1",
 "log_level": 1,
 "gitlab": "gitlab.com",    # gitlab.lucamatei.net
-"gitlab_token": None,
+"dhcp": None,
+"dns": None,
 }
