@@ -90,7 +90,7 @@ class Host:
         hal.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
         project_ids = [x[0] for x in hal.db.execute("select project from project.dbs where host=%s", (self.dbid,))]
 
-        for lmid in [hal.lmobjs[dbid] for dbid in project_ids]:
+        for lmid in [hal.lmobjs[dbid][0] for dbid in project_ids]:
             details_path = utils.projects_dir + lmid + "/src/app/db/details.ast"
             details = utils.read(details_path)
             details["port"] = port

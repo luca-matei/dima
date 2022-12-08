@@ -108,7 +108,7 @@ class Hal:
         log("Phase 4.10: Loading objects data ...")
         # Load lm objects
         for lmobj in self.db.execute("select id, lmid, module, alias from lmobjs order by id;"):
-            self.lmobjs[lmobj[0]] = lmobj[1:]    # 1 = lm1, 10 ('app' module id), astatin
+            self.lmobjs[lmobj[0]] = lmobj[1:]      # 1 = lm1, 10 ('app' module id), astatin
             self.lmobjs[lmobj[1]] = lmobj[0]       # lm1 = 1
 
             if lmobj[3]:
