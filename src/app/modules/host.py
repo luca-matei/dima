@@ -63,6 +63,7 @@ class Host:
 
         log(f"Configuring PostgreSQL for {self.lmid} ...", console=True)
         port = random.randint(4096, 8192)
+        print(port)
 
         pg_dir = f"/etc/postgresql/{os.listdir('/etc/postgresql/')[-1]}/main/"
         config_file = pg_dir + "postgresql.conf"
@@ -81,15 +82,21 @@ class Host:
                 break
 
         # Write new config file and restart service
-        #utils.write(config_file, config, lines=True, owner="postgres")
-        #cmd(f"sudo cp {hal.tpls_dir}db/pg_hba.tpl {pg_dir}pg_hba.conf")
-        #cmd(f"sudo chown postgres:postgres {pg_dir}pg_hba.conf")
-        #self.manage_service("restart", "postgresql")
+        utils.write(config_file, config, lines=True, owner="postgres")
+        cmd(f"sudo cp {hal.tpls_dir}db/pg_hba.tpl {pg_dir}pg_hba.conf")
+        cmd(f"sudo chown postgres:postgres {pg_dir}pg_hba.conf")
 
         # Update ports in project files and in db
         hal.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
-        project_ids = hal.db.execute("select project from project.dbs where host=%s", (self.dbid,))
-        print(project_ids)
+        project_ids = [x[0] for x in hal.db.execute("select project from project.dbs where host=%s", (self.dbid,))]
+
+        for lmid in [hal.lmobjs[dbid] for dbid in project_ids]:
+            details_path = utils.projects_dir + lmid + "/src/app/db/details.ast"
+            details = utils.read(details_path)
+            details["port"] = port
+            utils.write(details_path, details)
+
+        self.manage_service("restart", "postgresql")
 
     def start_postgres(self):
         self.manage_service("start", "postgresql")
