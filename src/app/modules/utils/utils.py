@@ -1,4 +1,4 @@
-import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re
+import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random
 from datetime import datetime
 
 class Utils:
