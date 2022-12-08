@@ -119,7 +119,7 @@ class Hal:
         #gitlab.check()
 
         log("Phase 6: Creating object pools ...")
-        for dbid in util.get_keys(self.lmobjs):
+        for dbid in utils.get_keys(self.lmobjs):
             if isinstance(dbid, int):
                 self.create_pool(dbid)
 
