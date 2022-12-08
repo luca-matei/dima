@@ -1,4 +1,4 @@
-import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re
+import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random
 from datetime import datetime
 
 class Utils:
@@ -31,6 +31,7 @@ class Utils:
 
     def __init__(self):
         self.get_debian_version()
+        self.src_dir = self.get_src_dir()
 
     def get_debian_version(self):
         debian_version = self._cmd(None, "cat /etc/debian_version", catch=True).split('.')
@@ -81,7 +82,7 @@ class Utils:
         final_path = None
         if path.startswith("/etc/"):
             final_path = path
-            path = hal.bay_dir + 'tmp'
+            path = utils.tmp_dir + 'tmp_file'
 
         with open(path, mode=mode, encoding='utf-8') as f:
             if lines:
@@ -93,7 +94,7 @@ class Utils:
                     f.write(content)
 
         if final_path:
-            cmd(f"sudo mv {hal.bay_dir}tmp {final_path}")
+            cmd(f"sudo mv {path} {final_path}")
             if not owner:
                 log(f"No owner specified for '{final_path}'!", level=4, console=True)
             else:
@@ -221,7 +222,13 @@ def no_logs_cmd(*args, **kwargs):
 class Logs:
     # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
-    log_file = utils.logs_dir + utils.get_src_dir().split('/')[-3] + ".log"
+    file_path = __file__.split('/')
+    file_dir, file_name = '/'.join(file_path[:-1]) + '/', file_path[-1]
+
+    if file_name == "install.py":
+        log_file = file_dir + 'install.log'
+    else:
+        log_file = utils.logs_dir + utils.get_src_dir().split('/')[-3] + ".log"
 
     levels = {
         1: ("Debug", "blue"),
@@ -271,97 +278,6 @@ def log(*args, **kwargs):
     logs._log(call_info, *args, **kwargs)
 
 
-class DbUtils:
-    query = """sudo -u hal psql -tAc \"{}\""""
-
-    def create_db(self, host=None):
-        pass
-
-    def config_pg(self, host=None):
-        pass
-
-    def create_pgrole(self, lmid, host=None):
-        log(f"Creating '{lmid}' role ...", console=True)
-        password = utils.new_pass(64)
-
-        if lmid == "hal":
-            query = self.query.replace("hal", "postgres")
-        else:
-            query = self.query
-
-        role_query = query.format(f"create role {lmid} with login {'createdb createrole ' if lmid == 'hal' else ''}password '{password}';")
-        output = cmd(role_query, catch=True)
-        if "already exists" in output:
-            log(f"'{lmid}' role already exists!", console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(query.format(f"drop database {lmid} if exists; drop role {lmid};"))
-            else: return
-
-            cmd(role_query)
-
-        if lmid == "hal":
-            return
-
-        elif lmid.startswith("lm"):
-            details_path = utils.projects_dir + lmid + "/src/app/db/details.ast"
-            details = utils.read(details_path)
-            details['pass'] = password
-            utils.write(details_path, details)
-            return password
-
-        else:
-            utils.write(utils.tmp_dir + "db_pass.tmp", password)
-            log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
-
-    def create_pgdb(self, lmid, host=None):
-        log(f"Creating {lmid} database ...", console=True)
-        db_query = self.query.format(f"create database {lmid} owner {lmid} encoding 'utf-8';")
-        output = cmd(db_query, catch=True)
-        if "already exists" in output:
-            log(f"{lmid} database already exists!", console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(self.query.format(f"drop database {lmid};"))
-            else: return
-
-            cmd(db_query, catch=True)
-
-utils.dbs = DbUtils()
-
-
-class GPG:
-    def create_gpgkey(self, email):
-        log(f"Generating GPG key for '{email}'. This may take a while ...", console=True)
-
-        key_config = utils.format_tpl("gpg-key.tpl", {
-            "user": email.split('@')[0],
-            "email": email
-            })
-        utils.write(utils.tmp_dir + "gpg", key_config)
-
-        cmd(f"gpg2 --batch --gen-key {utils.tmp_dir}gpg")
-
-        return self.get_privkey_id(email)
-
-    def get_privkey_id(self, email):
-        privkey_id = cmd(f"gpg2 --list-secret-keys --keyid-format LONG {email}", catch=True)
-        if not "No secret key" in privkey_id:
-            return re.findall(r'\bsec   rsa4096/\w+', privkey_id)[0].split('/')[1]
-        else:
-            log(f"Couldn't find GPG key for '{email}'!", level=4, console=True)
-            yes = utils.yes_no("Create one?")
-            if yes:
-                return self.create_gpgkey(email)
-            return 0
-
-    def delete_gpgkey(self, host):
-        cmd(f"gpg2 --batch --delete-secret-keys {email}")
-        cmd(f"gpg2 --batch --delete-keys {email}")
-
-gpg = GPG()
-
-
 class Install:
     def start(self):
         self.src_dir = utils.get_src_dir()
@@ -387,17 +303,23 @@ class Install:
             self.place_hal()
             print()
 
-        self.config_git()
+        if self.opts['has_db']:
+            query = """sudo -u postgres psql -tAc \"{}\""""
+            cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"))
+            cmd(query.format("create database hal owner hal encoding 'utf-8';"))
 
-        cmd(utils.projects_dir + self.lmid + "/make")
+        cmd(f"sudo -u hal {utils.projects_dir + self.lmid}/make")
+        cmd(f"hal {utils.hostname} config git")
 
         if self.opts['has_db']:
-            self.config_pg()
+            cmd(f"hal {utils.hostname} config postgres")
             print()
 
         if self.opts['has_web']:
-            self.config_web()
+            cmd(f"hal {utils.hostname} config nginx")
             print()
+
+        cmd(f"chmod -R g+w {utils.hal_dir}")
 
     def abort(self, msg):
         print(f"{msg} Aborting ...")
@@ -485,7 +407,6 @@ class Install:
         if not os.path.isdir(utils.hal_dir):
             cmd(f"mkdir {utils.hal_dir}")
             cmd(f"chown hal:hal {utils.hal_dir}")
-            cmd(f"chmod g+rwx {utils.hal_dir}")
 
         for node in dir_tree:
             # It's a directory
@@ -535,31 +456,6 @@ class Install:
 
         print("Placing Hal in the right place ...")
         cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{self.lmid}.git {utils.projects_dir + self.lmid}/")
-
-    def config_git(self):
-        log("Configuring Git ...", console=True)
-        config = utils.format_tpl("gitconfig.tpl", {
-            "user": utils.hostname,
-            "email": f"{utils.hostname}@{self.opts['gitlab']}",
-            "gpg_key": gpg.get_privkey_id(utils.hostname)
-            })
-        utils.write(f"/home/hal/.gitconfig", config)
-
-        if not self.opts['gitlab_token']:
-            print("Please enter Gitlab REST API token.")
-            token = getpass.getpass("Token: ")
-            settings = utils.read(self.src_dir + "app/settings.ast")
-            settings['gitlab_token'] = token
-            utils.write(self.src_dir + "app/settings.ast", settings)
-
-    def config_pg(self):
-        # https://www.postgresql.org/docs/current/sql-createrole.html
-        print("Configuring PostgreSQL ...")
-        utils.dbs.create_pgrole("hal")
-
-        if self.opts['is_main']:
-            utils.dbs.create_pgrole(self.lmid)
-            utils.dbs.create_pgdb(self.lmid)
 
 help = """
     Help

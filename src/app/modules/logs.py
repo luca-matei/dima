@@ -1,7 +1,13 @@
 class Logs:
     # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
-    log_file = utils.logs_dir + utils.get_src_dir().split('/')[-3] + ".log"
+    file_path = __file__.split('/')
+    file_dir, file_name = '/'.join(file_path[:-1]) + '/', file_path[-1]
+
+    if file_name == "install.py":
+        log_file = file_dir + 'install.log'
+    else:
+        log_file = utils.logs_dir + utils.get_src_dir().split('/')[-3] + ".log"
 
     levels = {
         1: ("Debug", "blue"),

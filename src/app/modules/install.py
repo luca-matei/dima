@@ -28,9 +28,8 @@ class Install:
             cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"))
             cmd(query.format("create database hal owner hal encoding 'utf-8';"))
 
+        cmd(f"sudo -u hal {utils.projects_dir + self.lmid}/make")
         cmd(f"hal {utils.hostname} config git")
-
-        cmd(utils.projects_dir + self.lmid + "/make")
 
         if self.opts['has_db']:
             cmd(f"hal {utils.hostname} config postgres")
@@ -39,6 +38,8 @@ class Install:
         if self.opts['has_web']:
             cmd(f"hal {utils.hostname} config nginx")
             print()
+
+        cmd(f"chmod -R g+w {utils.hal_dir}")
 
     def abort(self, msg):
         print(f"{msg} Aborting ...")
@@ -126,7 +127,6 @@ class Install:
         if not os.path.isdir(utils.hal_dir):
             cmd(f"mkdir {utils.hal_dir}")
             cmd(f"chown hal:hal {utils.hal_dir}")
-            cmd(f"chmod g+rwx {utils.hal_dir}")
 
         for node in dir_tree:
             # It's a directory

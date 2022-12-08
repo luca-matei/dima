@@ -1,0 +1,317 @@
+08 Dec, 15:33:05 install.py l328 create_sudo() Debug: Status: install ok installed
+08 Dec, 15:33:05 install.py l337 create_sudo() Debug: 
+08 Dec, 15:33:05 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:05 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:05 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:05 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:05 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:05 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:05 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:05 install.py l369 install_deps() Debug: Status: install ok unpacked
+08 Dec, 15:33:08 install.py l370 install_deps() Debug: Reading package lists...
+Building dependency tree...
+Reading state information...
+nginx is already the newest version (1.18.0-6.1+deb11u3).
+0 upgraded, 0 newly installed, 0 to remove and 5 not upgraded.
+2 not fully installed or removed.
+After this operation, 0 B of additional disk space will be used.
+Setting up nginx-core (1.18.0-6.1+deb11u3) ...
+Job for nginx.service failed because the control process exited with error code.
+See "systemctl status nginx.service" and "journalctl -xe" for details.
+invoke-rc.d: initscript nginx, action "start" failed.
+[0;1;31m●[0m nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (]8;;file://astatin/lib/systemd/system/nginx.service/lib/systemd/system/nginx.service]8;;; enabled; vendor preset: enabled)
+     Active: [0;1;31mfailed[0m (Result: exit-code) since Thu 2022-12-08 15:33:07 EET; 29ms ago
+       Docs: ]8;;man:nginx(8)man:nginx(8)]8;;
+    Process: 7032 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; [0;1;31m(code=exited, status=1/FAILURE)[0m
+        CPU: 8ms
+
+Dec 08 15:33:07 astatin systemd[1]: Starting A high performance web server and a reverse proxy server...
+Dec 08 15:33:07 astatin nginx[7032]: nginx: [emerg] cannot load certificate "/home/hal/ssl/lmw1.dev.lucamatei.eu/pubkey.pem": BIO_new_file() failed (SSL: error:02001002:system library:fopen:No such file or directory:fopen('/home/hal/ssl/lmw1.dev.lucamatei.eu/pubkey.pem','r') error:2006D080:BIO routines:BIO_new_file:no such file)
+Dec 08 15:33:07 astatin nginx[7032]: nginx: configuration file /etc/nginx/nginx.conf test failed
+Dec 08 15:33:07 astatin systemd[1]: [0;1;39m[0;1;31m[0;1;39mnginx.service: Control process exited, code=exited, status=1/FAILURE[0m
+Dec 08 15:33:07 astatin systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mnginx.service: Failed with result 'exit-code'.[0m
+Dec 08 15:33:07 astatin systemd[1]: [0;1;31m[0;1;39m[0;1;31mFailed to start A high performance web server and a reverse proxy server.[0m
+dpkg: error processing package nginx-core (--configure):
+ installed nginx-core package post-installation script subprocess returned error exit status 1
+dpkg: dependency problems prevent configuration of nginx:
+ nginx depends on nginx-core (<< 1.18.0-6.1+deb11u3.1~) | nginx-full (<< 1.18.0-6.1+deb11u3.1~) | nginx-light (<< 1.18.0-6.1+deb11u3.1~) | nginx-extras (<< 1.18.0-6.1+deb11u3.1~); however:
+  Package nginx-core is not configured yet.
+  Package nginx-full is not installed.
+  Package nginx-light is not installed.
+  Package nginx-extras is not installed.
+ nginx depends on nginx-core (>= 1.18.0-6.1+deb11u3) | nginx-full (>= 1.18.0-6.1+deb11u3) | nginx-light (>= 1.18.0-6.1+deb11u3) | nginx-extras (>= 1.18.0-6.1+deb11u3); however:
+  Package nginx-core is not configured yet.
+  Package nginx-full is not installed.
+  Package nginx-light is not installed.
+  Package nginx-extras is not installed.
+
+dpkg: error processing package nginx (--configure):
+ dependency problems - leaving unconfigured
+Errors were encountered while processing:
+ nginx-core
+ nginx
+08 Dec, 15:33:08 install.py l370 install_deps() Error: WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+E: Sub-process /usr/bin/dpkg returned an error code (1)
+08 Dec, 15:33:08 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:08 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:08 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:08 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:08 install.py l369 install_deps() Debug: Status: install ok installed
+08 Dec, 15:33:08 install.py l374 create_user() Debug: hal:x:107:127:,,,:/home/hal:/usr/sbin/nologin
+08 Dec, 15:33:11 install.py l385 add_to_group() Debug: hal:x:127:camil
+08 Dec, 15:33:13 install.py l407 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l408 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l409 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:33:13 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:33:15 install.py l429 create_env() Debug: 
+08 Dec, 15:33:16 install.py l439 create_env() Debug: Collecting wheel
+  Downloading wheel-0.38.4-py3-none-any.whl (36 kB)
+Installing collected packages: wheel
+Successfully installed wheel-0.38.4
+08 Dec, 15:33:25 install.py l439 create_env() Debug: Collecting uwsgi
+  Downloading uwsgi-2.0.21.tar.gz (808 kB)
+Building wheels for collected packages: uwsgi
+  Building wheel for uwsgi (setup.py): started
+  Building wheel for uwsgi (setup.py): finished with status 'done'
+  Created wheel for uwsgi: filename=uWSGI-2.0.21-cp39-cp39-linux_x86_64.whl size=587999 sha256=e0c15a435b02eaae6738b425b35c7f7a86644eacf4a4a15f4ebc9eb2855a7cbc
+  Stored in directory: /home/hal/.cache/pip/wheels/4c/b1/b1/9e32832706944163421d515c2c0562f66a49b5a98f3805196e
+Successfully built uwsgi
+Installing collected packages: uwsgi
+Successfully installed uwsgi-2.0.21
+08 Dec, 15:33:29 install.py l439 create_env() Debug: Collecting libsass
+  Downloading libsass-0.22.0-cp36-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.whl (9.4 MB)
+Installing collected packages: libsass
+Successfully installed libsass-0.22.0
+08 Dec, 15:33:31 install.py l439 create_env() Debug: Collecting pyyaml
+  Downloading PyYAML-6.0-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl (661 kB)
+Installing collected packages: pyyaml
+Successfully installed pyyaml-6.0
+08 Dec, 15:33:37 install.py l439 create_env() Debug: Collecting psycopg2
+  Downloading psycopg2-2.9.5.tar.gz (384 kB)
+Building wheels for collected packages: psycopg2
+  Building wheel for psycopg2 (setup.py): started
+  Building wheel for psycopg2 (setup.py): finished with status 'done'
+  Created wheel for psycopg2: filename=psycopg2-2.9.5-cp39-cp39-linux_x86_64.whl size=486282 sha256=e2c22e2b0d162f363c5a7acb8d6d5031af5e02f833476598063a5d98c531f04f
+  Stored in directory: /home/hal/.cache/pip/wheels/37/c1/ad/4ee49165718dff2c018c9830204ef8e749afdce7919f078586
+Successfully built psycopg2
+Installing collected packages: psycopg2
+Successfully installed psycopg2-2.9.5
+08 Dec, 15:33:37 install.py l445 create_cmd() Debug: 
+08 Dec, 15:33:59 install.py l458 place_hal() Debug: 
+08 Dec, 15:33:59 install.py l458 place_hal() Error: Cloning into '/home/hal/projects/lm1'...
+08 Dec, 15:33:59 install.py l308 start() Debug: 
+08 Dec, 15:33:59 install.py l308 start() Error: ERROR:  role "hal" already exists
+08 Dec, 15:33:59 install.py l309 start() Debug: 
+08 Dec, 15:33:59 install.py l309 start() Error: ERROR:  database "hal" already exists
+08 Dec, 15:33:59 install.py l311 start() Debug: 
+08 Dec, 15:33:59 install.py l311 start() Error: python3: can't open file '/home/hal/projects/lm1/src/app/app.py': [Errno 2] No such file or directory
+08 Dec, 15:33:59 install.py l313 start() Debug: Making app.py ...
+08 Dec, 15:33:59 install.py l316 start() Debug: 
+08 Dec, 15:33:59 install.py l316 start() Error: Traceback (most recent call last):
+  File "/home/hal/projects/lm1/src/app/app.py", line 1917, in <module>
+    main()
+  File "/home/hal/projects/lm1/src/app/app.py", line 1911, in main
+    hal.start()
+  File "/home/hal/projects/lm1/src/app/app.py", line 271, in start
+    self.db = Db(self.lmid)
+  File "/home/hal/projects/lm1/src/app/app.py", line 473, in __init__
+    self.connect()
+  File "/home/hal/projects/lm1/src/app/app.py", line 486, in connect
+    self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
+  File "/home/hal/projects/venv/lib/python3.9/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+psycopg2.OperationalError: could not connect to server: Connection refused
+	Is the server running on host "127.0.0.1" and accepting
+	TCP/IP connections on port 6202?
+08 Dec, 15:33:59 install.py l320 start() Debug: 
+08 Dec, 15:33:59 install.py l320 start() Error: Traceback (most recent call last):
+  File "/home/hal/projects/lm1/src/app/app.py", line 1917, in <module>
+    main()
+  File "/home/hal/projects/lm1/src/app/app.py", line 1911, in main
+    hal.start()
+  File "/home/hal/projects/lm1/src/app/app.py", line 271, in start
+    self.db = Db(self.lmid)
+  File "/home/hal/projects/lm1/src/app/app.py", line 473, in __init__
+    self.connect()
+  File "/home/hal/projects/lm1/src/app/app.py", line 486, in connect
+    self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
+  File "/home/hal/projects/venv/lib/python3.9/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+psycopg2.OperationalError: could not connect to server: Connection refused
+	Is the server running on host "127.0.0.1" and accepting
+	TCP/IP connections on port 6202?
+08 Dec, 15:44:14 install.py l329 create_sudo() Debug: Status: install ok installed
+08 Dec, 15:44:14 install.py l338 create_sudo() Debug: 
+08 Dec, 15:44:14 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:14 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:14 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:14 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:14 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:14 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:14 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:14 install.py l370 install_deps() Debug: Status: install ok unpacked
+08 Dec, 15:44:15 install.py l371 install_deps() Debug: Reading package lists...
+Building dependency tree...
+Reading state information...
+nginx is already the newest version (1.18.0-6.1+deb11u3).
+0 upgraded, 0 newly installed, 0 to remove and 5 not upgraded.
+2 not fully installed or removed.
+After this operation, 0 B of additional disk space will be used.
+Setting up nginx-core (1.18.0-6.1+deb11u3) ...
+Job for nginx.service failed because the control process exited with error code.
+See "systemctl status nginx.service" and "journalctl -xe" for details.
+invoke-rc.d: initscript nginx, action "start" failed.
+[0;1;31m●[0m nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (]8;;file://astatin/lib/systemd/system/nginx.service/lib/systemd/system/nginx.service]8;;; enabled; vendor preset: enabled)
+     Active: [0;1;31mfailed[0m (Result: exit-code) since Thu 2022-12-08 15:44:15 EET; 20ms ago
+       Docs: ]8;;man:nginx(8)man:nginx(8)]8;;
+    Process: 8612 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; [0;1;31m(code=exited, status=1/FAILURE)[0m
+        CPU: 8ms
+
+Dec 08 15:44:15 astatin systemd[1]: Starting A high performance web server and a reverse proxy server...
+Dec 08 15:44:15 astatin nginx[8612]: nginx: [emerg] cannot load certificate "/home/hal/ssl/lmw1.dev.lucamatei.eu/pubkey.pem": BIO_new_file() failed (SSL: error:02001002:system library:fopen:No such file or directory:fopen('/home/hal/ssl/lmw1.dev.lucamatei.eu/pubkey.pem','r') error:2006D080:BIO routines:BIO_new_file:no such file)
+Dec 08 15:44:15 astatin nginx[8612]: nginx: configuration file /etc/nginx/nginx.conf test failed
+Dec 08 15:44:15 astatin systemd[1]: [0;1;39m[0;1;31m[0;1;39mnginx.service: Control process exited, code=exited, status=1/FAILURE[0m
+Dec 08 15:44:15 astatin systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mnginx.service: Failed with result 'exit-code'.[0m
+Dec 08 15:44:15 astatin systemd[1]: [0;1;31m[0;1;39m[0;1;31mFailed to start A high performance web server and a reverse proxy server.[0m
+dpkg: error processing package nginx-core (--configure):
+ installed nginx-core package post-installation script subprocess returned error exit status 1
+dpkg: dependency problems prevent configuration of nginx:
+ nginx depends on nginx-core (<< 1.18.0-6.1+deb11u3.1~) | nginx-full (<< 1.18.0-6.1+deb11u3.1~) | nginx-light (<< 1.18.0-6.1+deb11u3.1~) | nginx-extras (<< 1.18.0-6.1+deb11u3.1~); however:
+  Package nginx-core is not configured yet.
+  Package nginx-full is not installed.
+  Package nginx-light is not installed.
+  Package nginx-extras is not installed.
+ nginx depends on nginx-core (>= 1.18.0-6.1+deb11u3) | nginx-full (>= 1.18.0-6.1+deb11u3) | nginx-light (>= 1.18.0-6.1+deb11u3) | nginx-extras (>= 1.18.0-6.1+deb11u3); however:
+  Package nginx-core is not configured yet.
+  Package nginx-full is not installed.
+  Package nginx-light is not installed.
+  Package nginx-extras is not installed.
+
+dpkg: error processing package nginx (--configure):
+ dependency problems - leaving unconfigured
+Errors were encountered while processing:
+ nginx-core
+ nginx
+08 Dec, 15:44:15 install.py l371 install_deps() Error: WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+E: Sub-process /usr/bin/dpkg returned an error code (1)
+08 Dec, 15:44:15 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:15 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:15 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:15 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:15 install.py l370 install_deps() Debug: Status: install ok installed
+08 Dec, 15:44:15 install.py l375 create_user() Debug: hal:x:107:127:,,,:/home/hal:/usr/sbin/nologin
+08 Dec, 15:44:20 install.py l386 add_to_group() Debug: hal:x:127:camil
+08 Dec, 15:44:22 install.py l408 create_dir_tree() Debug: 
+08 Dec, 15:44:22 install.py l409 create_dir_tree() Debug: 
+08 Dec, 15:44:22 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:44:22 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:44:22 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:44:22 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:44:22 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:44:22 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:44:22 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:44:22 install.py l414 create_dir_tree() Debug: 
+08 Dec, 15:44:24 install.py l429 create_env() Debug: 
+08 Dec, 15:44:25 install.py l439 create_env() Debug: Collecting wheel
+  Downloading wheel-0.38.4-py3-none-any.whl (36 kB)
+Installing collected packages: wheel
+Successfully installed wheel-0.38.4
+08 Dec, 15:44:34 install.py l439 create_env() Debug: Collecting uwsgi
+  Downloading uwsgi-2.0.21.tar.gz (808 kB)
+Building wheels for collected packages: uwsgi
+  Building wheel for uwsgi (setup.py): started
+  Building wheel for uwsgi (setup.py): finished with status 'done'
+  Created wheel for uwsgi: filename=uWSGI-2.0.21-cp39-cp39-linux_x86_64.whl size=588001 sha256=46ced0999ba1030e44de65b0427d4df62d6e59c2cbff1bf63f03782b176a24b9
+  Stored in directory: /home/hal/.cache/pip/wheels/4c/b1/b1/9e32832706944163421d515c2c0562f66a49b5a98f3805196e
+Successfully built uwsgi
+Installing collected packages: uwsgi
+Successfully installed uwsgi-2.0.21
+08 Dec, 15:44:37 install.py l439 create_env() Debug: Collecting libsass
+  Downloading libsass-0.22.0-cp36-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.whl (9.4 MB)
+Installing collected packages: libsass
+Successfully installed libsass-0.22.0
+08 Dec, 15:44:39 install.py l439 create_env() Debug: Collecting pyyaml
+  Downloading PyYAML-6.0-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl (661 kB)
+Installing collected packages: pyyaml
+Successfully installed pyyaml-6.0
+08 Dec, 15:44:46 install.py l439 create_env() Debug: Collecting psycopg2
+  Downloading psycopg2-2.9.5.tar.gz (384 kB)
+Building wheels for collected packages: psycopg2
+  Building wheel for psycopg2 (setup.py): started
+  Building wheel for psycopg2 (setup.py): finished with status 'done'
+  Created wheel for psycopg2: filename=psycopg2-2.9.5-cp39-cp39-linux_x86_64.whl size=486225 sha256=408f998b03d2fca6c62b73ec0ceb127f01c03bef6676e083d0bb3ae8d776d08e
+  Stored in directory: /home/hal/.cache/pip/wheels/37/c1/ad/4ee49165718dff2c018c9830204ef8e749afdce7919f078586
+Successfully built psycopg2
+Installing collected packages: psycopg2
+Successfully installed psycopg2-2.9.5
+08 Dec, 15:44:46 install.py l445 create_cmd() Debug: 
+08 Dec, 15:44:57 install.py l458 place_hal() Debug: 
+08 Dec, 15:44:57 install.py l458 place_hal() Error: Cloning into '/home/hal/projects/lm1'...
+08 Dec, 15:44:57 install.py l308 start() Debug: 
+08 Dec, 15:44:57 install.py l308 start() Error: ERROR:  role "hal" already exists
+08 Dec, 15:44:57 install.py l309 start() Debug: 
+08 Dec, 15:44:57 install.py l309 start() Error: ERROR:  database "hal" already exists
+08 Dec, 15:44:57 install.py l311 start() Debug: Making app.py ...
+08 Dec, 15:44:57 install.py l312 start() Debug: 
+08 Dec, 15:44:57 install.py l312 start() Error: Traceback (most recent call last):
+  File "/home/hal/projects/lm1/src/app/app.py", line 1917, in <module>
+    main()
+  File "/home/hal/projects/lm1/src/app/app.py", line 1911, in main
+    hal.start()
+  File "/home/hal/projects/lm1/src/app/app.py", line 271, in start
+    self.db = Db(self.lmid)
+  File "/home/hal/projects/lm1/src/app/app.py", line 473, in __init__
+    self.connect()
+  File "/home/hal/projects/lm1/src/app/app.py", line 486, in connect
+    self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
+  File "/home/hal/projects/venv/lib/python3.9/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+psycopg2.OperationalError: could not connect to server: Connection refused
+	Is the server running on host "127.0.0.1" and accepting
+	TCP/IP connections on port 6202?
+08 Dec, 15:44:57 install.py l315 start() Debug: 
+08 Dec, 15:44:57 install.py l315 start() Error: Traceback (most recent call last):
+  File "/home/hal/projects/lm1/src/app/app.py", line 1917, in <module>
+    main()
+  File "/home/hal/projects/lm1/src/app/app.py", line 1911, in main
+    hal.start()
+  File "/home/hal/projects/lm1/src/app/app.py", line 271, in start
+    self.db = Db(self.lmid)
+  File "/home/hal/projects/lm1/src/app/app.py", line 473, in __init__
+    self.connect()
+  File "/home/hal/projects/lm1/src/app/app.py", line 486, in connect
+    self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
+  File "/home/hal/projects/venv/lib/python3.9/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+psycopg2.OperationalError: could not connect to server: Connection refused
+	Is the server running on host "127.0.0.1" and accepting
+	TCP/IP connections on port 6202?
+08 Dec, 15:44:57 install.py l319 start() Debug: 
+08 Dec, 15:44:57 install.py l319 start() Error: Traceback (most recent call last):
+  File "/home/hal/projects/lm1/src/app/app.py", line 1917, in <module>
+    main()
+  File "/home/hal/projects/lm1/src/app/app.py", line 1911, in main
+    hal.start()
+  File "/home/hal/projects/lm1/src/app/app.py", line 271, in start
+    self.db = Db(self.lmid)
+  File "/home/hal/projects/lm1/src/app/app.py", line 473, in __init__
+    self.connect()
+  File "/home/hal/projects/lm1/src/app/app.py", line 486, in connect
+    self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
+  File "/home/hal/projects/venv/lib/python3.9/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+psycopg2.OperationalError: could not connect to server: Connection refused
+	Is the server running on host "127.0.0.1" and accepting
+	TCP/IP connections on port 6202?
+08 Dec, 15:44:57 install.py l322 start() Debug: 
