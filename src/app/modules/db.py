@@ -16,14 +16,7 @@ class Db:
         port = details['port']
         password = details['pass']
 
-        self.conn = psycopg2.connect(
-            dbname = self.lmid,
-            user = self.lmid,
-            host = host,
-            port = port,
-            password = password,
-            )
-
+        self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
         log(self.lmid + " database connected.")
 
     def erase(self):
