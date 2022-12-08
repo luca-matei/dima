@@ -81,9 +81,9 @@ class Host:
                 break
 
         # Write new config file and restart service
-        utils.write(config_file, config, lines=True, owner="postgres")
-        cmd(f"sudo cp {hal.tpls_dir}db/pg_hba.tpl {pg_dir}pg_hba.conf")
-        cmd(f"sudo chown postgres:postgres {pg_dir}pg_hba.conf")
+        #utils.write(config_file, config, lines=True, owner="postgres")
+        #cmd(f"sudo cp {hal.tpls_dir}db/pg_hba.tpl {pg_dir}pg_hba.conf")
+        #cmd(f"sudo chown postgres:postgres {pg_dir}pg_hba.conf")
         self.manage_service("restart", "postgresql")
 
         # Update ports in project files and in db
