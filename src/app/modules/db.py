@@ -182,6 +182,11 @@ class Db:
                     log(f"Data: {data}")
 
             except (Exception, psycopg2.Error) as e:
+                # Hitting 'restart postgres will terminate active connections'
+                if "server closed the connection" in e:
+                    self.connect()
+                    return self.execute(query, params)
+
                 log(f"Query error: {e}", level=4)
                 log(f"Database error!", level=5, console=True)
 
