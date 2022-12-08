@@ -224,9 +224,9 @@ class Hal:
     version = None
     settings = None
 
-    web = "lm2"
-    net = "lm3"
-    host = "lm4"
+    web_dbid = None
+    net_dbid = None
+    host_dbid = None
     db = None
 
     modules = {}
@@ -266,6 +266,7 @@ class Hal:
         logs.level = settings.get("log_level", 1)
         utils.nets.dhcp = settings.get("dhcp")
         utils.nets.dns = settings.get("dns")
+        gitlab.domain = settings.get("gitlab")
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
@@ -335,6 +336,10 @@ class Hal:
             if lmobj[3]:
                 self.lmobjs[lmobj[3]] = lmobj[0]   # alias = id
 
+            if lmobj[1] == "lm2": self.web_dbid = lmobj[0]
+            elif lmobj[1] == "lm3": self.net_dbid = lmobj[0]
+            elif lmobj[1] == "lm4": self.host_dbid = lmobj[0]
+
         log("Phase 5: Checking services ...")
         #ssh.check()
         #gitlab.check()
@@ -366,7 +371,13 @@ hal = Hal()
 class Logs:
     # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
-    log_file = utils.logs_dir + utils.get_src_dir().split('/')[-3] + ".log"
+    file_path = __file__.split('/')
+    file_dir, file_name = '/'.join(file_path[:-1]) + '/', file_path[-1]
+
+    if file_name == "install.py":
+        log_file = file_dir + 'install.log'
+    else:
+        log_file = utils.logs_dir + utils.get_src_dir().split('/')[-3] + ".log"
 
     levels = {
         1: ("Debug", "blue"),
@@ -684,90 +695,6 @@ class NetUtils:
         print("SET DHCP")
 
 utils.nets = NetUtils()
-
-
-class Net:
-    def __init__(self, dbid):
-        self.dbid = dbid
-        self.lmid = hal.lmobjs[dbid][0]
-
-        query = "select netmask, domain, gateway, lease_start, lease_end from nets where lmobj=%s;"
-        params = dbid,
-        self.netmask, self.domain, self.gateway, self.lease_start, self.lease_end = hal.db.execute(query, params)[0]
-
-        #self.check()
-
-    def start(self):
-        """
-        :public
-        Starts the network.
-        """
-
-        if self.dbid != hal.net_dbid:
-            if f"Network {self.lmid} started" in cmd("sudo virsh net-start " + self.lmid, catch=True):
-                self.state = 1
-                hal.db.execute("update nets set state=%s where lmobj=%s;", (self.state, self.dbid,))
-                log(f"{self.lmid} net started.", console=True)
-                return 1
-
-        log(f"Couldn't start {self.lmid} net!", level=4, console=True)
-        return 0
-
-    def stop(self):
-        """
-        :public
-        Stops the network.
-        """
-
-        if self.dbid != hal.net_dbid:
-            if f"Network {self.lmid} destroyed" in cmd("sudo virsh net-destroy " + self.lmid, catch=True):
-                self.state = 0
-                hal.db.execute("update nets set state=%s where lmobj=%s;", (self.state, self.dbid,))
-                log(f"{self.lmid} net stopped.", console=True)
-                return 1
-
-        log(f"Couldn't stop {self.lmid} net!", level=4, console=True)
-        return 0
-
-    def autostart(self):
-        """
-        :public
-        Toggles autostart flag.
-        """
-
-        if self.dbid != hal.net_dbid:
-            autolaunch = False if self.autolaunch else True
-            out = cmd(f"sudo virsh net-autostart {'' if autolaunch else '--disable '}" + self.lmid, catch=True)
-            if (autolaunch and f"Network {self.lmid} marked as autostarted" in out) or (not autolaunch and f"Network {self.lmid} unmarked as autostarted" in out):
-                self.autolaunch = autolaunch
-                hal.db.execute("update nets set autolaunch=%s where lmobj=%s;", (self.autolaunch, self.dbid,))
-                log(f"{'Added' if self.autolaunch else 'Removed'} autostart flag for {self.lmid} net.", console=True)
-                return 1
-
-        log(f"Couldn't toggle 'autostart' flag for {self.lmid} net!", level=4, console=True)
-        return 0
-
-    def delete(self):
-        # To do: move guests to another net
-        if self.dbid != hal.net_dbid:
-            if self.stop():
-                if f"Network {self.lmid} has been undefined" in cmd("sudo virsh net-undefine " + self.lmid, catch=True):
-                    hal.db.execute("delete from nets where lmobj=%s;", (self.dbid,))
-                    log(f"{self.lmid} net deleted.", console=True)
-                    hal.nutil.config_dhcp()
-                    hal.hutil.destroy_pool(self.dbid)
-                    return 1
-
-        log(f"Couldn't delete {self.lmid} net!", level=4, console=True)
-        return 0
-
-    def check(self):
-        if self.dbid != hal.net_dbid:
-            if not util.isfile(f"/etc/libvirt/qemu/networks/{self.lmid}.xml"):
-                if hal.nutil.create_libvirt_net(self.lmid, self.netmask, self.gateway):
-                    self.start()
-                    self.autostart()
-                    hal.nutil.config_dhcp()
 
 
 class SSH:
@@ -1122,19 +1049,131 @@ class HostUtils:
 utils.hosts = HostUtils()
 
 
-class Host:
+class lmObj:
     def __init__(self, dbid):
         self.dbid = dbid
         self.lmid = hal.lmobjs[dbid][0]
         self.alias = hal.lmobjs[dbid][2]
+        self.name = self.alias if self.alias else self.lmid
+
+    def set_alias(self, alias):
+        forbidden = "", "q", "exit"
+
+        if alias in forbidden or alias.startswith("lm") or alias in utils.get_keys(cli.acts):
+            log("Can't assign this alias!", level=4, console=True)
+
+        elif alias in utils.get_keys(hal.lmobjs):
+            log(f"Alias already in use by {hal.lmobjs[hal.lmobjs[alias]][0]}!", level=4, console=True)
+
+        else:
+            hal.lmobjs.pop(self.alias, None)
+            hal.lmobjs[alias] = self.dbid
+            self.alias = alias
+
+            hal.db.execute("update lmobjs set alias=%s where id=%s;", (alias, self.dbid,))
+            log(f"Alias '{alias}' set to {self.lmid}.", console=True)
+
+    def remove_alias(self):
+        hal.lmobjs.pop(self.alias, None)
+        self.alias = None
+        hal.db.execute("update lmobjs set alias=%s where id=%s;", (None, self.dbid,))
+        log("Alias removed.", console=True)
+
+
+class Net:
+    def __init__(self, dbid):
+        lmObj.__init__(self, dbid)
+
+        query = "select netmask, domain, gateway, lease_start, lease_end from nets where lmobj=%s;"
+        params = dbid,
+        self.netmask, self.domain, self.gateway, self.lease_start, self.lease_end = hal.db.execute(query, params)[0]
+
+        #self.check()
+
+    def start(self):
+        """
+        :public
+        Starts the network.
+        """
+
+        if self.dbid != hal.net_dbid:
+            if f"Network {self.lmid} started" in cmd("sudo virsh net-start " + self.lmid, catch=True):
+                self.state = 1
+                hal.db.execute("update nets set state=%s where lmobj=%s;", (self.state, self.dbid,))
+                log(f"{self.lmid} net started.", console=True)
+                return 1
+
+        log(f"Couldn't start {self.lmid} net!", level=4, console=True)
+        return 0
+
+    def stop(self):
+        """
+        :public
+        Stops the network.
+        """
+
+        if self.dbid != hal.net_dbid:
+            if f"Network {self.lmid} destroyed" in cmd("sudo virsh net-destroy " + self.lmid, catch=True):
+                self.state = 0
+                hal.db.execute("update nets set state=%s where lmobj=%s;", (self.state, self.dbid,))
+                log(f"{self.lmid} net stopped.", console=True)
+                return 1
+
+        log(f"Couldn't stop {self.lmid} net!", level=4, console=True)
+        return 0
+
+    def autostart(self):
+        """
+        :public
+        Toggles autostart flag.
+        """
+
+        if self.dbid != hal.net_dbid:
+            autolaunch = False if self.autolaunch else True
+            out = cmd(f"sudo virsh net-autostart {'' if autolaunch else '--disable '}" + self.lmid, catch=True)
+            if (autolaunch and f"Network {self.lmid} marked as autostarted" in out) or (not autolaunch and f"Network {self.lmid} unmarked as autostarted" in out):
+                self.autolaunch = autolaunch
+                hal.db.execute("update nets set autolaunch=%s where lmobj=%s;", (self.autolaunch, self.dbid,))
+                log(f"{'Added' if self.autolaunch else 'Removed'} autostart flag for {self.lmid} net.", console=True)
+                return 1
+
+        log(f"Couldn't toggle 'autostart' flag for {self.lmid} net!", level=4, console=True)
+        return 0
+
+    def delete(self):
+        # To do: move guests to another net
+        if self.dbid != hal.net_dbid:
+            if self.stop():
+                if f"Network {self.lmid} has been undefined" in cmd("sudo virsh net-undefine " + self.lmid, catch=True):
+                    hal.db.execute("delete from nets where lmobj=%s;", (self.dbid,))
+                    log(f"{self.lmid} net deleted.", console=True)
+                    hal.nutil.config_dhcp()
+                    hal.hutil.destroy_pool(self.dbid)
+                    return 1
+
+        log(f"Couldn't delete {self.lmid} net!", level=4, console=True)
+        return 0
+
+    def check(self):
+        if self.dbid != hal.net_dbid:
+            if not util.isfile(f"/etc/libvirt/qemu/networks/{self.lmid}.xml"):
+                if hal.nutil.create_libvirt_net(self.lmid, self.netmask, self.gateway):
+                    self.start()
+                    self.autostart()
+                    hal.nutil.config_dhcp()
+
+
+class Host:
+    def __init__(self, dbid):
+        lmObj.__init__(self, dbid)
 
         query = "select mac, storage, cpus, memory, net, ip, client, env, ssh_port, pg_port from host.hosts where lmobj=%s;"
         params = dbid,
 
         self.mac, self.storage, self.cpus, self.memory, self.net_dbid, self.ip, self.client_id, self.env, self.ssh_port, self.pg_port = hal.db.execute(query, params)[0]
 
-        self.mnt_dir = utils.mnt_dir + self.alias if self.alias else self.lmid + "/"
-        #self.check()
+        self.mnt_dir = utils.mnt_dir + self.name + "/"
+        self.check()
 
     def next_port(self, service=False):
         if service:
@@ -1155,12 +1194,12 @@ class Host:
         return port
 
     def manage_service(self, action, service):
-        log(f"Restarting {service} for {self.lmid} ...", console=True)
+        log(f"Restarting {service} for {self.name} ...", console=True)
         cmd(f"sudo systemctl {action} {service} ")
 
     # Nginx
     def config_nginx(self):
-        log(f"Configuring Nginx for {self.lmid} ...")
+        log(f"Configuring Nginx for {self.name} ...")
         cmd(f"sudo cp {hal.tpls_dir}web/nginx.tpl /etc/nginx/nginx.conf")
         self.manage_service("restart", "nginx")
 
@@ -1185,7 +1224,7 @@ class Host:
         Assigns a new port to the PostgreSQL server.
         """
 
-        log(f"Configuring PostgreSQL for {self.lmid} ...", console=True)
+        log(f"Configuring PostgreSQL for {self.name} ...", console=True)
         port = random.randint(4096, 8192)
 
         pg_dir = f"/etc/postgresql/{os.listdir('/etc/postgresql/')[-1]}/main/"
@@ -1221,6 +1260,9 @@ class Host:
 
         self.manage_service("restart", "postgresql")
 
+    def reload_postgres(self):
+        self.manage_service("reload", "postgresql")
+
     def start_postgres(self):
         self.manage_service("start", "postgresql")
 
@@ -1242,24 +1284,22 @@ class Host:
 
     # Git
     def config_git(self):
-        log(f"Configuring Git for {self.lmid} ...", console=True)
+        log(f"Configuring Git for {self.name} ...", console=True)
         config = utils.format_tpl("gitconfig.tpl", {
             "user": self.lmid,
-            "email": f"{self.lmid}@{self.opts['gitlab']}",
+            "email": f"{self.lmid}@{gitlab.domain}",
             "gpg_key": gpg.get_privkey_id(self.lmid)
             })
         utils.write(f"/home/hal/.gitconfig", config)
 
     # Mount
     def is_mounted(self):
-        # Warning! self.mnt_dir may not exist!
-        # To do: Handle exception
         if len(os.listdir(self.mnt_dir)):
             return True
         return False
 
     def mount(self):
-        if self.lmid == hal.host_lmid:
+        if self.dbid == hal.host_dbid:
             log("You can't mount the host!", level=4, console=True)
         else:
             if not os.path.isdir(self.mnt_dir):
@@ -1267,31 +1307,28 @@ class Host:
                 cmd("mkdir " + self.mnt_dir)
 
             if not self.is_mounted():
-                cmd(f"sshfs -p {self.ssh_port} -o identityfile={hal.gutil.ssh_dir}{self.lmid} hal@{self.ip}:/home {self.mnt_dir}")
-                log(f"{self.lmid} mounted {util.now()}", console=True)
+                cmd(f"sshfs -p {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} hal@{self.ip}:/home {self.mnt_dir}")
+                log(f"{self.name} mounted {util.now()}", console=True)
             else:
-                log(f"{self.lmid} is already mounted!", console=True)
+                log(f"{self.name} is already mounted!", console=True)
 
     def unmount(self):
-        if self.lmid == hal.host_lmid:
+        if self.dbid == hal.host_dbid:
             log("You can't unmount the host!", level=4, console=True)
         else:
             if self.is_mounted():
                 cmd(f"fusermount -u {self.mnt_dir}")
-                log(f"{self.lmid} unmounted {util.now()}", console=True)
+                log(f"{self.name} unmounted {util.now()}", console=True)
             else:
-                log(self.lmid + " is already unmounted!", console=True)
+                log(f"{self.name} is already unmounted!", console=True)
 
             # Double check that it's unmounted
-            if not self.is_mounted() and os.path.isdir(self.mnt_dir):
+            if os.path.isdir(self.mnt_dir) and not self.is_mounted():
                 log(f"Removing mount point from {self.mnt_dir} ...")
-                cmd("rm " + self.mnt_dir)
+                cmd("rmdir " + self.mnt_dir)
 
     def check(self):
-        if self.dbid == hal.host_dbid and not self.pg_port:
-            query = "update guests set pg_port=%s where lmobj=%s;"
-            params = util.read(hal.app_dir + "db/details.ast").get("port"), self.dbid,
-            hal.db.execute(query, params)
+        pass
 
 
 class ProjectUtils:
@@ -1303,15 +1340,14 @@ utils.projects = ProjectUtils()
 
 class Project:
     def __init__(self, dbid):
-        self.dbid = dbid
-        self.lmid = hal.lmobjs[dbid][0]
+        lmObj.__init__(self, dbid)
 
         self.repo_dir = utils.projects_dir + self.lmid + '/'
         self.log_file = utils.logs_dir + self.lmid + ".log"
 
     def save(self, message="Updated files"):
         # Will be replaced with the API method
-        log(f"Saving {self.lmid} on Gitlab ...")
+        log(f"Saving {self.name} on Gitlab ...")
         git_cmd = f"git --git-dir={self.repo_dir}.git/ --work-tree={self.repo_dir} " + "{}"
         cmd(git_cmd.format(f"add {self.repo_dir}*"))
         cmd(git_cmd.format(f"commit -m '{message}'"))
@@ -1702,6 +1738,7 @@ class CLI:
         command = [p for p in re.split("( |\\\".*?\\\"|'.*?')", command) if p.strip()] + ['']    # Split by spaces unless surrounded by quotes
 
         lmobj_id = hal.lmobjs.get(command[0], 0)    # Try to get a lmobj
+
         if lmobj_id:
             # lmobj act obj    ===    lm1 restart nginx
             # lmobj act        ===    lm3 save

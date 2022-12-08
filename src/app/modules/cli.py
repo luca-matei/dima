@@ -49,6 +49,7 @@ class CLI:
         command = [p for p in re.split("( |\\\".*?\\\"|'.*?')", command) if p.strip()] + ['']    # Split by spaces unless surrounded by quotes
 
         lmobj_id = hal.lmobjs.get(command[0], 0)    # Try to get a lmobj
+
         if lmobj_id:
             # lmobj act obj    ===    lm1 restart nginx
             # lmobj act        ===    lm3 save

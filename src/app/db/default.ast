@@ -135,34 +135,32 @@
 
         ("utils.softs", "soft", ("create",), ()),
 
-        ("gitlab", "git", ("config",), ()),
-
         ("ssh", "ssh", ("config",), ()),
         ("ssh", "sshkey", ("create", "delete"), ()),
 
         ("gpg", "gpgkey", ("create",), ()),
 
-        ("Net", "", ("start", "stop", "delete"), ()),
+        ("Net", "", ("check", "start", "stop", "delete"), ()),
         ("Net", "alias", ("set", "remove"), ("alias",)),
 
-        ("Host", "", ("mount", "unmount"), ()),
+        ("Host", "", ("check", "mount", "unmount"), ()),
         ("Host", "alias", ("set", "remove"), ("alias",)),
-        ("Host", "nginx", ("config", "reload", "restart", "start", "stop"), ()),
-        ("Host", "postgres", ("config", "restart", "start", "stop"), ()),
+        ("Host", "nginx", ("config", "reload", "start", "stop", "restart"), ()),
+        ("Host", "postgres", ("config", "reload", "start", "stop", "restart"), ()),
         ("Host", "supervisor", ("restart", "start", "stop"), ()),
         ("Host", "git", ("config",), ()),
 
-        ("App", "", ("start", "stop", "restart", "save"), ()),
+        ("App", "", ("check", "start", "stop", "restart", "save"), ()),
         ("App", "alias", ("set", "remove"), ("alias",)),
 
-        ("Web", "", ("start", "stop", "restart", "save",), ()),
+        ("Web", "", ("check", "start", "stop", "restart", "save",), ()),
         ("Web", "alias", ("set", "remove"), ("alias",)),
         ("Web", "nginx", ("config",), ()),
         ("Web", "ssl", ("renew",), ()),
         ("Web", "default", ("set",), ()),
         ("Web", "html", ("update",), ()),
 
-        ("Soft", "", ("save",), ()),
+        ("Soft", "", ("check", "save",), ()),
         ("Soft", "alias", ("set", "remove"), ("alias",)),
         )),
     )),

@@ -3,9 +3,9 @@ class Hal:
     version = None
     settings = None
 
-    web = "lm2"
-    net = "lm3"
-    host = "lm4"
+    web_dbid = None
+    net_dbid = None
+    host_dbid = None
     db = None
 
     modules = {}
@@ -45,6 +45,7 @@ class Hal:
         logs.level = settings.get("log_level", 1)
         utils.nets.dhcp = settings.get("dhcp")
         utils.nets.dns = settings.get("dns")
+        gitlab.domain = settings.get("gitlab")
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
@@ -113,6 +114,10 @@ class Hal:
 
             if lmobj[3]:
                 self.lmobjs[lmobj[3]] = lmobj[0]   # alias = id
+
+            if lmobj[1] == "lm2": self.web_dbid = lmobj[0]
+            elif lmobj[1] == "lm3": self.net_dbid = lmobj[0]
+            elif lmobj[1] == "lm4": self.host_dbid = lmobj[0]
 
         log("Phase 5: Checking services ...")
         #ssh.check()

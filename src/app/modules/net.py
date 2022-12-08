@@ -1,7 +1,6 @@
 class Net:
     def __init__(self, dbid):
-        self.dbid = dbid
-        self.lmid = hal.lmobjs[dbid][0]
+        lmObj.__init__(self, dbid)
 
         query = "select netmask, domain, gateway, lease_start, lease_end from nets where lmobj=%s;"
         params = dbid,
