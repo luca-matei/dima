@@ -2,7 +2,7 @@ class Host:
     def __init__(self, dbid):
         self.dbid = dbid
         self.lmid = hal.lmobjs[dbid][0]
-        self.alias = hal.lmobjs[dbid][3]
+        self.alias = hal.lmobjs[dbid][2]
 
         query = "select mac, storage, cpus, memory, net, ip, client, env, ssh_port, pg_port from host.hosts where lmobj=%s;"
         params = dbid,
