@@ -1,5 +1,5 @@
 class DbUtils:
-    query = """sudo -u postgres psql -tAc \"{}\""""
+    query = """sudo -u hal psql -tAc \"{}\""""
 
     def create_db(self, host=None):
         pass
@@ -9,7 +9,7 @@ class DbUtils:
         log(f"Creating '{lmid}' role ...", console=True)
         password = utils.new_pass(64)
 
-        role_query = self.query.format(f"create role {lmid} with login {'createdb createrole ' if lmid == 'hal' else ''}password '{password}';")
+        role_query = self.query.format(f"create role {lmid} with login password '{password}';")
         output = cmd(role_query, catch=True)
         if "already exists" in output:
             log(f"'{lmid}' role already exists!", console=True)

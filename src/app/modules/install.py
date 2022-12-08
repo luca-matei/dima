@@ -23,6 +23,11 @@ class Install:
             self.place_hal()
             print()
 
+        if self.opts['has_db']:
+            query = """sudo -u postgres psql -tAc \"{}\""""
+            cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"))
+            cmd(query.format("create database hal owner hal encoding 'utf-8';"))
+
         cmd(f"hal {utils.hostname} config git")
 
         cmd(utils.projects_dir + self.lmid + "/make")

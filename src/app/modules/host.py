@@ -57,7 +57,7 @@ class Host:
         """
         :public
         Manages /etc/postgresql/13/main/postgresql.conf
-                /etc/postgresql/13/main/hba_conf.conf
+                /etc/postgresql/13/main/pg_hba.conf
         Assigns a new port to the PostgreSQL server.
         """
 
@@ -67,10 +67,11 @@ class Host:
         pg_dir = f"/etc/postgresql/{os.listdir('/etc/postgresql/')[-1]}/main/"
         config_file = pg_dir + "postgresql.conf"
 
-        # Create backup for default config
-        if not utils.isfile(config_file + ".bak"):
-            cmd(f"sudo cp {config_file} {config_file}.bak")
-            cmd(f"sudo chown postgres:postgres {config_file}.bak")
+        # Create backup for default configs
+        for cfg_file in (config_file, pg_dir + "pg_hba.conf"):
+            if not utils.isfile(cfg_file + ".bak"):
+                cmd(f"sudo cp {cfg_file} {cfg_file}.bak")
+                cmd(f"sudo chown postgres:postgres {cfg_file}.bak")
 
         # Modify port in config file
         config = utils.read(config_file, True)
@@ -81,6 +82,8 @@ class Host:
 
         # Write new config file and restart service
         utils.write(config_file, config, lines=True, owner="postgres")
+        cmd(f"sudo cp {hal.tpls_dir}db/pg_hba.tpl {pg_dir}pg_hba.conf")
+        cmd(f"sudo chown postgres:postgres {pg_dir}pg_hba.conf")
         self.manage_service("restart", "postgresql")
 
         # Update ports in project files and in db

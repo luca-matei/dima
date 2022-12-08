@@ -81,7 +81,7 @@ class Utils:
         final_path = None
         if path.startswith("/etc/"):
             final_path = path
-            path = hal.bay_dir + 'tmp'
+            path = utils.tmp_dir + 'tmp_file'
 
         with open(path, mode=mode, encoding='utf-8') as f:
             if lines:
@@ -93,7 +93,7 @@ class Utils:
                     f.write(content)
 
         if final_path:
-            cmd(f"sudo mv {hal.bay_dir}tmp {final_path}")
+            cmd(f"sudo mv {path} {final_path}")
             if not owner:
                 log(f"No owner specified for '{final_path}'!", level=4, console=True)
             else:

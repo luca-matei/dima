@@ -11,6 +11,7 @@ class Hal:
 
     src_dir = utils.get_src_dir()
     app_dir = src_dir + "app/"
+    tpls_dir = src_dir + "assets/tpls/"
 
     modules = {}
     domains = {}

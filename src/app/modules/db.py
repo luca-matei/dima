@@ -10,24 +10,11 @@ class Db:
             self.build()
 
     def connect(self):
-        # Web apps can connect only to their database
         # To do: get passwords securely
-        if self.dbid:
-            query = "select host, port, password from dbs where lmobj=%s;"
-            params = self.dbid,
-            details = hal.db.execute(query, params)
-
-            if details:
-                host, port, password = details[0]
-            else:
-                utils.dbs.create_database(self.lmid, self.dbid, self.host_dbid)
-                return self.connect()
-        else:
-            # Hal's database
-            details = utils.read(hal.app_dir + "db/details.ast")
-            host = details['host']
-            port = details['port']
-            password = details['pass']
+        details = utils.read(utils.src_dir + "app/db/details.ast")
+        host = details['host']
+        port = details['port']
+        password = details['pass']
 
         self.conn = psycopg2.connect(
             dbname = self.lmid,
