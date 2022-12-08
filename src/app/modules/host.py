@@ -63,7 +63,6 @@ class Host:
 
         log(f"Configuring PostgreSQL for {self.lmid} ...", console=True)
         port = random.randint(4096, 8192)
-        print(port)
 
         pg_dir = f"/etc/postgresql/{os.listdir('/etc/postgresql/')[-1]}/main/"
         config_file = pg_dir + "postgresql.conf"
