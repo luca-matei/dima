@@ -37,7 +37,7 @@ class Host:
     # Nginx
     def config_nginx(self):
         log(f"Configuring Nginx for {self.lmid} ...")
-        cmd(f"sudo cp {hal.src_dir}assets/tpls/web/nginx.tpl /etc/nginx/nginx.conf")
+        cmd(f"sudo cp {hal.tpls_dir}web/nginx.tpl /etc/nginx/nginx.conf")
         self.manage_service("restart", "nginx")
 
     def reload_nginx(self):

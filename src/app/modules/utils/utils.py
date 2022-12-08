@@ -31,6 +31,7 @@ class Utils:
 
     def __init__(self):
         self.get_debian_version()
+        self.src_dir = self.get_src_dir()
 
     def get_debian_version(self):
         debian_version = self._cmd(None, "cat /etc/debian_version", catch=True).split('.')

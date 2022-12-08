@@ -3,15 +3,10 @@ class Hal:
     version = None
     settings = None
 
-    app = None
     web = "lm2"
     net = "lm3"
     host = "lm4"
     db = None
-
-    src_dir = utils.get_src_dir()
-    app_dir = src_dir + "app/"
-    tpls_dir = src_dir + "assets/tpls/"
 
     modules = {}
     domains = {}
@@ -23,6 +18,9 @@ class Hal:
         print("STATUS")
 
     def start(self):
+        self.app_dir = utils.src_dir + "app/"
+        self.tpls_dir = utils.src_dir + "assets/tpls/"
+
         # Reset logs
         logs.reset()
 
