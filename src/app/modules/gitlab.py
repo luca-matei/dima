@@ -1,6 +1,7 @@
 class Gitlab:
     # Line count git ls-files | xargs wc -l
     domain = None
+    user = None
 
     def request(self, method="get", endpoint="", data={}):
         method = method.lower()
@@ -18,6 +19,10 @@ class Gitlab:
             )
 
         return response.json()
+
+    def clone(self, lmid):
+        log(f"Cloning {lmid} Gitlab repository ...")
+        cmd(f"git clone git@{self.domain}:{self.user}/{lmid}.git {utils.projects_dir}{lmid}/")
 
     def add_ssh_key(self, host):
         if hal.ssh.create_sshkey(host + "-gitlab"):

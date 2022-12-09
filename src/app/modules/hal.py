@@ -45,7 +45,8 @@ class Hal:
         logs.level = settings.get("log_level", 1)
         utils.nets.dhcp = settings.get("dhcp")
         utils.nets.dns = settings.get("dns")
-        gitlab.domain = settings.get("gitlab")
+        gitlab.domain = settings.get("gitlab_domain")
+        gitlab.user = settings.get("gitlab_user")
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
@@ -143,5 +144,26 @@ class Hal:
     def destroy_pool(self, dbid):
         self.pools.pop(dbid, None)
         log(f"Pool {dbid} destroyed.")
+
+    def insert_lmobj(self, lmid, module, alias):
+        log(f"Inserting {lmid} of type {module} ...")
+        module_id = hal.modules[module]
+
+        query = f"insert into lmobjs (lmid, module, alias) values (%s, %s, %s) returning id;"
+        params = lmid, module_id, alias,
+        dbid = hal.db.execute(query, params)[0][0]
+
+        hal.lmobjs[dbid] = list(params)
+        hal.lmobjs[lmid] = dbid
+        if alias: hal.lmobjs[alias] = dbid
+
+        return dbid
+
+    def next_lmid(self):
+        taken = [int(lmid[0][2:]) for lmid in hal.db.execute("select lmid from lmobjs;")]
+
+        for i in range(1, 1000):
+            if i not in taken:
+                return f"lm{i}"
 
 hal = Hal()

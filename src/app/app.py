@@ -266,7 +266,8 @@ class Hal:
         logs.level = settings.get("log_level", 1)
         utils.nets.dhcp = settings.get("dhcp")
         utils.nets.dns = settings.get("dns")
-        gitlab.domain = settings.get("gitlab")
+        gitlab.domain = settings.get("gitlab_domain")
+        gitlab.user = settings.get("gitlab_user")
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
@@ -364,6 +365,27 @@ class Hal:
     def destroy_pool(self, dbid):
         self.pools.pop(dbid, None)
         log(f"Pool {dbid} destroyed.")
+
+    def insert_lmobj(self, lmid, module, alias):
+        log(f"Inserting {lmid} of type {module} ...")
+        module_id = hal.modules[module]
+
+        query = f"insert into lmobjs (lmid, module, alias) values (%s, %s, %s) returning id;"
+        params = lmid, module_id, alias,
+        dbid = hal.db.execute(query, params)[0][0]
+
+        hal.lmobjs[dbid] = list(params)
+        hal.lmobjs[lmid] = dbid
+        if alias: hal.lmobjs[alias] = dbid
+
+        return dbid
+
+    def next_lmid(self):
+        taken = [int(lmid[0][2:]) for lmid in hal.db.execute("select lmid from lmobjs;")]
+
+        for i in range(1, 1000):
+            if i not in taken:
+                return f"lm{i}"
 
 hal = Hal()
 
@@ -793,6 +815,7 @@ gpg = GPG()
 class Gitlab:
     # Line count git ls-files | xargs wc -l
     domain = None
+    user = None
 
     def request(self, method="get", endpoint="", data={}):
         method = method.lower()
@@ -810,6 +833,10 @@ class Gitlab:
             )
 
         return response.json()
+
+    def clone(self, lmid):
+        log(f"Cloning {lmid} Gitlab repository ...")
+        cmd(f"git clone git@{self.domain}:{self.user}/{lmid}.git {utils.projects_dir}{lmid}/")
 
     def add_ssh_key(self, host):
         if hal.ssh.create_sshkey(host + "-gitlab"):
@@ -1080,7 +1107,7 @@ class lmObj:
         log("Alias removed.", console=True)
 
 
-class Net:
+class Net(lmObj):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
@@ -1163,7 +1190,7 @@ class Net:
                     hal.nutil.config_dhcp()
 
 
-class Host:
+class Host(lmObj):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
@@ -1183,7 +1210,7 @@ class Host:
         else:
             min, max = 16384, 32768
             used = []
-            for ports in hal.db.execute("select a.port, b.port from projects.webs a, projects.apps b;"):
+            for ports in hal.db.execute("select a.port, b.port from web.webs a, web.apps b;"):
                 used.extend(ports)
 
         port = random.randint(min, max)
@@ -1196,6 +1223,75 @@ class Host:
     def manage_service(self, action, service):
         log(f"Restarting {service} for {self.name} ...", console=True)
         cmd(f"sudo systemctl {action} {service} ")
+
+    def has_storage(self, capacity):
+        return True
+
+    def create_project(self, lmid, module, name, description, alias, host):
+        host_dbid = hal.lmobjs.get(host, 0)
+        if isinstance(hal.pools[host_dbid], Host):
+            if hal.pools[host_dbid].env == utils.hosts.envs.get("dev"):
+                if hal.pools[host_dbid].has_storage("10mb"):
+                    gitlab.create_project(data={
+                        'path': lmid,
+                        'name': name,
+                        'description': description,
+                        'visibility': 'private',
+                        'initialize_with_readme': True,
+                        })
+                else:
+                    log(f"Not enough storage on {host}!", level=4, console=True)
+                    return 0
+            else:
+                log(f"{host} is not a dev machine!", level=4, console=True)
+                return 0
+        else:
+            log(f"{host} is not a host!", level=4, console=True)
+            return 0
+
+        if gitlab.get_projects(lmid):
+            dbid = hal.insert_lmobj(lmid, module, alias)
+
+            query = f"insert into project.projects (lmobj, dev_host, dev_version, prod_host, prod_version, name, description) values (%s, %s, %s, %s, %s, %s, %s);"
+            params = dbid, host_dbid, 0.1, None, None, name, description,
+            hal.db.execute(query, params)
+
+            gitlab.clone(lmid)
+            return dbid
+
+        log(f"Couldn't create project {lmid}!", level=4, console=True)
+        return 0
+
+    # Web
+    def create_web(self, name, description, alias, host, domain, modules, langs, themes, default_lang, default_theme, has_top, has_animations, has_domain_in_title):
+        lmid = hal.next_lmid()
+        dbid = self.create_project(lmid, "Web", name, description, alias, host)
+
+        if dbid:
+            module_ids = [x for x in [utils.webs.modules.get(m, 0) for m in modules] if x]
+            lang_ids = [x for x in [utils.projects.langs.get(l, 0) for l in langs] if x]
+            theme_ids = [x for x in [utils.projects.themes.get(t, 0) for t in themes] if x]
+
+            query = "insert into web.webs (lmobj, domain, port, ssl_last_gen, modules, langs, themes, default_lang, default_theme, has_top, has_animations, has_domain_in_title) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
+            params = hal.lmobjs[lmid], domain, self.next_port(), None, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], has_top, has_animations, has_domain_in_title
+
+            if hal.db.execute(query, params)[0][0]:
+                log(f"{lmid} web app created!", console=True)
+                hal.create_pool(dbid)
+                return
+
+        log(f"Couldn't create web app '{lmid}'!", level=4, console=True)
+
+    def generate_dh(self):
+        if os.path.isfile(utils.ssl_dir + "dhparam.pem"):
+            log("DH parameters are already in place!")
+            yes = utils.yes_no("Purge them?")
+
+            if yes: cmd(f"rm {utils.ssl_dir}dhparam.pem")
+            else: return
+
+        log("Generating DH params. This may take a while ...", console=True)
+        cmd(f"openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096")
 
     # Nginx
     def config_nginx(self):
@@ -1225,7 +1321,7 @@ class Host:
         """
 
         log(f"Configuring PostgreSQL for {self.name} ...", console=True)
-        port = random.randint(4096, 8192)
+        port = self.next_port()
 
         pg_dir = f"/etc/postgresql/{os.listdir('/etc/postgresql/')[-1]}/main/"
         config_file = pg_dir + "postgresql.conf"
@@ -1338,7 +1434,7 @@ class ProjectUtils:
 utils.projects = ProjectUtils()
 
 
-class Project:
+class Project(lmObj):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
@@ -1347,31 +1443,15 @@ class Project:
 
     def save(self, message="Updated files"):
         # Will be replaced with the API method
-        log(f"Saving {self.name} on Gitlab ...")
         git_cmd = f"git --git-dir={self.repo_dir}.git/ --work-tree={self.repo_dir} " + "{}"
         cmd(git_cmd.format(f"add {self.repo_dir}*"))
         cmd(git_cmd.format(f"commit -m '{message}'"))
         cmd(git_cmd.format("push"))
+        log(f"Saved {self.name} on Gitlab ...", console=True)
 
 
 class WebUtils:
     modules = {}
-
-    def generate_dh(self):
-        if os.path.isfile(utils.ssl_dir + "dhparam.pem"):
-            log("DH parameters are already in place!")
-            yes = utils.yes_no("Purge them?")
-
-            if yes: cmd(f"rm -r {utils.ssl_dir}dhparam.pem")
-            else: return
-
-        log("Generating DH params. This may take a while ...", console=True)
-        cmd(f"openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096")
-
-    def config_nginx(self):
-        log(f"Configuring Nginx ...")
-        cmd(f"cp {src_dir}assets/tpls/web/nginx.conf /etc/nginx/nginx.conf")
-        cmd("systemctl restart nginx")
 
 utils.webs = WebUtils()
 

@@ -1,4 +1,4 @@
-class Project:
+class Project(lmObj):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
@@ -7,8 +7,8 @@ class Project:
 
     def save(self, message="Updated files"):
         # Will be replaced with the API method
-        log(f"Saving {self.name} on Gitlab ...")
         git_cmd = f"git --git-dir={self.repo_dir}.git/ --work-tree={self.repo_dir} " + "{}"
         cmd(git_cmd.format(f"add {self.repo_dir}*"))
         cmd(git_cmd.format(f"commit -m '{message}'"))
         cmd(git_cmd.format("push"))
+        log(f"Saved {self.name} on Gitlab ...", console=True)

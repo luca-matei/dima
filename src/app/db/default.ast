@@ -149,6 +149,7 @@
         ("Host", "postgres", ("config", "reload", "start", "stop", "restart"), ()),
         ("Host", "supervisor", ("restart", "start", "stop"), ()),
         ("Host", "git", ("config",), ()),
+        ("Host", "dh", ("generate",), ()),
 
         ("App", "", ("check", "start", "stop", "restart", "save"), ()),
         ("App", "alias", ("set", "remove"), ("alias",)),

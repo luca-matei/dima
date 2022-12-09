@@ -1,4 +1,4 @@
-class Net:
+class Net(lmObj):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
