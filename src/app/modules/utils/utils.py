@@ -1,4 +1,4 @@
-import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random
+import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress
 from datetime import datetime
 
 class Utils:
@@ -167,9 +167,9 @@ class Utils:
 
     def isfile(self, path, root=False):
         if path.startswith('/etc'): root = True
-        if cmd(f"{'sudo ' if root else ''}ls {path}", catch=True):
-            return 1
-        return 0
+        if "No such file or directory" in cmd(f"{'sudo ' if root else ''}ls {path}", catch=True):
+            return 0
+        return 1
 
     def format_tpl(self, tpl, keys):
         tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl)
@@ -180,6 +180,7 @@ class Utils:
         return tpl
 
     def yes_no(self, question):
+        # To do: implement number of tries (see select_opt())
         resp = ""
         yes = "y", "yes", "1",
         no = "n", "no", "0",
@@ -189,6 +190,25 @@ class Utils:
 
         if resp in yes: return 1
         elif resp in no: return 0
+
+    def select_opt(self, opts):
+        index = 1
+        ordered_opts = sorted(utils.get_keys(opts))
+        for opt_id in ordered_opts:
+            print(f"{index}. {opts.get(opt_id)}")
+            index += 1
+
+        resp = 0
+        tries = 0
+        while resp not in range(1, len(ordered_opts) + 1) and tries < 3:
+            resp = input(f"Select an option from 1-{len(ordered_opts)}: ")
+            try: resp = int(resp)
+            except: pass
+            tries += 1
+
+        if tries < 3:
+            return ordered_opts[resp - 1]
+        return 0
 
     def _cmd(self, call_info, command, catch=False):
         output = subprocess.run([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

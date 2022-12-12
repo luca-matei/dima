@@ -1,7 +1,4 @@
 class NetUtils:
-    dhcp = None
-    dns = None
-    
     def in_subnets(self):
         subnets = []
 
@@ -10,9 +7,5 @@ class NetUtils:
                subnets.append(x)
 
         return subnets
-
-    def set_dhcp(self):
-        # To do: nmap scan, display available hosts, make install script for one
-        print("SET DHCP")
 
 utils.nets = NetUtils()

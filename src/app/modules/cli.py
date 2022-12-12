@@ -39,7 +39,8 @@ class CLI:
             return 0
         return 1
 
-    def process_params(self, params):
+    def process_params(self, act_ids, params):
+        print(act_ids, params)
         return {}
 
     def process(self, command):
@@ -78,7 +79,7 @@ class CLI:
             try: params = command[2:]
             except: params = []
 
-            params = self.process_params(params)
+            params = self.process_params(obj_data[2], params)
 
             # Call the method
             if obj == '':
@@ -122,7 +123,7 @@ class CLI:
             try: params = command[2:]
             except: params = []
 
-            params = self.process_params(params)
+            params = self.process_params(obj_data[2], params)
 
             # Call the method
             if obj == '':

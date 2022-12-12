@@ -1,5 +1,5 @@
 class GPG:
-    def create_gpgkey(self, email):
+    def create_gpg_key(self, email):
         log(f"Generating GPG key for '{email}'. This may take a while ...", console=True)
 
         key_config = utils.format_tpl("gpg-key.tpl", {
@@ -20,10 +20,10 @@ class GPG:
             log(f"Couldn't find GPG key for '{email}'!", level=4, console=True)
             yes = utils.yes_no("Create one?")
             if yes:
-                return self.create_gpgkey(email)
+                return self.create_gpg_key(email)
             return 0
 
-    def delete_gpgkey(self, host):
+    def delete_gpg_key(self, host):
         cmd(f"gpg2 --batch --delete-secret-keys {email}")
         cmd(f"gpg2 --batch --delete-keys {email}")
 

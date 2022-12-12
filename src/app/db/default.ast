@@ -25,13 +25,6 @@
     ("lmobjs", (
         ("lmid", "module", "alias"),
         ("", "id:name:modules", ""),
-        ("lm1", "App", "hal"),
-        #("lm2", "App", "portal"),
-        ("lm3", "Net", "gravity"),
-        ("lm4", "Host", "astatin"),
-        ("lm5", "Host", "quasar"),
-        #("lm6", "Web", "assets"),
-        ("lm7", "Web", "hello"),
         )),
 
     ("domains", (
@@ -54,9 +47,8 @@
         )),
 
     ("nets", (
-        ("lmobj", "domain", "netmask", "gateway", "lease_start", "lease_end"),
-        ("id:lmid:lmobjs", "id:name:domains", "", "", "", ""),
-        ("lm3", "home.lucamatei.net", "255.255.255.0", "192.168.1.1", "192.168.1.4", "192.168.1.254"),
+        ("lmobj", "dhcp", "dns", "domain", "netmask", "gateway", "lease_start", "lease_end", "is_virtual"),
+        ("id:lmid:lmobjs", "id:lmid:lmobjs", "id:lmid:lmobjs", "id:name:domains", "", "", "", "", ""),
         )),
     )),
 
@@ -70,10 +62,8 @@
         )),
 
     ("hosts", (
-        ("lmobj", "mac", "storage", "cpus", "memory", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
-        ("id:lmid:lmobjs", "", "", "", "", "id:lmid:lmobjs", "", "", "id:name:host.envs", "", "", ""),
-        ("lm4", "40:8d:5c:e4:fd:46", "", "", "", "lm3", "192.168.1.8", "", "prod", "", "", ""),
-        ("lm5", "40:8d:5c:e4:fd:46", "", "", "", "lm3", "192.168.1.9", "", "dev", "", "", ""),
+        ("lmobj", "mac", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
+        ("id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", "id:name:host.envs", "", "", ""),
         )),
     )),
 
@@ -90,29 +80,35 @@
         ("create", "generate"),
         ("start", ""),
         ("stop", ""),
-        ("delete", "del"),
+        ("delete", "remove"),
         ("restart", ""),
         ("mount", "mnt"),
         ("unmount", "umnt"),
         ("load", ""),
         ("export", ""),
         ("reset", ""),
-        ("generate", "gen"),
         ("build", ""),
         ("update", ""),
         ("save", ""),
         )),
 
     ("args", (
-        ("name", "act", "req", "regex", "short", "long"),
-        ("", "id:name:command.acts", "", "", "", ""),
-        ("env", "set", True, "", "env", ""),
-        ("table", "list", True, "", "table_name", ""),
-        ("load-file", "load", True, "", "load_file", ""),
-        ("output-file", "export", False, "", "o", "output"),
-        ("opt-alias", "create", False, "", "a", "alias"),
-        ("alias", "alias", True, "", "alias", ""),
-        ("service", "config", True, "", "service", ""),
+        ("name", "act", "positional", "regex", "is_bool", "short", "long"),
+        ("", "id:name:command.acts", "", "", "", "", ""),
+        ("opt-alias", "create", False, "", False, "a", "alias"),
+        ("alias", "set", True, "", False, "alias", ""),
+        ("name", "create", False, "", False, "n", "name"),
+        ("description", "create", False, "", False, "desc", "description"),
+        ("host", "create", False, "", False, "h", "host"),
+        ("domain", "create", False, "", False, "d", "domain"),
+        ("modules", "create", False, "", False, "m", "modules"),
+        ("langs", "create", False, "", False, "L", "langs"),
+        ("themes", "create", False, "", False, "T", "themes"),
+        ("default_lang", "create", False, "", False, "l", "default_lang"),
+        ("default_theme", "create", False, "", False, "t", "default_theme"),
+        ("has_top", "create", False, "", True, "top", "has_top"),
+        ("has_animations", "create", False, "", True, "anims", "has_animations"),
+        ("has_domain_in_title", "create", False, "", True, "dtitle", "has_domain_in_title"),
         )),
 
     ("objs", (
@@ -121,48 +117,46 @@
 
         ("hal", "", ("status",), ()),
 
-        ("utils.dbs", "db", ("load", "export"), ("load-file", "output-file")),
-
         ("utils.nets", "net", ("list", "create", "next"), ("opt-alias",)),
         ("utils.nets", "ip", ("next",), ()),
         ("utils.nets", "dhcp", ("set", "config", "restart", "status"), ()),
 
-        ("utils.hosts", "host", ("create",), ("opt-alias",)),
-
-        ("utils.webs", "web", ("create", "config", "restart",), ()),
-
-        ("utils.apps", "app", ("create",), ()),
-
-        ("utils.softs", "soft", ("create",), ()),
-
-        ("ssh", "ssh", ("config",), ()),
-        ("ssh", "sshkey", ("create", "delete"), ()),
-
-        ("gpg", "gpgkey", ("create",), ()),
+        ("gpg", "gpg_key", ("create",), ()),
 
         ("Net", "", ("check", "start", "stop", "delete"), ()),
-        ("Net", "alias", ("set", "remove"), ("alias",)),
+        ("Net", "alias", ("set", "delete"), ("alias",)),
+        ("Net", "dhcp", ("set",), ("host",)),
+        ("Net", "dns", ("set",), ("host",)),
 
         ("Host", "", ("check", "mount", "unmount"), ()),
-        ("Host", "alias", ("set", "remove"), ("alias",)),
+        ("Host", "alias", ("set", "delete"), ("alias",)),
         ("Host", "nginx", ("config", "reload", "start", "stop", "restart"), ()),
         ("Host", "postgres", ("config", "reload", "start", "stop", "restart"), ()),
         ("Host", "supervisor", ("restart", "start", "stop"), ()),
+        ("Host", "ssh", ("check",), ()),
+        ("Host", "ssh_client", ("config",), ()),
+        ("Host", "ssh_server", ("config",), ()),
+        ("Host", "ssh_key", ("create", "delete"), ()),
         ("Host", "git", ("config",), ()),
         ("Host", "dh", ("generate",), ()),
+        ("Host", "host", ("create",), ("opt-alias",)),
+        ("Host", "project", ("create",), ()),
+        ("Host", "web", ("create", "config", "restart",), ("name", "description", "opt-alias", "host", "domain", "modules", "langs", "themes", "default_lang", "default_theme", "has_top", "has_animations", "has_domain_in_title")),
+        ("Host", "app", ("create",), ()),
+        ("Host", "soft", ("create",), ()),
 
         ("App", "", ("check", "start", "stop", "restart", "save"), ()),
-        ("App", "alias", ("set", "remove"), ("alias",)),
+        ("App", "alias", ("set", "delete"), ("alias",)),
 
         ("Web", "", ("check", "start", "stop", "restart", "save",), ()),
-        ("Web", "alias", ("set", "remove"), ("alias",)),
+        ("Web", "alias", ("set", "delete"), ("alias",)),
         ("Web", "nginx", ("config",), ()),
         ("Web", "ssl", ("renew",), ()),
         ("Web", "default", ("set",), ()),
         ("Web", "html", ("update",), ()),
 
         ("Soft", "", ("check", "save",), ()),
-        ("Soft", "alias", ("set", "remove"), ("alias",)),
+        ("Soft", "alias", ("set", "delete"), ("alias",)),
         )),
     )),
 
@@ -170,16 +164,11 @@
     ("projects", (
         ("lmobj", "dev_host", "dev_version", "prod_host", "prod_version", "name", "description"),
         ("id:lmid:lmobjs", "id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", ""),
-        ("lm1", "lm4", 0.1, "lm5", "", "Hal", ""),
-        #("lm2", "lm4", 0.1, "lm5", "", "Hal Web", ""),
-        #("lm6", "lm4", 0.1, "lm5", "", "Assets", ""),
-        ("lm7", "lm4", 0.1, "lm5", "", "Hello World", ""),
         )),
 
     ("dbs", (
         ("host", "project"),
         ("id:lmid:lmobjs", "id:lmid:lmobjs"),
-        ("lm4", "lm1"),
         )),
 
     ("langs", (
@@ -210,9 +199,6 @@
     ("webs", (
         ("lmobj", "domain", "port", "ssl_last_gen", "modules", "langs", "themes", "default_lang", "default_theme", "has_top", "has_animations", "has_domain_in_title"),
         ("id:lmid:lmobjs", "id:name:domains", "", "", "id[]:name:web.modules", "id[]:code:project.langs", "id[]:code:project.themes", "id:code:project.langs", "id:code:project.themes", "", "", ""),
-        #("lm2", "hal.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
-        #("lm6", "assets.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
-        ("lm7", "hello.lucamatei.net", "", "", ("static",), ("en", "ro"), ("light", "dark"), "en", "light", True, True, True),
         )),
     )),
 )

@@ -19,11 +19,14 @@
 ("nets", (
     "id serial primary key",
     "lmobj int",
+    "dhcp int",
+    "dns int",
     "domain varchar not null",
     "netmask inet not null",
     "gateway inet not null",
     "lease_start inet not null",
     "lease_end inet not null",
+    "is_virtual boolean",
     )),
 
 ("host", (
@@ -36,9 +39,6 @@
         "id serial primary key",
         "lmobj int",
         "mac macaddr",
-        "storage int",
-        "cpus smallint",
-        "memory int",
         "net int",
         "ip inet",
         "client int",
@@ -68,8 +68,9 @@
         "id serial primary key",
         "name varchar unique not null",
         "act smallint not null",
-        "req boolean not null",                     # 1 = positional; 0 = flag
+        "positional boolean not null",              # 1 = positional; 0 = flag
         "regex varchar",                            # Regex expression for validating argument value
+        "is_bool boolean",
         "short varchar not null",                   # e.g. -q, -v for type 1 or 2 and load-file for type 0
         "long varchar",                             # e.g. --quiet for -q, --verbose for -v or None for type 0
         )),
@@ -103,6 +104,17 @@
         "id serial primary key",
         "code varchar",
         )),
+
+    ("apps", (
+        "id serial primary key",
+        "lmobj int",
+        "port int",
+        )),
+
+    ("softs", (
+        "id serial primary key",
+        "lmobj int",
+        )),
     )),
 
 ("web", (
@@ -125,17 +137,6 @@
         "has_top boolean",
         "has_animations boolean",
         "has_domain_in_title boolean",
-        )),
-
-    ("apps", (
-        "id serial primary key",
-        "lmobj int",
-        "port int",
-        )),
-
-    ("softs", (
-        "id serial primary key",
-        "lmobj int",
         )),
     )),
 )

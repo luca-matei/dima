@@ -22,8 +22,8 @@ class lmObj:
             hal.db.execute("update lmobjs set alias=%s where id=%s;", (alias, self.dbid,))
             log(f"Alias '{alias}' set to {self.lmid}.", console=True)
 
-    def remove_alias(self):
+    def delete_alias(self):
         hal.lmobjs.pop(self.alias, None)
         self.alias = None
         hal.db.execute("update lmobjs set alias=%s where id=%s;", (None, self.dbid,))
-        log("Alias removed.", console=True)
+        log("Alias deleted.", console=True)

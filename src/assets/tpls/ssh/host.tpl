@@ -2,5 +2,6 @@ Host %LMID
     HostName %IP
     Port %PORT
     User %USER
-    IdentityFile %PUBKEY
+    IdentityFile %PRIVKEY
+    TCPKeepAlive yes
     IdentitiesOnly yes

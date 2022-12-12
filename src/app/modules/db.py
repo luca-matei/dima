@@ -183,7 +183,7 @@ class Db:
 
             except (Exception, psycopg2.Error) as e:
                 # Hitting 'restart postgres will terminate active connections'
-                if "server closed the connection" in e:
+                if "server closed the connection" in str(e):
                     self.connect()
                     return self.execute(query, params)
 

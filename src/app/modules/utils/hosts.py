@@ -125,4 +125,7 @@ class HostUtils:
             log(f"Removing {iso_dir} ...")
             cmd("sudo rm -r " + iso_dir)
 
+    def register_host(self):
+        pass
+
 utils.hosts = HostUtils()

@@ -1,5 +1,3 @@
-{
-"host": '127.0.0.1',
-"port": 5896,
-"pass": "oyA1DoncUMabsHxZBNpyVDrfSQGRGd7grEiQAdFFIUpt7mFU7Qjh1wwAw2Xhsg6",
-}
+{'host': '127.0.0.1',
+ 'pass': 'oyA1DoncUMabsHxZBNpyVDrfSQGRGd7grEiQAdFFIUpt7mFU7Qjh1wwAw2Xhsg6',
+ 'port': 21941}

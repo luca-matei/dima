@@ -2,10 +2,10 @@ class Host(lmObj):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
-        query = "select mac, storage, cpus, memory, net, ip, client, env, ssh_port, pg_port from host.hosts where lmobj=%s;"
+        query = "select mac, net, ip, client, env, ssh_port, pg_port from host.hosts where lmobj=%s;"
         params = dbid,
 
-        self.mac, self.storage, self.cpus, self.memory, self.net_dbid, self.ip, self.client_id, self.env, self.ssh_port, self.pg_port = hal.db.execute(query, params)[0]
+        self.mac, self.net_dbid, self.ip, self.client_id, self.env, self.ssh_port, self.pg_port = hal.db.execute(query, params)[0]
 
         self.mnt_dir = utils.mnt_dir + self.name + "/"
         self.check()
@@ -18,7 +18,7 @@ class Host(lmObj):
         else:
             min, max = 16384, 32768
             used = []
-            for ports in hal.db.execute("select a.port, b.port from web.webs a, web.apps b;"):
+            for ports in hal.db.execute("select a.port, b.port from web.webs a, project.apps b;"):
                 used.extend(ports)
 
         port = random.randint(min, max)
@@ -101,6 +101,10 @@ class Host(lmObj):
         log("Generating DH params. This may take a while ...", console=True)
         cmd(f"openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096")
 
+    # Hosts
+    def create_host(self):
+        pass
+
     # Nginx
     def config_nginx(self):
         log(f"Configuring Nginx for {self.name} ...")
@@ -149,7 +153,7 @@ class Host(lmObj):
 
         # Write new config file and restart service
         utils.write(config_file, config, lines=True, owner="postgres")
-        cmd(f"sudo cp {hal.tpls_dir}db/pg_hba.tpl {pg_dir}pg_hba.conf")
+        cmd(f"sudo cp {hal.tpls_dir}pg/pg_hba.tpl {pg_dir}pg_hba.conf")
         cmd(f"sudo chown postgres:postgres {pg_dir}pg_hba.conf")
 
         # Update ports in project files and in db
@@ -162,6 +166,7 @@ class Host(lmObj):
             details["port"] = port
             utils.write(details_path, details)
 
+        self.pg_port = port
         self.manage_service("restart", "postgresql")
 
     def reload_postgres(self):
@@ -185,6 +190,93 @@ class Host(lmObj):
 
     def restart_supervisor(self):
         self.manage_service("restart", "supervisor")
+
+    # SSH
+    def config_ssh_client(self):
+        self.check_ssh()
+
+        log(f"Configuring SSH client for {self.name} ...", console=True)
+        hosts = ""
+
+        if self.dbid == hal.host_dbid:
+            query = "select a.lmid, a.alias, b.ip, b.ssh_port from lmobjs a, host.hosts b where a.id = b.lmobj and a.id != %s;"
+            params = hal.host_dbid,
+
+            for host in hal.db.execute(query, params):
+                hosts += utils.format_tpl("ssh/host.tpl", {
+                    "lmid": host[0],
+                    "ip": host[2],
+                    "port": host[3],
+                    "user": "hal",
+                    "privkey": utils.ssh_dir + host[0],
+                    })
+
+                if host[1]:
+                    hosts += utils.format_tpl("ssh/host.tpl", {
+                        "lmid": host[1],
+                        "ip": host[2],
+                        "port": host[3],
+                        "user": "hal",
+                        "privkey": utils.ssh_dir + host[0],
+                    })
+
+        hosts += utils.format_tpl("ssh/host.tpl", {
+            "lmid": gitlab.domain,
+            "ip": gitlab.domain,
+            "port": 22,
+            "user": "git",
+            "privkey": utils.ssh_dir + self.lmid + "-gitlab",
+            })
+
+        utils.write("/home/hal/.ssh/config", utils.format_tpl("ssh/client_config.tpl", {
+            "hosts": hosts,
+        }))
+
+    def config_ssh_server(self):
+        self.check_ssh()
+
+        log(f"Configuring SSH server for {self.name} ...", console=True)
+        port = self.next_port()
+
+        hal.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
+
+        if self.dbid != hal.host_dbid:
+            config = utils.format_tpl("ssh/server_config.tpl", {
+                "port": port,
+                })
+
+            utils.write("/etc/ssh/sshd_config", config)
+
+        self.config_ssh_client()
+
+    def check_ssh(self):
+        if not os.path.isdir("/home/hal/.ssh/"):
+            cmd("mkdir /home/hal/.ssh/")
+
+    def create_ssh_key(self, gitlab=False):
+        log(f"Generating SSH key to access {'Gitlab from ' if gitlab else ''}host '{self.name}'. This may take a while ...", console=True)
+
+        privkey = utils.ssh_dir + self.lmid + ("-gitlab" if gitlab else '')
+        cmd(f'ssh-keygen -b 4096 -t ed25519 -a 100 -f {privkey} -q -N ""')
+
+        if utils.isfile(privkey):
+            cmd("chmod 600 " + privkey)
+            cmd("chmod 600 " + privkey + ".pub")
+            self.config_ssh_client()
+
+            return 1
+        else:
+            log(f"Couldn't generate SSH key to access {'Gitlab from ' if gitlab else ''}host '{self.name}'!", level=4, console=True)
+
+            return 0
+
+    def delete_ssh_key(self, gitlab=False):
+        log(f"Removing {'Gitlab ' if gitlab else ''}SSH key for host '{self.name}' ...", console=True)
+
+        privkey = utils.ssh_dir + self.lmid + ("-gitlab" if gitlab else '')
+        cmd(f"rm {privkey} {privkey}.pub")
+
+        self.config_ssh_client()
 
     # Git
     def config_git(self):
@@ -232,4 +324,8 @@ class Host(lmObj):
                 cmd("rmdir " + self.mnt_dir)
 
     def check(self):
-        pass
+        if not self.ssh_port:
+            self.config_ssh_server()
+
+        if not self.pg_port:
+            self.config_postgres()

@@ -31,9 +31,9 @@ class Install:
         cmd(f"sudo -u hal {utils.projects_dir + self.lmid}/make")
         cmd(f"hal {utils.hostname} config git")
 
-        if self.opts['has_db']:
-            cmd(f"hal {utils.hostname} config postgres")
-            print()
+        #if self.opts['has_db']:
+            #cmd(f"hal {utils.hostname} config postgres")
+            #print()
 
         if self.opts['has_web']:
             cmd(f"hal {utils.hostname} config nginx")
@@ -148,7 +148,7 @@ class Install:
         print("Creating Virtual Env ...")
         cmd(f"sudo -u hal python3 -m venv {utils.projects_dir}venv")
 
-        packages = "wheel",
+        packages = "wheel", "netifaces",
         if self.opts['has_web']:
             packages += "uwsgi", "libsass", "pyyaml",
 

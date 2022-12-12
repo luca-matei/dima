@@ -2,8 +2,7 @@
 'lmid': 'lm1',
 'version': '0.1',
 'log_level': 1,
+'domain': 'lucamatei.net',
 'gitlab_domain': 'gitlab.com',
 'gitlab_user': 'lucamatei',
-"dhcp": None,
-"dns": None,
 }

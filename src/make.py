@@ -22,7 +22,6 @@ else:
         "utils/dbs.py",
         "db.py",
         "utils/nets.py",
-        "ssh.py",
         "gpg.py",
         "gitlab.py",
         "utils/hosts.py",
