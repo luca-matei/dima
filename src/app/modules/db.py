@@ -10,13 +10,24 @@ class Db:
             self.build()
 
     def connect(self):
-        # To do: get passwords securely
-        details = utils.read(utils.src_dir + "app/db/details.ast")
-        host = details['host']
-        port = details['port']
-        password = details['pass']
+        def try2connect():
+            # To do: get passwords securely
+            details = utils.read(utils.src_dir + "app/db/details.ast")
+            host = details['host']
+            port = details['port']
+            password = details['pass']
 
-        self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
+            self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
+
+        try:
+            try2connect()
+        except:
+            # Maybe PostgreSQL port has updated in the meantime
+            #requests.get(f"https://hal.lucamatei.net/c/{self.lmid}/update/db")
+            try:
+                try2connect()
+            except:
+                log(f"Cannot connect to {self.lmid} database!", level=5, console=True)
 
         log(self.lmid + " database connected.")
 

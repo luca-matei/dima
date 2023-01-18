@@ -21,12 +21,11 @@
     "lmobj int",
     "dhcp int",
     "dns int",
-    "domain varchar not null",
+    "domain int not null",
     "netmask inet not null",
     "gateway inet not null",
     "lease_start inet not null",
     "lease_end inet not null",
-    "is_virtual boolean",
     )),
 
 ("host", (
@@ -136,7 +135,7 @@
         "default_theme smallint",
         "has_top boolean",
         "has_animations boolean",
-        "has_domain_in_title boolean",
+        "title_format varchar",
         )),
     )),
 )

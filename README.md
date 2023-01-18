@@ -4,6 +4,9 @@
 Description.  
 Visit [lucamatei.net/hal](https://) for more.
 
+## TO DO
+- separate host, dev / test / prod machines, guest devices from main network in dhcp
+
 ## Prerequisites
 Create a Gitlab REST API token from your [Gitlab profile](https://gitlab.com/-/profile/personal_access_tokens). Save it as you have to feed it later when it prompts.
 

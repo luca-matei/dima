@@ -62,23 +62,25 @@ class Utils:
         # https://miro.medium.com/max/2138/1*O7E2cZsFohFNj_oGEe-dYg.png
         return datetime.now().strftime("%d %b, %H:%M:%S")
 
-    def read(self, path, lines=False):
+    def read(self, path, lines=False, host=None):
         is_ast = path.endswith('.ast')
         is_json = path.endswith('.json')
 
-        with open(path, mode='r', encoding='utf-8') as f:
-            if is_ast:
-                return ast.literal_eval(f.read())
-            elif is_json:
-                if f: return json.loads(f)
-                else: return ""
-            elif lines:
-                return f.readlines()
-            else:
-                return f.read()
+        if is_ast or is_json:
+            with open(path, mode='r', encoding='utf-8') as f:
+                if is_ast:
+                    return ast.literal_eval(f.read())
+                elif is_json:
+                    if f: return json.loads(f)
+                    else: return ""
 
-    def write(self, path, content, lines=False, mode='w', owner=""):
-        # Web apps can't configure themselves
+        elif lines:
+            return [x+'\n' for x in no_logs_cmd(f"cat {path}", catch=True, host=host).split('\n')]
+
+        else:
+            return no_logs_cmd(f"cat {path}", catch=True, host=host)
+
+    def write(self, path, content, lines=False, mode='w', owner="root", host=None):
         final_path = None
         if path.startswith("/etc/"):
             final_path = path
@@ -95,10 +97,15 @@ class Utils:
 
         if final_path:
             cmd(f"sudo mv {path} {final_path}")
-            if not owner:
-                log(f"No owner specified for '{final_path}'!", level=4, console=True)
-            else:
-                cmd(f"sudo chown {owner}:{owner} {final_path}")
+            cmd(f"sudo chown {owner}:{owner} {final_path}", host=host)
+
+    def copy(self, src, dest, owner="root", host=None):
+        if dest.startswith("/etc/"):
+            cmd(f"sudo cp {src} {dest}", host=host)
+            cmd(f"sudo chown {owner}:{owner} {dest}", host=host)
+
+        else:
+            cmd(f"cp {src} {dest}", host=host)
 
     def color(self, txt, name):
         colors = {
@@ -165,9 +172,9 @@ class Utils:
 
         return '\n'.join(table)
 
-    def isfile(self, path, root=False):
+    def isfile(self, path, root=False, host=None):
         if path.startswith('/etc'): root = True
-        if "No such file or directory" in cmd(f"{'sudo ' if root else ''}ls {path}", catch=True):
+        if "No such file or directory" in cmd(f"{'sudo ' if root else ''}ls {path}", catch=True, host=host):
             return 0
         return 1
 
@@ -193,6 +200,7 @@ class Utils:
 
     def select_opt(self, opts):
         index = 1
+        opts.update({0: "Exit"})
         ordered_opts = sorted(utils.get_keys(opts))
         for opt_id in ordered_opts:
             print(f"{index}. {opts.get(opt_id)}")
@@ -210,14 +218,19 @@ class Utils:
             return ordered_opts[resp - 1]
         return 0
 
-    def _cmd(self, call_info, command, catch=False):
+    def _cmd(self, call_info, command, catch=False, host=None):
+        # To do: modify to transfer files via ssh (stp)
+        # Executing scripts from host: ssh lm32 'bash -s' < /path/to/host/script.sh
+        if host != None and host != hal.host_lmid:
+            command = f"ssh {host} '{command}'"
+
         output = subprocess.run([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         output.stdout = output.stdout.strip('\n')
         output.stderr = output.stderr.strip('\n')
 
         if call_info:
-            #logs._log(call_info, f"{hal.user}@{hal.host} {command}")
+            logs._log(call_info, command)
             logs._log(call_info, output.stdout, level=1)
             if output.stderr: logs._log(call_info, output.stderr, level=4)
         else:

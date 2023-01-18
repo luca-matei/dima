@@ -25,6 +25,12 @@
     ("lmobjs", (
         ("lmid", "module", "alias"),
         ("", "id:name:modules", ""),
+        ("lm1", "App", "hal"),
+        ("lm2", "Web", ""),
+        ("lm3", "Net", ""),
+        ("lm4", "Host", "astatin"),
+        ("lm5", "Host", "rasp"),
+        ("lm6", "Host", "quasar"),
         )),
 
     ("domains", (
@@ -46,10 +52,6 @@
         ("lucamatei.store",),
         )),
 
-    ("nets", (
-        ("lmobj", "dhcp", "dns", "domain", "netmask", "gateway", "lease_start", "lease_end", "is_virtual"),
-        ("id:lmid:lmobjs", "id:lmid:lmobjs", "id:lmid:lmobjs", "id:name:domains", "", "", "", "", ""),
-        )),
     )),
 
 ("host", (
@@ -64,6 +66,17 @@
     ("hosts", (
         ("lmobj", "mac", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
         ("id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", "id:name:host.envs", "", "", ""),
+        ("lm4", "40:8d:5c:e4:fd:46", "lm3", "192.168.1.8", "", "dev", "", "", ""),
+        ("lm5", "b8:27:eb:71:d5:09", "lm3", "192.168.1.3", "", "prod", "", "", ""),
+        ("lm6", "52:54:00:4c:3f:e3", "lm3", "192.168.1.9", "", "dev", "", "", ""),
+        )),
+    )),
+
+("public", (
+    ("nets", (
+        ("lmobj", "dhcp", "dns", "domain", "netmask", "gateway", "lease_start", "lease_end"),
+        ("id:lmid:lmobjs", "id:lmid:lmobjs", "id:lmid:lmobjs", "id:name:domains", "", "", "", ""),
+        ("lm3", "lm5", "lm5", "home.lucamatei.net", "255.255.255.0", "192.168.1.2", "192.168.1.4", "192.168.1.254"),
         )),
     )),
 
@@ -121,14 +134,14 @@
         ("utils.nets", "ip", ("next",), ()),
         ("utils.nets", "dhcp", ("set", "config", "restart", "status"), ()),
 
-        ("gpg", "gpg_key", ("create",), ()),
-
-        ("Net", "", ("check", "start", "stop", "delete"), ()),
+        ("Net", "", ("check",), ()),
         ("Net", "alias", ("set", "delete"), ("alias",)),
         ("Net", "dhcp", ("set",), ("host",)),
         ("Net", "dns", ("set",), ("host",)),
 
-        ("Host", "", ("check", "mount", "unmount"), ()),
+        ("utils.hosts", "host", ("register", "preseed"), ()),
+
+        ("Host", "", ("check", "mount", "unmount", "update", "reboot",), ()),
         ("Host", "alias", ("set", "delete"), ("alias",)),
         ("Host", "nginx", ("config", "reload", "start", "stop", "restart"), ()),
         ("Host", "postgres", ("config", "reload", "start", "stop", "restart"), ()),
@@ -137,6 +150,7 @@
         ("Host", "ssh_client", ("config",), ()),
         ("Host", "ssh_server", ("config",), ()),
         ("Host", "ssh_key", ("create", "delete"), ()),
+        ("Host", "gpg_key", ("create", "delete"), ()),
         ("Host", "git", ("config",), ()),
         ("Host", "dh", ("generate",), ()),
         ("Host", "host", ("create",), ("opt-alias",)),
@@ -164,11 +178,15 @@
     ("projects", (
         ("lmobj", "dev_host", "dev_version", "prod_host", "prod_version", "name", "description"),
         ("id:lmid:lmobjs", "id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", ""),
+        ("lm1", "lm4", 0.1, "lm5", 0.1, "Hal", ""),
+        ("lm2", "lm4", 0.1, "lm5", 0.1, "Hal Portal", ""),
         )),
 
     ("dbs", (
         ("host", "project"),
         ("id:lmid:lmobjs", "id:lmid:lmobjs"),
+        ("lm4", "lm1"),
+        ("lm4", "lm2"),
         )),
 
     ("langs", (
@@ -185,6 +203,12 @@
         ("dark",),
         )),
 
+    ("apps", (
+        ("lmobj", "port"),
+        ("id:lmid:lmobjs", ""),
+        ("lm1", ""),
+        )),
+
     )),
 
 ("web", (
@@ -197,8 +221,9 @@
         )),
 
     ("webs", (
-        ("lmobj", "domain", "port", "ssl_last_gen", "modules", "langs", "themes", "default_lang", "default_theme", "has_top", "has_animations", "has_domain_in_title"),
+        ("lmobj", "domain", "port", "ssl_last_gen", "modules", "langs", "themes", "default_lang", "default_theme", "has_top", "has_animations", "title_format"),
         ("id:lmid:lmobjs", "id:name:domains", "", "", "id[]:name:web.modules", "id[]:code:project.langs", "id[]:code:project.themes", "id:code:project.langs", "id:code:project.themes", "", "", ""),
+        ("lm2", "hal.lucamatei.net", "", "", ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True, True, ""),
         )),
     )),
 )

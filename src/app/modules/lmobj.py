@@ -6,15 +6,7 @@ class lmObj:
         self.name = self.alias if self.alias else self.lmid
 
     def set_alias(self, alias):
-        forbidden = "", "q", "exit"
-
-        if alias in forbidden or alias.startswith("lm") or alias in utils.get_keys(cli.acts):
-            log("Can't assign this alias!", level=4, console=True)
-
-        elif alias in utils.get_keys(hal.lmobjs):
-            log(f"Alias already in use by {hal.lmobjs[hal.lmobjs[alias]][0]}!", level=4, console=True)
-
-        else:
+        if hal.check_alias(alias):
             hal.lmobjs.pop(self.alias, None)
             hal.lmobjs[alias] = self.dbid
             self.alias = alias

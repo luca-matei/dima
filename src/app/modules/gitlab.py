@@ -3,6 +3,11 @@ class Gitlab:
     domain = None
     user = None
 
+    def __init__(self, host_dbid, host_lmid):
+        self.host_dbid = host_dbid
+        self.host_lmid = host_lmid
+        self.email = f"{host_lmid}@{self.domain}"
+
     def request(self, method="get", endpoint="", data={}):
         method = method.lower()
         if method not in ("get", "post", "delete"):
@@ -22,13 +27,13 @@ class Gitlab:
 
     def clone(self, lmid):
         log(f"Cloning {lmid} Gitlab repository ...")
-        cmd(f"git clone git@{self.domain}:{self.user}/{lmid}.git {utils.projects_dir}{lmid}/")
+        cmd(f"git clone git@{self.domain}:{self.user}/{lmid}.git {utils.projects_dir}{lmid}/", host=self.host_lmid)
 
-    def add_ssh_key(self, host):
-        if hal.ssh.create_sshkey(host + "-gitlab"):
+    def add_ssh_key(self):
+        if hal.pools.get(self.host_dbid).create_ssh_key(gitlab=True):
             data = {
-                'title': host,
-                'key': util.read(hal.ssh.keys_dir + host + "-gitlab.pub")
+                'title': self.host_lmid,
+                'key': utils.read(utils.ssh_dir + self.host_lmid + "-gitlab.pub", host=self.host_lmid)
                 }
 
             self.request(
@@ -37,45 +42,39 @@ class Gitlab:
                     data = data
                     )
 
-    def delete_ssh_key(self, host):
-        hal.ssh.delete_sshkey(host + '-gitlab')
+    def delete_ssh_key(self):
+        hal.pools.get(self.host_dbid).delete_ssh_key(gitlab=True)
         self.request(
             method = "delete",
-            endpoint = "/user/keys/" + self.get_ssh_keys(host).get('id')
+            endpoint = "/user/keys/" + self.get_ssh_keys(self.host_lmid).get('id')
             )
 
-    def get_ssh_keys(self, host=None):
-        keys = self.request(endpoint = "/user/keys")
-
-        if host:
-            key = None
-            for k in keys:
-                if k.get("title") == host:
-                    key = k
-                    break
-            return key
-
-        return keys
+    def get_ssh_key(self):
+        key = None
+        for k in self.request(endpoint = "/user/keys"):
+            if k.get("title") == self.host_lmid:
+                key = k
+                break
+        return key
 
     def get_gpg_keys(self):
         keys = self.request(endpoint = "/user/gpg_keys")
         return keys
 
-    def add_email(self, email):
+    def add_email(self):
         self.request(
             method = "post",
             endpoint = "/user/emails",
-            data = {'email': email}
+            data = {'email': self.email}
             )
 
-    def add_gpg_key(self, host):
-        email = f"{host}@{self.domain}"
-        privkey_id = hal.gpg.create_gpgkey(email)
+    def add_gpg_key(self):
+        privkey_id = gpg.create_gpg_key(self.email)
 
         if privkey_id:
             pubkey = cmd("gpg2 --armor --export " + privkey_id, catch=True)
 
-            self.add_email(email)
+            self.add_email()
             self.request (
                 method = "post",
                 endpoint = "/user/gpg_keys",
@@ -104,29 +103,39 @@ class Gitlab:
             data = data
         )
 
-    def get_token(self):
-        token_file = hal.app_dir + 'token.txt'
+    def config_git(self):
+        log(f"Configuring Git for {self.host_lmid} ...", console=True)
+        config = utils.format_tpl("gitconfig.tpl", {
+            "user": self.host_lmid,
+            "email": self.email,
+            "gpg_key": gpg.get_privkey_id(self.host_lmid)
+            })
+        utils.write(f"/home/hal/.gitconfig", config, host=self.host_lmid)
 
-        # To do: Save it securely
-        if not util.isfile(token_file):
+    def get_token(self):
+        token_file = utils.projects_dir + 'gitlab_token.txt'
+
+        if not utils.isfile(token_file, host=self.host_lmid):
             log("Getting Gitlab REST API token ...")
             print("Please enter Hal's Gitlab REST API token.")
 
             token = getpass.getpass("Token: ")
-            util.write(token_file, token)
+            utils.write(token_file, token, host=self.host_lmid)
+            cmd("chmod 600 " + token_file, host=self.host_lmid)
 
             return token
         else:
-            return util.read(token_file)
+            return utils.read(token_file, host=self.host_lmid)
 
     def check(self):
-        if not util.isfile(f"/home/{hal.user}/.gitconfig"):
+        if not utils.isfile("/home/hal/.gitconfig"):
             self.config_git()
 
-        if not self.get_ssh_keys(hal.host_lmid):
-            self.add_ssh_key(hal.host_lmid)
+        if not gitlab.get_ssh_keys(self.lmid):
+            gitlab.add_ssh_key(self.lmid)
 
-        if not self.get_gpg_keys():
-            self.add_gpg_key(hal.host_lmid)
+        if not gitlab.get_gpg_keys():
+            gitlab.add_gpg_key(self.lmid)
 
-gitlab = Gitlab()
+        if not utils.ssh_dir + self.lmid + "-gitlab" in utils.read("/home/hal/.ssh/config"):
+            self.config_ssh_client()

@@ -3,11 +3,16 @@ class Hal:
     version = None
     settings = None
 
-    web_dbid = None
     app_dbid = None
+    web_dbid = None
     net_dbid = None
     host_dbid = None
     db = None
+
+    app_lmid = "lm1"
+    web_lmid = "lm2"
+    net_lmid = "lm3"
+    host_lmid = "lm4"
 
     modules = {}
 
@@ -34,7 +39,7 @@ class Hal:
         packages_path = lib_path + os.listdir(lib_path)[0] + "/site-packages"
         sys.path.append(packages_path)
 
-        for module in ('psycopg2', 'yaml', 'netifaces'):
+        for module in ('psycopg2', 'yaml', 'netifaces', 'requests'):
             globals()[module] = __import__(module)
 
         log("Phase 3: Loading settings ...")
@@ -46,8 +51,8 @@ class Hal:
             setattr(self, attr, settings.get(attr))
 
         logs.level = settings.get("log_level", 1)
-        gitlab.domain = settings.get("gitlab_domain")
-        gitlab.user = settings.get("gitlab_user")
+        Gitlab.domain = settings.get("gitlab_domain")
+        Gitlab.user = settings.get("gitlab_user")
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
@@ -59,7 +64,6 @@ class Hal:
         log("Phase 5: Checking services ...")
         self.check()
         #ssh.check()
-        #gitlab.check()
 
         log("Phase 6: Creating object pools ...")
         for dbid in utils.get_keys(self.lmobjs):
@@ -130,7 +134,8 @@ class Hal:
             if lmobj[3]:
                 self.lmobjs[lmobj[3]] = lmobj[0]   # alias = id
 
-            if lmobj[1] == "lm2": self.web_dbid = lmobj[0]
+            if lmobj[1] == "lm1": self.app_dbid = lmobj[0]
+            elif lmobj[1] == "lm2": self.web_dbid = lmobj[0]
             elif lmobj[1] == "lm3": self.net_dbid = lmobj[0]
             elif lmobj[1] == "lm4": self.host_dbid = lmobj[0]
 
@@ -171,7 +176,22 @@ class Hal:
             if i not in taken:
                 return f"lm{i}"
 
+    def check_alias(self, alias):
+        forbidden = "", "q", "exit"
+
+        if alias in forbidden or alias.startswith("lm") or alias in utils.get_keys(cli.acts):
+            log("Can't assign this alias!", level=4, console=True)
+            return 0
+
+        elif alias in utils.get_keys(self.lmobjs):
+            log(f"Alias already in use by {self.lmobjs[self.lmobjs[alias]][0]}!", level=4, console=True)
+            return 0
+
+        else:
+            return 1
+
     def check(self):
+        """
         iface = netifaces.interfaces()[1]
         addrs = netifaces.ifaddresses(iface)
         net = addrs[netifaces.AF_INET][0]
@@ -179,6 +199,7 @@ class Hal:
         mac = addrs[netifaces.AF_LINK][0]['addr']
         network = ipaddress.ip_network(ip + '/' + netmask, strict=False)
         gateway = netifaces.gateways()['default'][netifaces.AF_INET][0]
+        """
 
         reload = False
         # To do: validate registration details
@@ -192,10 +213,10 @@ class Hal:
 
         if not self.net_dbid:
             log("Main network not registered!", level=3, console=True)
-            self.net_dbid = self.insert_lmobj("lm3", "Net", None)
+            self.net_dbid = self.insert_lmobj(self.net_lmid, "Net", None)
 
-            query = "insert into nets (lmobj, dhcp, dns, domain, netmask, gateway, lease_start, lease_end, is_virtual) values (%s, %s, %s, %s, %s, %s, %s, %s, %s);"
-            params = self.net_dbid, None, None, domain_id, netmask, gateway, str(network[4]), str(network[-2]), False
+            query = "insert into nets (lmobj, dhcp, dns, pm, domain, netmask, gateway, lease_start, lease_end) values (%s, %s, %s, %s, %s, %s, %s, %s, %s);"
+            params = self.net_dbid, None, None, None, domain_id, netmask, gateway, str(network[4]), str(network[-2]),
 
             self.db.execute(query, params)
             reload = True
@@ -203,7 +224,7 @@ class Hal:
         if not self.host_dbid:
             # https://pypi.org/project/netifaces/
             log("Main host not registered!", level=3, console=True)
-            self.host_dbid = self.insert_lmobj("lm4", "Host", utils.hostname)
+            self.host_dbid = self.insert_lmobj(self.host_lmid, "Host", utils.hostname)
 
             query = "insert into host.hosts (lmobj, mac, net, ip, client, env, ssh_port, pg_port, pm) values (%s, %s, %s, %s, %s, %s, %s, %s, %s);"
             params = self.host_dbid, mac, self.net_dbid, ip, None, utils.hosts.envs["dev"], None, None, None,
@@ -212,7 +233,7 @@ class Hal:
             reload = True
 
         if not self.app_dbid:
-            self.app_dbid = self.insert_lmobj("lm1", "App", "hal")
+            self.app_dbid = self.insert_lmobj(self.app_lmid, "App", "hal")
 
             # Register project
             query = "insert into project.projects (lmobj, dev_host, dev_version, prod_host, prod_version, name, description) values (%s, %s, %s, %s, %s, %s, %s);"
@@ -228,7 +249,7 @@ class Hal:
             query = "insert into project.apps (lmobj, port) values (%s, %s);"
             params = self.app_dbid, None,
             self.db.execute(query, params)
-            
+
             reload = True
 
         if not self.web_dbid:

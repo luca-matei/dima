@@ -74,14 +74,13 @@ class Install:
             packages += "openssh-client",
 
         if self.opts['has_vms']:
-            # packages +=
-            pass
+            packages += "bridge-utils",
 
         if self.opts['has_dhcp']:
-            packages += "isc-dhcp-server"
+            packages += "isc-dhcp-server",
 
         if self.opts['has_dns']:
-            packages += "bind9"
+            packages += "bind9",
 
         if self.opts['has_firewall']:
             packages += "nftables",
@@ -148,7 +147,7 @@ class Install:
         print("Creating Virtual Env ...")
         cmd(f"sudo -u hal python3 -m venv {utils.projects_dir}venv")
 
-        packages = "wheel", "netifaces",
+        packages = "wheel", "netifaces", "requests",
         if self.opts['has_web']:
             packages += "uwsgi", "libsass", "pyyaml",
 
