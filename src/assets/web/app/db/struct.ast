@@ -1,0 +1,35 @@
+(
+
+("methods", (
+    "id serial primary key",
+    "name varchar",
+    )),
+
+("langs", (
+    "id serial primary key",
+    "code varchar",
+    )),
+
+("modules", (
+    "id serial primary key",
+    "name varchar",
+    )),
+
+("sections", (
+    "id serial primary key",
+    "name varchar",
+    "parent int",
+    )),
+
+("pages", (
+    "id serial primary key",
+    "name varchar",
+    "module int references modules (id)",
+    "section int references sections (id)",
+    "method int references methods (id)",
+    "lang int references langs (id)",
+    "first boolean default false",
+    "html varchar",
+    )),
+
+)

@@ -1,0 +1,17 @@
+div:
+    children:
+        span:
+            text:
+                en: "lucamatei.eu"
+        i:
+            class: "fa fa-circle"
+        span:
+            text:
+                en: "All rights reserved"
+                ro: "Toate drepturile rezervate"
+        i:
+            class: "fa fa-circle"
+        span:
+            text:
+                en: "Made in Romania"
+                ro: "Creat în România"

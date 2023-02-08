@@ -1,0 +1,29 @@
+{
+"meta": {
+    "en": (
+        "Sign In",
+        "Sign in to your account.",
+        ),
+
+    "ro": (
+        "Conectare",
+        "Conectează-te în cont.",
+        ),
+    },
+
+"en": (
+    "For now, this section is intended for the website administrators only.",
+    "<h1>Sign In</h1>",
+    "Username or Email",
+    "Password",
+    "Sign In",
+    ),
+
+"ro": (
+    "Momentan, această secțiune este destinată numai administratorilor website-ului.",
+    "<h1>Conectare</h1>",
+    "Utilizator sau Email",
+    "Parolă",
+    "Conectare",
+    ),
+}

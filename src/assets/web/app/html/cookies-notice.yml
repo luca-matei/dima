@@ -1,0 +1,12 @@
+div:
+    id: "cookies-notice"
+    text:
+        en: "This website uses cookies to improve browsing experience. [Learn More](docs/cookies)"
+        ro: "Acest website folosește cookie-uri pentru a îmbunătăți experiența de navigare. [Află mai multe](docs/cookies)"
+    children:
+        button:
+            id: "lmid-policy-accept"
+            class: "lmbtn-1"
+            text:
+                en: "Accept"
+                ro: "Acceptă"

@@ -1,0 +1,33 @@
+{
+"meta": {
+    "en": (
+        "Contact",
+        "Socializing may have been challenging for the past while. Let's chat (safely), by emailing or by using the form.",
+        ),
+
+    "ro": (
+        "Contact",
+        "Socializarea poate să fi fost îngreunată în ultima perioadă. Hai să stăm de vorbă (în siguranță), scriindu-mi la adresa de email sau folosind formularul.",
+        ),
+    },
+
+"en": (
+    "For now, the email address and the form are unavailable.",
+    "<h1>Contact</h1><p>Socializing may have been challenging for the past while. Let's chat (safely), by emailing me at <b>contact<i class='fa fa-at'></i>lucamatei.ro</b> or by using the form down below. Signaling an issue or an uncertainty regarding the website's functionality or content is appreciated.</p>",
+    "Name",
+    "Mesage",
+    "Hi!",
+    "Send",
+    "Unsaved Message",
+    ),
+
+"ro": (
+    "Momentan, adresa de email și formularul de contact sunt indisponibile.",
+    "<h1>Contact</h1><p>Socializarea poate să fi fost îngreunată în ultima perioadă. Hai să stăm de vorbă (în siguranță), scriindu-mi la adresa de email <b>contact<i class='fa fa-at'></i>lucamatei.ro</b> sau folosind formularul de mai jos. Semnalarea unei nereguli ori nelămuriri în ceea ce privește funcționalitatea sau conținutul website-ului este apreciată.</p>",
+    "Nume",
+    "Mesaj",
+    "Salut!",
+    "Trimite",
+    "Mesaj Nesalvat",
+    ),
+}

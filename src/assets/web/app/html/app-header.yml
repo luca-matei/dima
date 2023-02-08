@@ -1,0 +1,53 @@
+div:
+    id: "app-header"
+    children:
+        div:
+            class: "lmtpl-notice lmbg-orange"
+            children:
+                noscript:
+                    text:
+                        en: "To avoid possible errors, please allow JavaScript to run in your browser."
+                        ro: "Pentru a evita posibilele erori, vă rugăm să permiteți JavaScript să ruleze în browserul dvs."
+        div:
+            class: "bobo"
+            children:
+                a:
+                    href: "https://lucamatei.eu"
+                    text:
+                        en: "lucamatei.eu"
+
+                span:
+                    class: "separator-expand"
+
+                div:
+                    id: "app-header-nav"
+                    children:
+                        a:
+                            href: "/home"
+                            text:
+                                en: "Home"
+                                ro: "Acasă"
+                        a:
+                            href: "/about"
+                            text:
+                                en: "About Me"
+                                ro: "Despre mine"
+                        a:
+                            href: "https://lucamatei.xyz"
+                            text:
+                                en: "Projects"
+                                ro: "Proiecte"
+                        a:
+                            href: "https://lucamatei.org"
+                            text:
+                                en: "Opportunities"
+                                ro: "Oportunități"
+                        a:
+                            href: "https://lucamatei.shop"
+                            text:
+                                en: "Services"
+                                ro: "Servicii"
+                        a:
+                            href: "/contact"
+                            text:
+                                en: "Contact"

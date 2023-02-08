@@ -1,0 +1,44 @@
+{
+"meta": {
+    "en": (
+        "Hosting",
+        "",
+        ),
+
+    "ro": (
+        "Găzduire",
+        "",
+        ),
+    },
+
+"en": (
+    "<h1>Why Choose a Hosting Service?</h1><p>The ever-evolving security of our services and their easy maintenance are the reason why we host your website on our servers. Also, because the two backend and frontend frames are private, all the services we offer will remain exclusively on our servers.</p>",
+    "<h1>Basic Hosting</h1><p></p>",
+    "<h1>Email Addresses</h1><p></p>",
+    "<h1>Domain And Nameservers</h1><p></p>",
+    "<h1>Support</h1><p></p>",
+    "<h1>Ready? Let's Do It!</h1><p></p>",
+    "<h1>Price List</h1><p></p>",
+    ),
+
+"ro": (
+    "<h1>De ce să alegi un serviciu de găzduire?</h1><p>Securitatea în continuă dezvoltare a serviciilor noastre și mentenanța facilă a acestora sunt motivul pentru care să găzduim website-ul tău pe serverele noastre. De asemenea, pentru că cele două cadre pentru backend și frontend sunt private, toate serviciile pe care le oferim vor rămâne exclusiv pe serverele noastre.</p>",
+    "<h1>Găzduire de bază</h1><p>Cuprinde o rată de disponibilitate a website-ului de 99% și măsuri de prevenție contra unor atacuri. Securitatea serviciilor noastre este consolidată în fiecare săptămână pentru siguranța clienților noștri și a vizitatorilor tăi. Află mai multe despre <a href='projects/lazarus'>Lazarus</a>, sistemul care administrează toate website-urile.</p>",
+    "lună", "Găzduire de bază",
+    "<h1>Adrese de email</h1><p>Permite vizitatorilor tăi să te contacteze la o adresă de email personalizată cu numele domeniului tău. Câteva dintre cele mai frecvente alegeri sunt office / contact / dm (Dan Marcel) <i class='fa fa-at'></i>danmarcel.ro. Formularul de contact este disponibil numai la achiziționarea uneia dintre opțiunile următoare.</p>",
+    "lună", "2 adrese de email",
+    "sau", "lună", "Recomandat", "Până la 5 adrese de email",
+    "sau", "lună", "Până la 15 adrese de email",
+    "sau", "lună", "Adrese de email nelimitate",
+    "Gratuit", "Un formular de contact",
+    "<h1>Domeniu și servere de nume</h1><p>Domeniul tău corespunde cu o adresă IP a unuia dintre serverele noastre. Pentru ca această pereche să fie găsită, e nevoie de un server de nume. Serverele de nume pot fi găzduite la noi sau la un alt furnizor de găzduire web.</p><p>De asemenea, dacă dorești să primești înștiințări de plată timpurii pentru domeniul tău și dorești ca acesta să fie gestionat în concordanță cu sistemele noastre, îl poți găzdui la noi.</p><p><b>Notă:</b> Prețul domeniului nu este inclus deoarece variază în funcție de TLD.</p>",
+    "an", "Servere de nume",
+    "an", "Domeniu",
+    "<h1>Asistență</h1><p>Ai posibilitatea să modifici conținutul website-ului tău de maxim două ori pe săptămână. Cu toate acestea, poți adăuga / modifica / șterge conținut din blogul sau galeria ta oricând, direct din interfață.</p><p><b>Notă:</b> Un sistem de gestionare a conținutului (CMS) pentru pagini statice este pe drum. Odată ce acesta este publicat, restricția de două sesiuni pe săptămână va fi eliminată, putând să-ți modifici conținutul oricând, direct din interfață.</p>",
+    "Gratuit", "2 sesiuni de asistență / săptămână",
+    "sesiune", "Asistență 24/7",
+    "<h1>Pregătit? S-o facem!</h1><p>Dacă te-ai decis în ceea ce privește funcționalitatea, aspectul și găzduirea website-ului tău, plasează-ți comanda în secțiunea Contact. Pentru nelămuriri, vizitează Întrebările Frecvente (FAQ) sau întreabă direct, tot din secțiunea Contact.</p>",
+    "Contact",
+    "<h1>Lista cu prețuri</h1>",
+    ),
+}

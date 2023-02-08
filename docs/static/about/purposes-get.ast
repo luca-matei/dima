@@ -1,0 +1,29 @@
+{
+"meta": {
+    "en": (
+        "Purposes",
+        "When we're young, we wish to experiment and find answers to as many questions a possible. The desire of knowledge is lost along with aging and driven away by the shortcoming of the system.",
+        ),
+
+    "ro": (
+        "Scopuri",
+        "Când suntem mici, ne dorim să experimentăm și să aflăm răspunsurile a cât mai multe întrebări. Nevoia de cunoaștere se pierde odată cu înaintarea în vârstă și cu îndepărtarea ei de către neajunsurile sistemului.",
+        ),
+    },
+
+"en": (
+    "<h1>Purposes</h1><p>When we're young, we wish to experiment and find answers to as many questions a possible. However, the desire of knowledge is lost along with aging and driven away by the shortcomings of the system. Other matters replace it with how we'll dress and feed our children the next day and what we'll leave behind.</p>",
+    "<h2>Vision</h2><p>In my vision, the need for knowledge will be met, with or without the system's help and computer science along with mechatronics will lend a helping hand in solving daily struggles. <a href='coming-soon'>Isn't it already happening?</a></p>",
+    "<h2>Mission</h2><p>My mission is creating an intercultural community where study materials are at everybody's reach and people can mentor each other. During my mission, I will assure the necessary technical support of the platform.</p>",
+    "<h2>Strategy</h2><p>I will publish works with the purpose of uniting numerous people for debating subjects like education or fundamental principles of ethics. Meanwhile, I will improve the services offered to cover the technical necessities.</p>",
+    "<h2>Progress</h2><p>Find out what I've managed to build until now and my next goals by visiting the <a href='projects'>Projects</a> section. If we share the same ideals and you're willing to help, then <a href='offers/partnerships'>let's be partners!</a></p>",
+    ),
+
+"ro": (
+    "<h1>Scopuri</h1><p>Când suntem mici, ne dorim să experimentăm și să aflăm răspunsurile a cât mai multe întrebări. Totuși, nevoia de cunoaștere se pierde odată cu înaintarea în vârstă și cu îndepărtarea ei de către neajunsurile sistemului. Alte preocupări îi iau locul, precum ce punem pe masă, cu ce îmbrăcăm copiii sau ce vom lăsa în urma noastră.</p>",
+    "<h2>Viziune</h2><p>În viziunea mea, nevoia de cunoaștere ar fi nutrită (și chiar sădită), cu sau fără ajutorul sistemului, iar informatica și mecatronica ar da o mână de ajutor în rezolvarea dificultăților cotidiene. <a href='coming-soon'>Nu se întâmplă asta deja?</a></p>",
+    "<h2>Misiune</h2><p>Misiunea mea este de a crea o comunitate interculturală, în care materialele de studiu sunt la îndemâna oricui, iar fiecare poate fi mentorul celuilalt. În decursul misiunii voi asigura suportul tehnic necesar dezvoltării platformei.</p>",
+    "<h2>Strategie</h2><p>Voi publica lucrări cu scopul de a uni cât mai mulți oameni pentru a dezbate subiecte precum educația sau principii etice fundamentale. Totodată, voi dezvolta serviciile oferite pentru a putea acoperi necesitățile tehnice.</p>",
+    "<h2>Progese</h2><p>Află ce am reușit să construiesc până acum și care sunt următoarele obiective, vizitând secțiunea <a href='projects'>Proiecte</a>. Dacă împărțim aceleași scopuri și crezi că poți da o mână de ajutor, atunci <a href='offers/partnerships'>hai să fim parteneri!</a></p>",
+    ),
+}

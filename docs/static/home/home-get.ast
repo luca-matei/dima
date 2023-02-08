@@ -1,0 +1,48 @@
+{
+"meta": {
+    "en": (
+        "Home",
+        "I'm a Romanian high school student. I develop web apps and I manage systems and computer networks. I also dedicate my free time to writing. Friends say I'm calm and reliable.",
+        ),
+    "ro": (
+        "Acasă",
+        "Sunt un elev de liceu din România. Dezvolt aplicații web și administrez sisteme și rețele informatice. Totodată, îmi dedic timpul liber artei cuvintelor. Prietenii îmi spun că sunt un om calm și franc.",
+        ),
+    },
+
+"en": (
+    "<p>Welcome!</p><h1>I'm Luca</h1><p>I develop web apps</p>",
+    "I need a website",
+    "I'm looking for a tie-up",
+    "<h1>About Me</h1><p>I'm a Romanian high school student. I develop web apps and I manage systems and computer networks. I also dedicate my free time to writing. Friends say I'm calm and reliable.</p>",
+    "See more about me",
+    "<h1>Experience</h1>",
+    "<h3>+10 years in computer science</h3><p>I use Linux and I code in Python3 since 2010</p>",
+    "<h3>3 years in web development</h3><p>I have built my own tools and frameworks</p>",
+    "<h3>2 years in writing</h3><p>I have written a story, I blog and I'm working on a novel</p>",
+    "See My Experience",
+    "<h1>Already interested in working together?</h1><p>If we share the same vision, mission and strategy or you think my help is right for you, then let's be partners!</p>",
+    "Purposes",
+    "Partnerships",
+    "<h1>Writing</h1><p>Explore <a href='coming-soon'>my blog</a> where I express my vision on several important matters, such as education in Romania or the bond between man and technology.</p>",
+    "<h1>Let's Get In Touch!</h1><p>Socializing may have been challenging for the past while. Let's chat (safely), using one of the options in the <a href='contact'>Contact</a> section.</p>",
+    ),
+
+"ro": (
+    "<p>Salutare!</p><h1>Eu sunt Luca</h1><p>Dezvolt aplicaţii web</p>",
+    "Am nevoie de un site",
+    "Caut un parteneriat",
+    "<h1>Despre mine</h1><p>Sunt un elev de liceu din România. Dezvolt aplicații web și administrez sisteme și rețele informatice. Totodată, îmi dedic timpul liber artei cuvintelor. Prietenii îmi spun că sunt un om calm și franc.</p>",
+    "Află mai multe despre mine",
+    "<h1>Experiență</h1>",
+    "<h3>+10 ani în informatică</h3><p>Folosesc Linux și programez în Python3 din 2010</p>",
+    "<h3>3 ani în dezvoltare web</h3><p>Mi-am construit propriile unelte și framework-uri</p>",
+    "<h3>2 ani în arta cuvintelor</h3><p>Am scris o poveste, compun articole de blog și lucrez la un roman</p>",
+    "Află mai multe despre experiența mea",
+    "<h1>Deja ești interesat să lucrăm împreună?</h1><p>Dacă împărțim aceeași viziune, misiune și strategie sau crezi că ajutorul meu îți este prielnic, atunci hai să fim parteneri!</p>",
+    "Scopuri",
+    "Parteneriate",
+    "<h1>Arta cuvintelor</h1><p>Explorează <a href='coming-soon'>blogul meu</a> unde îmi exprim viziunea asupra mai multor teme importante, precum educația în România sau armonia dintre om și tehnologie.</p>",
+    "<h1>Hai să ne cunoaştem!</h1><p>Socializarea poate să fi fost îngreunată în ultima perioadă. Hai să stăm de vorbă (în siguranță), folosind una dintre opțiunile prezente în secțiunea <a href='contact'>Contact</a>.</p>",
+    ),
+}

@@ -1,0 +1,16 @@
+title:
+    en: "Home"
+    ro: "Acasă"
+description:
+    en: "Default description"
+keywords:
+    en: ""
+has_wrapper: False
+module: static
+
+----
+
+div:
+    text:
+        en: "# Hello World!"
+        ro: "# Salutare lume!"

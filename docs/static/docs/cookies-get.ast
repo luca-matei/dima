@@ -1,0 +1,39 @@
+{
+"meta": {
+    "en": (
+        "Cookies Policy",
+        "Luca Matei may use cookies when you visit certain Luca Matei products or services, including lucamatei.ro, websites and web applications, offered by us to help customize the Site and improve your experience.",
+        ),
+
+    "ro": (
+        "Politica Cookies",
+        "Luca Matei may use cookies when you visit certain Luca Matei products or services, including lucamatei.ro, websites and web applications, offered by us to help customize the Site and improve your experience.",
+        ),
+    },
+
+"en": (
+    """<h1>Cookies Policy</h1>
+    <p>Last updated on July 1st, 2021</p>
+    <p>Luca Matei ("us", "we" or "our") may use cookies when you visit certain Luca Matei products or services, including lucamatei.ro, websites and web applications (collectively, the "Site"), offered by us to help customize the Site and improve your experience. This Cookies Policy explains what cookies are and how we use them. You should read this policy so you can understand what type of cookies we use, or the information we collect using cookies and how that information is used.</p>
+    <p>We reserve the right to make changes to this Cookies Policy at any time and for any reason. We will alert you about any changes by updating the "Last updated" date of this Cookies Policy. Any changes or modifications will be effective immediately upon posting the updated Cookies Policy on the Site, and you waive the right to receive specific notice of each such change or modification.</p>
+    <p>You are encouraged to periodically review this Cookies Policy to stay informed of updates. You will be deemed to have been made aware of, will be subject to, and will be deemed to have accepted the changes in any revised Cookies Policy by your continued use of the Site after the date such revised Cookies Policy is posted.</p>
+    <p>For information on how lucamatei.ro collects, uses and shares any personal information. please see our <a href="docs/privacy">Privacy Policy</a>. If you reside outside of the European Economic Area, your acceptance of this Cookies Policy constitutes your consent to the processing activities described in our <a href="docs/privacy">Privacy Policy</a> under the laws of your jurisdiction.</p>
+    <h2 id="what-are-cookies-">What Are Cookies?</h2>
+    <p>Cookies are small text files which are downloaded to your computer, tablet or mobile phone when you visit a website or application. The website or application may retrieve these cookies from your web browser (e.g. Internet Explorer, Mozilla Firefox, Safari or Google Chrome) each time you visit, so they can recognise you, remember your preferences and provide you with a more secure online experience. If you prefer, you can restrict, block or delete cookies by changing your browser settings but that may mean that the website won’t work properly.</p>
+    <p>For more information about cookies and their impact on you and your browsing, visit <a href="https://www.aboutcookies.org">www.aboutcookies.org</a>.</p>
+    <h2 id="types-of-cookies-we-use">Types of Cookies We Use</h2>
+    <h3 id="necessary-cookies">Necessary Cookies</h3>
+    <p>These cookies are essential to provide you with services available through the Site and to enable you to use some of its features. They help to authenticate users and prevent fraudulent use of user accounts. Without these cookies, the services that you have asked for cannot be provided, and we only use these cookies to provide you with those services.</p>
+    <h3 id="notice-acceptance-cookies">Notice Acceptance Cookies</h3>
+    <p>These cookies identify if users have accepted the use of cookies on the Site.</p>
+    <h3 id="personalization-cookies">Personalization Cookies</h3>
+    <p>These cookies allow us to remember choices you make when you use the Site, such as remembering your login details, your color theme preference or your language preference. The purpose of these cookies is to provide you with a more personal experience and to avoid you having to re-enter your preferences every time you use the Site.</p>
+    <h2 id="managing-cookies-">Managing cookies​</h2>
+    <p>If you prefer to avoid the use of cookies on the Site, first you must disable the use of cookies in your browser and then delete the cookies saved in your browser associated with this website. you may use this option for preventing the use of cookies at any time. If you do not accept our cookies, you may experience some inconvenience in your use of the Website and some features may not function properly. You can always withdraw your consent to this Cookies Policy and delete all the cookies by clicking the "Withdraw" button below.</p>""",
+    "Revoke consent",
+    """<p>If want to delete cookies or instruct your web browser to delete or refuse cookies, please visit the help pages of your web browser: <a href="https://support.google.com/accounts/answer/32050">Chrome</a>, <a href="http://support.microsoft.com/kb/278835">Internet Explorer</a>, <a href="https://support.mozilla.org/en-US/kb/delete-cookies-remove-info-websites-stored">Firefox</a>, <a href="https://support.apple.com/guide/safari/manage-cookies-and-website-data-sfri11471/mac">Safari</a>.</p>
+    <p>For any other web browser, please visit your web browser's official web pages.</p>
+    <h2 id="contact-us">Contact Us</h2>
+    <p>If you have any questions about this Cookies Policy, you can contact us by email at help@lucamatei.ro or by visiting the <a href="contact">Contact</a> page.</p>""",
+    ),
+}

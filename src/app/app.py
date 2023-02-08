@@ -1996,8 +1996,8 @@ class Web(Project):
         #self.db = Db(self.dbid)
         #self.check()
 
-    def default(self):
-        log(f"Setting {self.lmid}.{self.domain} to 'Hello World' ...", console=True)
+    def set_default(self):
+        log(f"Setting {self.domain} to 'Hello World' ...", console=True)
 
         app_main = util.read(hal.tpl_dir + "web/app/app.py") \
             .replace("%APP_DIR", self.app_dir) \
@@ -2170,11 +2170,11 @@ class Web(Project):
 
         for node in dir_tree:
             node = self.repo_dir + node
-            if not util.isfile(node):
+            if not utils.isfile(node, host=self.dev_host):
                 if node.endswith('/'):
-                    cmd(f"mkdir " + node)
+                    cmd(f"mkdir " + node, host=self.dev_host)
                 else:
-                    cmd(f"touch " + node)
+                    cmd(f"touch " + node, host=self.dev_host)
 
         self.default()
         self.config()

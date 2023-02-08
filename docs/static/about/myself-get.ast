@@ -1,0 +1,35 @@
+{
+"meta": {
+    "en": (
+        "About Me",
+        "Since I was little I have been eager to learn about subjects that interest me, as well as general knowledge. I learn quickly when I'm doing it interactively and, most of the time, in a group. Despite of my introverted tendencies, I enjoy meeting new people.",
+        ),
+
+    "ro": (
+        "Despre Mine",
+        "Încă de mic sunt dornic să învăț, atât pentru subiectele care mă pasionează, cât și pentru cultura generală. Învăț repede când o fac interactiv și, de cele mai multe ori, când o fac cu cineva. În ciuda înclinațiilor introvertite, sunt încântat să cunosc oameni noi.",
+        ),
+    },
+
+"en": (
+    "<h1>About Me</h1><p>I'm Luca, a high school student. I appeared almost 18 years ago, in the lands of Eastern Europe, in Romania.</p>",
+    "<h2>Personality</h2><p>Since I was little I have been eager to learn about subjects that interest me, as well as general knowledge. I learn quickly when I'm doing it interactively and, most of the time, in a group. Despite of my introverted tendencies, I enjoy meeting new people.</p>",
+    "<h2>Studies</h2><p>Lacking an educational system up to European standards, I gained computer science knowledge thanks to my father, who's a programmer, and by experimenting since 2010, from the age of 7. I'm planning to continue my studies in Romania, at Polytechnic University of Bucharest, Faculty of Automatics and Computer Science.</p>",
+    "<h2>Interests</h2><p>Although I experienced game development, 3D modeling, cyber security, I've chosen to deepen into the branches of the internet and intranet. Hence, I develop web apps and I manage systems and computer networks. I also dedicate my free time to writing stories and blog articles.</p>",
+    "<h1>Interested In What I'm Doing?</h1><p>If you're interested in the fields in which I'm progressing, find out what skills I've gained and how I apply them in reaching my goals.</p>",
+    "Experience",
+    "Purposes",
+    "<h1>Thank You</h1><p>Great things aren't made alone. Thus, I'd like to thank my father, with the help of which I gained a lot of my current knowledge about computer science and a large perspective on the surrounding world.</p><p>Likewise, I'd like to thank my family and friends for the support in my personal, academic and professional development.</p><p>I'd also like to thank miss Katerina Limpitsouni, the founder of <a href='https://undraw.co/'>unDraw.co</a>, for the marvelous ilustrations used on this site.</p></a>",
+    ),
+
+"ro": (
+    "<h1>Despre mine</h1><p>Eu sunt Luca, un elev de liceu. Am apărut în urmă cu aproape 18 ani, în România.</p>",
+    "<h2>Personalitate</h2><p>Încă de mic sunt deschis la cunoaștere, atât pentru subiectele care mă pasionează, cât și pentru cultura generală. Învăț repede când o fac interactiv și, de cele mai multe ori, când o fac cu cineva. În ciuda înclinațiilor introvertite, sunt încântat să cunosc oameni noi.</p>",
+    "<h2>Studii</h2><p>În lipsa unui sistem educațional la standarde europene, am dobândit cunoștințe în informatică datorită tatălui meu programator și prin experimentare încă din 2010, de la vârsta de 7 ani. Plănuiesc să îmi continui studiile în țară, în România, la Universitatea Politehnica București, Facultatea de Automatică și Calculatoare.</p>",
+    "<h2>Interese</h2><p>Deși am experimentat dezvoltarea de jocuri video, modelarea 3D, securitatea cibernetică, am ales să mă deprind în ramurile internetului și ale intranetului. Prin urmare, dezvolt aplicații web și administrez sisteme și rețele informatice. Totodată, îmi dedic timpul liber artei cuvintelor, scriind povești și articole de blog.</p>",
+    "<h1>Ești interesat de ceea ce fac?</h1><p>Dacă te interesează domeniile în care progresez, află ce abilități am dobândit și în vederea căror scopuri le aplic.</p>",
+    "Experiență",
+    "Scopuri",
+    "<h1>Mulțumesc</h1><p>Lucrurile mărețe nu se fac de unul singur. Prin urmare, doresc să-i mulțumesc tatălui meu, cu ajutorul căruia am dobândit o bună parte din cunoștințele actuale despre informatică și o largă perspectivă asupra lumii înconjurătoare.</p><p>Totodată, le mulțumesc familiei și prietenilor mei pentru susținerea pe care mi-o oferă în dezvoltarea personală, academică și profesională.</p><p>Mulțumesc și domnișoarei Katerina Limpitsouni, fondatoarea <a href='https://undraw.co/'>unDraw.co</a>, pentru ilustrațiile admirabile de pe acest website.</p></a>",
+    ),
+}

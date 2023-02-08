@@ -1,0 +1,21 @@
+{
+"meta": {
+    "en": (
+        "Coming Soon!",
+        "Stay tuned for more updates!",
+        ),
+
+    "ro": (
+        "În Curând!",
+        "Stai la curent pentru mai multe actualizări!",
+        ),
+    },
+
+"en": (
+    "<h1>Coming Soon!</h1>",
+    ),
+
+"ro": (
+    "<h1>În Curând!</h1>",
+    ),
+}

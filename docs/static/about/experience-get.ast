@@ -1,0 +1,32 @@
+{
+"meta": {
+    "en": (
+        "Experience",
+        "For 10 years I've been working with programming languages (mainly Python3) and scripting languages. I also work with software for managing systems, computer networks and automations, using Linux operating systems (Debian, Ubuntu).",
+        ),
+    "ro": (
+        "Experiență",
+        "Vreme de 10 ani lucrez cu diverse limbaje de programare (predominant Python3) și cu limbaje de scripting. De asemenea, lucrez cu aplicații și programe pentru administrarea sistemelor, a rețelelor informatice, și a automatizărilor, folosind sisteme de operare Linux (Debian, Ubuntu).",
+        ),
+    },
+
+"en": (
+    "<h1>Experience</h1>",
+    "<h2>Programming and SysAdmin</h2><p>For 10 years I've been working with programming languages (mainly Python3) and scripting languages. I also work with software for managing systems, computer networks and automations, using Linux operating systems (Debian, Ubuntu).</p>",
+    "<h2>Full-Stack</h2><p>For 3 years I've been developing web apps, in which I join software like Nginx and Postgres. Although I've worked with multiple frameworks on the market, for backend as well as frontend (e.g. Flask, Bootstrap), I've built my own framework in Python3, respectively in JavaScript and CSS3.</p>",
+    "<h2>Author</h2><p>I'm the author of a story and a future novel in which I approach social topics. Writing is a passion that I've been practicing since I was in primary school, but to which I have been paying more attention in the last two years. Moreover, in my blog, I cover subjects such as education in Romania or the bond between man and technology.</p>",
+    "<h1>Why These Skills?</h1><p>Find out the reasons behind my efforts in these fields and what I've built to reach my goals.</p>",
+    "Purposes",
+    "Projects",
+    ),
+
+"ro": (
+    "<h1>Experienţă</h1>",
+    "<h2>Programare și SysAdmin</h2><p>Vreme de 10 ani lucrez cu diverse limbaje de programare (predominant Python3) și cu limbaje de scripting. De asemenea, lucrez cu aplicații și programe pentru administrarea sistemelor, a rețelelor informatice, și a automatizărilor, folosind sisteme de operare Linux (Debian, Ubuntu).</p>",
+    "<h2>Full-Stack</h2><p>De 3 ani dezvolt aplicații web, în care îmbin piese de software precum Nginx și Postgres. Cu toate că am folosit multiple framework-uri prezente pe piață, atât pentru backend, cât și pentru frontend (ex. Flask, Bootstrap), mi-am construit propriile framework-uri în Python3, respectiv JavaScript și CSS3.</p>",
+    "<h2>Autor</h2><p>Sunt autorul unei povești și al unui viitor roman în care abordez teme sociale. Arta cuvintelor este o pasiune pe care o practic încă din clasele primare, însă căreia i-am acordat mai multă atenție în decursul ultimilor doi ani. De asemenea, în <a href='coming-soon'>blogul meu</a>, tratez subiecte precum educația în România sau armonia dintre om și tehnologie.</p>",
+    "<h1>De ce aceste abilități?</h1><p>Află cu ce scopuri depun eforturi în aceste domenii și ce am reușit să construiesc până acum pentru a le atinge.</p>",
+    "Scopuri",
+    "Proiecte",
+    ),
+}

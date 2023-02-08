@@ -1,0 +1,6 @@
+a:
+    id: "top-btn"
+    href: "%PERMALINK#top"
+    children:
+        i:
+            class: "fa fa-chevron-up"

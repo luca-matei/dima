@@ -1,0 +1,19 @@
+div:
+    id: "app-footer"
+    children:
+        div:
+            children:
+                a:
+                    href: "docs/privacy"
+                    text:
+                        en: "Privacy"
+                        ro: "Confidențialitate"
+                a:
+                    href: "docs/terms"
+                    text:
+                        en: "Terms"
+                        ro: "Termeni"
+                a:
+                    href: "docs/cookies"
+                    text:
+                        en: "Cookies"

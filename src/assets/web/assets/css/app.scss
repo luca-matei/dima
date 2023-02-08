@@ -1,0 +1,1377 @@
+/*
+    #############
+    ||  NOTES  ||
+    #############
+
+
+    -webkit-   Used by Chrome, Safari, Android, & iOS
+    -moz-      Used by Mozilla Firefox
+    -o-        Used by Opera
+    -ms-       Used by Internet Explorer
+
+    lm<type>-<pos|name>-<amount|variation>
+    Scrolling rows will have a trailing x
+
+    lm - trademark
+
+    Type
+    p - padding
+    a - alignment
+    t - text alignment
+    c - columns
+    b - background
+    bd - border
+    tpl - template
+
+    Position
+    t - top
+    b - bottom
+    l - left
+    r - right
+
+    Amount
+    px 15, 30, 45, 60
+    % 30p, 50p, 70p, 100p
+
+    Order
+    from darkest to brightest
+
+    ##############
+    ||  GLOBAL  ||
+    ##############
+
+*/
+
+$bd-r: 4px;   // Border radius
+$tr-t: 0.1s;  // Transition time
+$gold-1: #e69500;
+$silver-1: #9A9A9A;
+$blue-1: #53a2e3;
+$blue-2-hex: #95C6EE;
+$green-1: #2ecc71;
+$green-2: #55d98c;
+$orange-1: #f4ad49;
+$purple-hex: #6757e2;
+$red-1: #ef4658;
+$red-2: #f1725d;
+$sh-1: 0 0 2px 2px rgba(0, 0, 0, 0.12);
+$sh-2: 2px 4px 3px 4px rgba(0, 0, 0, 0.06);
+
+:root {
+    --max-pad: 30px;    // 30px -> 60px -> 50%-600px
+    --lmc-s-1: 30px; // 30px -> 60px
+    --lmc-s-2: var(--lmc-s-1);
+}
+
+@font-face {
+    font-family: Muli-Light;
+    src: url('/commons/font/Muli-Light.ttf');
+}
+
+* {box-sizing: border-box;}
+
+html {
+    --p-1-1: #faf9f9;   // Primary color 1, light
+    --p-2-1: #f1eeee;   // Primary color 2, light
+    --s-1-1: #e8e4e4;   // Secondary color 1, light
+    --s-2-1: #dfd9d9;   // Secondary color 2, light
+    --tp-1-1: #36454f;   // Primary text color 1, light
+    --tp-2-1: #40525e;   // Primary text color 2, light
+    --ts-1-1: #4b5f6d;   // Secondary text color 1, light
+    --ts-2-1: #556d7c;   // Secondary text color 2, light
+    --p-1-2: #27343C;   // Primary color 1, dark
+    --p-2-2: #32424C;   // Primary color 2, dark
+    --s-1-2: #3E525E;   // Secondary color 1, dark
+    --s-2-2: #496170;   // Secondary color 2, dark
+    --tp-1-2: #ced9df;   // Primary text color 1, dark
+    --tp-2-2: #fcfdfd;   // Primary text color 2, dark
+    --ts-1-2: #A6B9C5;   // Secondary text color 1, dark
+    --ts-2-2: #B8C7D0;   // Secondary text color 2, dark
+
+    &[data-theme='1'] {
+      --p-1: var(--p-1-1);
+      --p-2: var(--p-2-1);
+      --s-1: var(--s-1-1);
+      --s-2: var(--s-2-1);
+      --tp-1: var(--tp-1-1);
+      --tp-2: var(--tp-2-1);
+      --ts-1: var(--ts-1-1);
+      --ts-2: var(--ts-2-1);
+
+      --p-1-i: var(--p-1-2);
+      --p-2-i: var(--p-2-2);
+      --s-1-i: var(--s-1-2);
+      --s-2-i: var(--s-2-2);
+      --tp-1-i: var(--tp-1-2);
+      --tp-2-i: var(--tp-2-2);
+      --ts-1-i: var(--ts-1-2);
+      --ts-2-i: var(--ts-2-2);
+    }
+
+    &[data-theme='2'] {
+      --p-1: var(--p-1-2);
+      --p-2: var(--p-2-2);
+      --s-1: var(--s-1-2);
+      --s-2: var(--s-2-2);
+      --tp-1: var(--tp-1-2);
+      --tp-2: var(--tp-2-2);
+      --ts-1: var(--ts-1-2);
+      --ts-2: var(--ts-2-2);
+
+      --p-1-i: var(--p-1-1);
+      --p-2-i: var(--p-2-1);
+      --s-1-i: var(--s-1-1);
+      --s-2-i: var(--s-2-1);
+      --tp-1-i: var(--tp-1-1);
+      --tp-2-i: var(--tp-2-1);
+      --ts-1-i: var(--ts-1-1);
+      --ts-2-i: var(--ts-2-1);
+    }
+
+    background-color: var(--p-1);
+    color: var(--tp-1);
+    font-family: "Muli-Light";
+    height: 100%;
+    line-height: 1.6;
+    letter-spacing: 0.01rem;
+    overflow: hidden;
+}
+
+body {
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+/* Links */
+
+p a {
+    padding-bottom: 2px;
+    border-bottom: 1px solid var(--ts-2);
+    transition: border-bottom $tr-t;
+    &:hover {border-bottom-color: var(--tp-1);}
+}
+
+@mixin arrow-right {
+    margin-left: 0;
+    width: 0;
+    font-size: 0.8rem;
+    opacity: 0;
+    transition: margin 0.2s, width 0.4s, opacity 0.2s;
+}
+
+@mixin arrow-right-hvr {
+    margin-left: 6px;
+    width: auto;
+    opacity: 1;
+}
+
+a  {
+    color: var(--ts-2);
+    text-decoration: none;
+    transition: background-color $tr-t, color $tr-t;
+
+    &.active {
+        background-color: var(--p-2);
+        color: var(--tp-1);
+
+        &:hover {
+            background-color: var(--s-1);
+        }
+    }
+
+    .fa-angle-right, .fa-chevron-right {@include arrow-right;}
+
+    &:hover {
+        color: var(--tp-1);
+        .fa-angle-right, .fa-chevron-right {@include arrow-right-hvr;}
+    }
+}
+
+/* Text */
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    padding: 0.67em 0 0 0;
+    color: var(--tp-2);
+}
+h1 ~ p, h2 ~ p {font-size: 1.18rem;}
+h3 ~ p, ul {font-size: 1.12rem;}
+
+/* Input fields */
+
+a, label, button {cursor: pointer;}
+
+input:disabled, textarea:disabled, .disabled {
+    opacity: 0.6;
+    cursor: not-allowed !important;
+}
+
+input, textarea, button {
+    background: none;
+    color: var(--tp-1);
+    outline: none;  // For focus
+    border: none;
+}
+
+input, textarea, .lmtpl-form-f2>* {
+    padding: 10px 12px;
+    background-color: var(--p-2);
+    border-bottom: 2px solid $blue-1;
+}
+
+textarea {
+    min-height: 150px;
+    resize: none;
+}
+
+input[type=text],
+input[type=email],
+input[type=tel],
+input[type=password],
+textarea {width: 100%;}
+
+
+/*
+  ################
+  ||  TEMPLATE  ||
+  ################
+*/
+
+
+section {
+    display: flex;
+    flex-flow: row wrap;
+    min-height: 100%;
+
+    #aside-collapse {
+        display: none;
+        &:checked + aside {
+            transform: translate(0, 0);
+        }
+    }
+
+    aside {
+        position: fixed;
+        height: 100%;
+        width: 310px; // aside width + aside padding
+        padding: 0 20px;
+        background-color: var(--p-2);
+        transition: transform 0.2s;
+        transform: translate(calc(0px - 310px), 0);
+        z-index: 1;
+
+        label[for=aside-collapse] {
+            position: absolute;
+            margin: 8px 8px 8px 298px; // aside width + aside padding + 8px
+            padding: 10px;
+            background-color: var(--p-2);
+            border-radius: $bd-r;
+            transition: background-color $tr-t;
+            &:hover {background-color: var(--s-1);}
+        }
+
+        &>div {
+            display: flex;
+            flex-flow: column nowrap;
+            margin-top: 15px;
+
+            &>a {
+                margin: 6px 0;
+                padding: 8px 12px;
+                border-radius: 0 $bd-r $bd-r 0;
+                border-left: 4px solid var(--s-1);
+
+                &.active, &:hover {
+                    background-color: var(--s-1);
+                    border-left-color: var(--s-2);
+                }
+            }
+        }
+
+        & ~ main {
+        }
+    }
+
+    main {
+        flex: 100%;
+        z-index: 0;
+    }
+}
+
+footer {
+    position: relative;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    background-color: var(--p-2);
+    padding: 0 var(--max-pad);
+    text-align: center;
+    border-top: 2px solid var(--s-2);
+    z-index: 2;
+
+    a {
+        display: inline-block;
+        padding: 12px 8px;
+        margin: 0 4px;
+    }
+
+    span {
+        margin: 0;
+        padding: 12px 0;
+    }
+
+    .fa-circle {
+        font-size: 0.2rem;
+        vertical-align: middle;
+    }
+}
+
+#appheader {
+    border-bottom: 2px solid var(--s-2);
+    z-index: 2;
+
+    &>nav {
+        display: flex;
+        flex-flow: row wrap;
+        justify-content: space-between;
+        align-items: center;
+        max-height: 100vh;
+        overflow: auto;
+        padding: 4px var(--max-pad);
+
+        input {display: none;}
+        &>span {flex: 100%;}
+
+        &>label {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 4px 6px;
+            border-radius: $bd-r;
+        }
+    }
+
+    #nav-check:checked ~ #nav-links {display: flex;}
+}
+
+#nav-links {
+    flex: 100%;
+    display: none;
+    flex-flow: column nowrap;
+    max-width: 480px;
+    margin: 0 auto;
+
+    &>a {
+        display: inline-block;
+        padding: 8px 12px;
+        margin: 4px 6px;
+        border-radius: $bd-r;
+        &:hover {background-color: var(--s-1);}
+    }
+}
+
+#path-area {
+    background-color: var(--p-2);
+
+    a {
+        display: inline-block;
+        padding: 6px 9px;
+    }
+    i {
+        &.fa-home {font-size: 1rem;}
+        &:hover {color: var(--ts-1);}
+    }
+}
+
+#user-drop>a {
+    padding: 8px 4px;
+    background: none;
+    line-height: 0;
+    vertical-align: middle;
+
+    &>img {
+        width: 30px;
+        height: auto;
+        border-radius: 50%;
+        transition: var(--t);
+
+        &:hover {transform: scale(1.03);}
+    }
+}
+
+html.js {#hideAll {display: flex;}}
+
+#hideAll {
+    display: none;
+    position: fixed;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background-color: var(--p-1);
+    z-index: 4;
+    transition: opacity 0.4s ease;
+    animation-duration: 0.4s;
+}
+
+#scroll {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    scroll-behavior: smooth;
+}
+
+#top-btn {
+    position: absolute;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+    width: 40px;
+    bottom: 30px;
+    right: 30px;
+    padding-bottom: 2px;
+    background-color: var(--s-1);
+    font-size: 0.8rem;
+    border-radius: 50%;
+    z-index: 3;
+    transition: background-color $tr-t;
+    animation-duration: 0.1s;
+    animation-fill-mode: forwards;
+
+    &:hover {background-color: var(--s-2);}
+    &.in {animation-name: topBtn-in;}
+    &.out {animation-name: topBtn-out;}
+}
+
+@keyframes topBtn-in {
+    0% {
+        transform: scale(0);
+    }
+    60% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes topBtn-out {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(0);
+    }
+}
+
+#message-box {
+    position: absolute;
+    display: none;
+    bottom: 60px;
+    left: 60px;
+    padding: 14px 16px;
+    background-color: var(--p-2);
+    color: var(--tp-1);
+    border-left-width: 6px;
+    border-left-style: solid;
+    border-radius: 0 $bd-r $bd-r 0;
+}
+
+#cookies-notice {
+    position: absolute;
+    display: none;
+    max-width: 300px;
+    left: 15px;
+    bottom: 15px;
+    margin-right: 15px;
+    padding: 8px 12px;
+    background-color: var(--p-1);
+    border-radius: 4px;
+    box-shadow: $sh-1;
+    animation-duration: 0.5s;
+    animation-name: FIB;
+    z-index: 3;
+
+    button, p {font-size: 0.9rem;}
+    button {width: 100%;}
+}
+
+#sensor-cpt {
+    position: absolute;
+    bottom: 0;
+}
+
+
+/*
+  #################
+  ||  FRAMEWORK  ||
+  #################
+*/
+
+/* Columns */
+
+.lmc-1-33 {max-width: 400px;} // 33% of maximum width
+.lmc-1-50 {max-width: 600px;}
+.lmc-1-75 {max-width: 900px;}
+
+.lmc-2-28, .lmc-2-37, .lmc-2-46, .lmc-2-55, .lmc-2-82, .lmc-2-73, .lmc-2-64,
+.lmc-3 {
+    display: flex;
+    flex-flow: column nowrap;
+    &.lmc-s-15 {--lmc-s-2: 15px;}
+}
+
+.lmc-3>div {
+    max-width: 400px;
+    margin: 30px auto;
+}
+
+/* Templates */
+
+@mixin lmtpl-drop($var) {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+
+    @if $var == r {position: relative;}
+
+    a:hover {background-color: var(--s-1);}
+
+    &>a {
+        flex-grow: 1;
+        display: inline-block;
+        padding: 8px 12px;
+        margin: 4px 0 4px 6px;
+        border-radius: $bd-r;
+    }
+
+    &>label {
+        margin-right: 6px;
+        padding: 8px;
+        font-size: 0.8rem;
+        line-height: 1.6;
+        transition: transform $tr-t;
+    }
+
+    &>div {
+        flex: 100%;
+        display: none;
+        background-color: var(--p-1);
+        margin: 0 6px 4px;
+        min-width: 160px;
+        border: 2px solid var(--s-2);
+        border-radius: $bd-r;
+
+        @if $var == r {right: 27px;} // Width of drop arrow
+
+        .lmtpl-switch {padding: 12px 16px;}
+        &>a {
+            display: block;
+            padding: 12px 16px;
+
+            &:first-child {border-radius: 4px 4px 0 0;}
+            &:last-child {border-radius: 0 0 4px 4px;}
+        }
+    }
+
+    &:hover>div, input:checked ~ div {display: block;}
+    &:hover>label, input:checked + label {transform: rotate(180deg);}
+
+}
+
+.lmtpl-drop-l {@include lmtpl-drop(l);}
+.lmtpl-drop-r {@include lmtpl-drop(r);}
+
+.lmtpl-ilust {
+    display: flex;
+    order: -1;
+
+    img {
+        width: 100%;
+        max-width: 500px;
+        height: auto;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    a {
+        display: inline-block;
+        margin: 15px 0;
+    }
+}
+
+.lmtpl-switch {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+
+    a {
+        display: inline-block;
+        width: 50px;
+        margin: 0 10px;
+        color: var(--s-1);
+        background-color: var(--s-1);
+        border: none;
+        border-radius: 18px;
+
+        &:before {
+            display: block;
+            content: "";
+            height: 15px;
+            width: 15px;
+            background-color: var(--s-1);
+            border: 4px solid $green-1;
+            border-radius: 50%;
+            transition: transform $tr-t;
+        }
+    }
+
+    .fa {font-size: 1rem;}
+
+    input {
+        display: none;
+        &[type=checkbox]:checked ~ a {
+            background-color: $green-1;
+            &:before {transform: translateX(26px);}
+        }
+    }
+}
+
+@mixin lmbtn($var, $color: null) {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 8px 16px;
+    transition: background-color $tr-t, color $tr-t, transform $tr-t;
+    border-radius: $bd-r;
+
+    .fa-check {margin-right: 8px;}
+
+    @if $var == 1 or $var == 3 {
+        @if $color == red {
+            background-color: $red-1;
+            color: #fff;
+            font-weight: bold;
+        }
+        @else {
+            background-color: var(--p-1-i);
+            color: var(--tp-1-i);
+        }
+
+        &:hover {
+            @if $color == red {background-color: $red-2;}
+            @else {
+                background-color: var(--p-2-i);
+                color: var(--tp-2-i);
+            }
+        }
+    }
+
+    @if $var == 2 or $var == 4 {
+        @if $color == red {
+            font-weight: bold;
+            &:hover {
+                background-color: $red-1;
+                color: #fff;
+            }
+        }
+        border: 1px solid var(--p-1-i);
+    }
+
+    @if $var == 3 or $var == 4 {
+        &:hover {transform: scale(1.05)}
+    }
+}
+
+// Find out why it doesn't work with @each (it isn't executing the @if statements)
+.lmbtn-1 {@include lmbtn(1);}
+.lmbtn-1-red {@include lmbtn(1, red);}
+.lmbtn-2 {@include lmbtn(2);}
+.lmbtn-2-red {@include lmbtn(2, red);}
+.lmbtn-3 {@include lmbtn(3);}
+.lmbtn-3-red {@include lmbtn(3, red);}
+.lmbtn-4 {@include lmbtn(4);}
+.lmbtn-4-red {@include lmbtn(4, red);}
+
+.lmtpl-bgimg {
+    /* Replace 'backgorund: cover;' because of CSP */
+    position: relative;
+    overflow: hidden;
+    &>img {
+        position: absolute;
+        min-width: 1000%;
+        min-height: 1000%;
+        left: 50%;
+        top: 50%;
+        transform: translateX(-50%) translateY(-50%) scale(0.1);
+    }
+}
+
+.lmtpl-crsl {
+    &-elems {
+        display: flex;
+        justify-content: center;
+        position: relative;
+
+        &>div {
+            width: calc(100% - 30px);
+            transition: transform 0.3s, filter 0.3s, opacity 0.3s;
+
+            &[data-pos="-1"],
+            &[data-pos="1"] {
+                position: absolute;
+                opacity: 0.3;
+                filter: blur(2px);
+                z-index: 1;
+            }
+
+            &[data-pos="-1"] {transform: translateX(-45%) translateY(10px) scale(0.9);}
+            &[data-pos="1"] {transform: translateX(45%) translateY(10px) scale(0.9);}
+            &[data-pos="0"] {
+                position: relative;
+                z-index: 2;
+            }
+        }
+    }
+
+    &-ctrls {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: center;
+        padding-top: 30px;
+
+        button>i {
+            padding: 8px 10px;
+            margin: 0;
+        }
+    }
+}
+
+.lmtpl-slideshow {
+    display: flex;
+    flex-flow: row wrap;
+
+    &>button>i {
+        padding: 8px 10px;
+        margin: 0;
+    }
+}
+
+.lmtpl-slides {
+    text-align: left;
+    margin-bottom: 10px;
+
+    &>div {
+        display: flex;
+        flex-flow: row wrap;
+        justify-content: center;
+        border-radius: var(--r);
+        animation-duration: 0.5s;
+        animation-name: FI;
+
+        &:not(:first-of-type) {display: none;}
+    }
+}
+
+.lmtpl-bullets>span {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-color: var(--s-2);
+    border-radius: 50%;
+    vertical-align: middle;
+
+    &:not(:last-of-type) {margin-right: 8px;}
+    &.active {background-color: var(--ts-2);}
+}
+
+.lmtpl-card- {
+    &1, &2 {
+        min-height: 300px;
+        p {font-size: 1.05rem;}
+    }
+
+    &1>:first-child, &2>:last-child {
+        flex: 60%;
+        border-radius: $bd-r 0 0 $bd-r;
+    }
+
+    &1>:last-child, &2>:first-child {
+        flex: 40%;
+        padding: 15px;
+        background-color: var(--p-2);
+        border-radius: 0 $bd-r $bd-r 0;
+    }
+
+    &3 {
+        border-radius: 20px;
+        box-shadow: $sh-1;
+
+        &>div:first-of-type {
+            min-height: 220px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        &>div:last-of-type {
+            padding: 12px 24px 36px;
+            background-color: var(--p-2);
+            font-size: 1.1rem;
+            border-radius: 0 0 20px 20px;
+        }
+
+        a {@extend .lmtpl-a-blue;}
+    }
+}
+
+.lmtpl-a-blue {
+    color: $blue-1;
+    font-weight: bold;
+    &:hover {color: $blue-2-hex;}
+}
+
+.lmtpl-notice {
+    p {
+        margin: 0;
+        padding: 8px;
+        text-align: center;
+        a  {
+            color: var(--ts-2-1);
+            border-bottom: 1px solid var(--ts-2-1);
+            &:hover {
+                color: var(--tp-1-1);
+                border-bottom-color: var(--tp-1-1);
+            }
+        }
+    }
+}
+
+.lmtpl-sign {
+    color: $blue-1;
+    font-size: 2rem;
+}
+
+.lmtpl-cta {
+    &>a {
+        margin-top: 8px;
+        margin-bottom: 8px;
+
+        &:not(:last-of-type) {
+            margin-right: 15px;
+        }
+    }
+}
+
+.lmtpl-setting {
+    display: flex;
+    flex-flow: row wrap;
+    p {
+        font-size: 1rem;
+    }
+    &>div:first-of-type {
+        flex-grow: 1;
+    }
+}
+
+.lmtpl-form-f1 {
+    margin-bottom: 10px;
+    h4 {
+        margin-bottom: 10px;
+        &>span:nth-child(2) {
+            color: $red-1;
+            margin-left: 5px;
+        }
+    }
+}
+
+.lmtpl-form-f2 {
+    display: flex;
+    flex-flow: row nowrap;
+    margin-bottom: 10px;
+
+    &>:first-child {
+        padding: 9px 12px;
+        flex-grow: 1;
+    }
+
+    &>:last-child {
+        padding: 9px 12px; // Not ok, needs to be solved
+        &:hover {color: var(--tp-1);}
+    }
+}
+
+.lmtpl-select {
+    position: relative;
+
+    div {
+        &:first-of-type {
+            cursor: pointer;
+        }
+
+        &:last-of-type {
+            position: absolute;
+            display: none;
+            flex-flow: column nowrap;
+            background-color: var(--p-1);
+            width: 100%;
+            z-index: 1;
+
+            &.opened {
+                display: flex;
+            }
+
+            .selected {
+                background-color: var(--p-2);
+            }
+
+            span {
+                display: block;
+                padding: 10px 12px;
+                transition: background-color $tr-t;
+            }
+
+            span:hover {
+                background-color: var(--s-1);
+                cursor: pointer;
+            }
+        }
+    }
+}
+
+.lmtpl-spinner {
+    // Add width, height, margin for when we use this in places other than hideAll
+    &:after {
+        content: " ";
+        display: block;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border-width: 5px;
+        border-style: solid;
+        border-color: var(--s-2) transparent var(--s-2) transparent;
+        animation-name: R360;
+        animation-duration: 1.2s;
+        animation-delay: 1s;
+        animation-direction: linear;
+        animation-iteration-count: infinite;
+    }
+}
+
+.lmtpl-steps {
+    margin: 25px 0;
+    font-size: 1.12rem;
+    .fa-check-circle {margin-right: 6px; color: $green-1;}
+    .fa-arrow-circle-right {margin-right: 6px; color: $silver-1;}
+    .fa-chevron-right {margin: 0 15px;}
+}
+
+@mixin lmtpl-tbl($var) {
+    background-color: var(--p-2);
+    width: 100%;
+    margin: 15px 0;
+    border-radius: $bd-r;
+
+    div {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+
+        &:first-of-type {
+            border-top-left-radius: $bd-r;
+            border-top-right-radius: $bd-r;
+        }
+        &:not(:last-of-type) {border-bottom: 1px solid var(--s-2);}
+        &:last-of-type {
+            border-bottom-left-radius: $bd-r;
+            border-bottom-right-radius: $bd-r;
+        }
+
+        &>span {
+            min-width: 80px;
+
+            &:nth-child(1) {
+                text-align: left;
+                @if $var == 1 {
+                    color: $blue-1;
+                    span {font-size: 0.85rem;}
+                }
+            }
+
+            &:nth-child(2) {
+                flex-grow: 1;
+                text-align: right;
+            }
+        }
+    }
+}
+
+// Price table
+.lmtpl-tbl-1 {@include lmtpl-tbl(1);}
+
+@mixin lmtpl-tbl-r($hex) {
+    background-color: $hex;
+    border-radius: $bd-r;
+    font-weight: bold;
+    transform: scale(1.03);
+    border-bottom: none !important;
+
+    &>span {
+        color: #fff !important;
+    }
+}
+
+.lmtpl-tbl-r1 {@include lmtpl-tbl-r($green-2);}
+.lmtpl-tbl-r2 {@include lmtpl-tbl-r($silver-1);}
+
+.lmtpl-tbl-h1 {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 30px;
+}
+
+@each $c, $v in (gold: $gold-1, silver: $silver-1, green: $green-1) {
+    .lmtpl-tag-#{$c} {
+        padding: 4px 14px;
+        font-size: 0.8rem;
+        border-radius: 20px;
+        vertical-align: middle;
+        color: $v;
+        background-color: rgba($v, 0.16);
+    }
+}
+
+#unsaved-changes {
+    display: none;
+    color: $red-1;
+}
+
+/* Padding */
+
+$pad-pos: (
+    t: top,
+    b: bottom,
+    l: left,
+    r: right
+);
+
+$pad-comb: (
+    tb top bottom,
+    lr left right
+);
+
+$pad-val: (15, 30, 45, 60);
+
+@each $val in $pad-val {
+    @each $pos-s, $pos-l in $pad-pos {
+        .lmp-#{$pos-s}-#{$val} {padding-#{$pos-l}: #{$val}px;}
+    }
+
+    @each $comb, $pos1, $pos2 in $pad-comb {
+        .lmp-#{$comb}-#{$val} {
+            padding-#{$pos1}: #{$val}px;
+            padding-#{$pos2}: #{$val}px;
+        }
+    }
+
+    .lmp-a-#{$val}-max {padding: #{$val}px var(--max-pad);}
+}
+
+.lmp-lr-auto {padding-left: auto; padding-right: auto;}
+.lmp-lr-max {padding-left: var(--max-pad); padding-right: var(--max-pad);}
+
+/* Alignment */
+
+.lma-h-center {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+}
+
+.lma-hv-center {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    min-height: 100%;
+}
+
+.lma-v-top>div {
+    justify-content: flex-start !important;
+}
+
+/* Text */
+
+$text-aligns: (
+    l: left,
+    c: center,
+    r: right,
+    j: justify
+);
+
+@each $short, $long in $text-aligns {
+    .lmt-#{$short} {text-align: $long;}
+}
+
+/* Backgrounds */
+
+.lmbg-blue {background-color: $blue-1;}
+.lmbg-silver {
+    background-color: $silver-1;
+    &>* {color: #fff !important;}
+    font-weight: bold;
+}
+.lmbg-green {
+    background-color: $green-1;
+    &>* {color: #fff !important;}
+    font-weight: bold;
+}
+.lmbg-orange {background-color: $orange-1; color: var(--tp-1-1);}
+.lmbg-red {background-color: $red-1;}
+
+.lmbg-p-2 {background-color: var(--p-2);}
+
+
+/*
+  ##############
+  ||  CUSTOM  ||
+  ##############
+*/
+
+
+/* Overrides */
+
+.grow {flex-grow: 1;}
+span.red {color: $red-1;}
+span.blue {color: $blue-1;}
+a.red:hover {
+    background-color: $red-1;
+    color: var(--tp-1-2);
+}
+.fa-question-circle {
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: opacity $tr-t;
+    &:hover {opacity: 0.8;}
+}
+
+/* Home */
+
+#home-welcome>div {
+    &.lmtpl-ilust {display: none;}
+    text-align: center;
+
+    &>h1 {
+        padding: 0;
+        font-size: 4rem;
+        line-height: 1;
+    }
+
+    &>p {
+        font-size: 2rem;
+        &:first-of-type {margin-top: 30px; margin-bottom: 15px;}
+        &:last-of-type {margin-top: 15px; margin-bottom: 30px;}
+    }
+}
+
+
+/*
+  ##################
+  ||  ANIMATIONS  ||
+  ##################
+*/
+
+// Animation Fades
+$fades: (
+    fi 0 0,
+    fil -100px 0,
+    fir 100px 0,
+    fit 0 -100px,
+    fib 0 100px
+);
+
+html.js {
+    @each $f, $x, $y in $fades {
+        .#{$f} {opacity: 0;}
+    }
+}
+
+// Animation Delay
+@each $d in (1, 2, 3, 4, 5, 6, 7, 8) {
+    .ad#{$d} {animation-delay: #{"#{$d * 0.075}s"};}
+}
+
+@each $f, $x, $y in $fades {
+    .anim .#{$f} {
+        animation-duration: 0.6s;
+        animation-fill-mode: forwards;
+        transition: opacity 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955), transform 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+        animation-name: $f;
+    }
+
+    @keyframes #{$f} {
+        0% {
+            @if x != 0 and y != 0 {transform: translate($x, $y);}
+            opacity: 0;
+        }
+
+        100% {
+            transform: translate(0, 0);
+            opacity: 1;
+        }
+    }
+}
+
+@keyframes hideAll {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes R360 {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+/*
+  #############
+  ||  MEDIA  ||
+  #############
+*/
+
+
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+}
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {
+    .lmtpl-crsl-elems>div {width: calc(66.66% - 30px;)}
+}
+
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {
+    footer {justify-content: space-between;}
+
+    .lmtpl-ilust>img {width: 75%;}
+    .lmtpl-crsl-elems>div {width: calc(50% - 30px);}
+}
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {
+    :root {--max-pad: 60px;}
+
+    /* Template */
+    section {
+        aside {
+            transform: translate(0, 0);
+
+            label[for=aside-collapse] {
+                display: none;
+            }
+
+            & ~ main {
+                padding-left: 310px; // aside width + main padding-left
+            }
+        }
+    }
+
+    /* Columns */
+
+    @each $cols in (28, 37, 46, 55, 82, 73, 64) {
+        .lmc-2-#{$cols} {
+            flex-flow: row wrap;
+            justify-content: space-between;
+
+            &>div {
+                display: flex;
+                flex-flow: column nowrap;
+                justify-content: center;
+            }
+        }
+    }
+
+    .lmc-3 {
+        flex-flow: row wrap;
+        justify-content: space-between;
+    }
+
+    .lmc-2-28>div:first-of-type, .lmc-2-82>div:last-of-type {flex: 0 1 calc(20% - var(--lmc-s-2));}
+    .lmc-2-28>div:last-of-type, .lmc-2-82>div:first-of-type {flex: 0 1 calc(80% - var(--lmc-s-2));}
+    .lmc-2-37>div:first-of-type, .lmc-2-73>div:last-of-type {flex: 0 1 calc(30% - var(--lmc-s-2));}
+    .lmc-2-37>div:last-of-type, .lmc-2-73>div:first-of-type {flex: 0 1 calc(70% - var(--lmc-s-2));}
+    .lmc-2-46>div:first-of-type, .lmc-2-64>div:last-of-type {flex: 0 1 calc(40% - var(--lmc-s-2));}
+    .lmc-2-46>div:last-of-type, .lmc-2-64>div:first-of-type {flex: 0 1 calc(60% - var(--lmc-s-2));}
+    .lmc-2-55>div {flex: 0 1 calc(50% - var(--lmc-s-2));}
+
+    .lmc-3>div {
+        flex: 0 0 calc(33.33% - 40px);
+        border-radius: $bd-r;
+    }
+
+    /* Templates */
+
+    .lmtpl-ilust {
+        order: 0;
+        &>img {width: 100%;}
+    }
+
+    /* Custom */
+
+    #home-welcome>div {
+        text-align: left;
+        &.lmtpl-ilust {display: flex;}
+    }
+}
+
+/* Header break */
+@media only screen and (min-width: 1054px) {
+    #appheader>nav {
+        overflow: visible;
+        &>label {display: none;}
+        &>span {flex: 0;}
+    }
+
+    #nav-links {
+        flex: 0 0 auto;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        max-width: initial;
+        margin: 0;
+    }
+
+    .lmtpl-drop-l, .lmtpl-drop-r {
+        display: inline-block;
+        &>div {position: absolute;}
+    }
+
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {
+    html {--col-space: 60px;}
+    .lmtpl-crsl-elems>div {width: calc(33.33% - 30px);}
+}
+
+/* Maximum page width */
+@media only screen and (min-width: 1330px) {
+    :root {--max-pad: calc(50% - 600px);}
+}
