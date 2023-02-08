@@ -59,7 +59,7 @@ class Install:
 
     def install_deps(self):
         print("Installing dependencies ...")
-        packages = "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip", "gnupg2",
+        packages = "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip", "gnupg2", "git", "curl",
 
         if self.opts['has_web']:
             packages += "openssl", "nginx", "supervisor",
@@ -93,7 +93,7 @@ class Install:
         # https://manpages.debian.org/jessie/adduser/adduser.8.en.html
         if not cmd("getent passwd hal", catch=True):
             print("Creating 'hal' user and group ...")
-            cmd("adduser --system --group --no-create-home --disabled-login --gecos '' hal", catch=True)
+            cmd("adduser --system --group --gecos '' hal", catch=True)
             cmd(f"echo hal:{utils.new_pass(64)} | chpasswd")
         else:
             print("User 'hal' already exists!")

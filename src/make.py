@@ -23,6 +23,7 @@ else:
         "db.py",
         "utils/nets.py",
         "gpg.py",
+        "ssh.py",
         "gitlab.py",
         "utils/hosts.py",
         "lmobj.py",

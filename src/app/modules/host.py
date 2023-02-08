@@ -1,17 +1,33 @@
 class HostServices:
+    pg_version = 13
+
     def manage_service(self, action, service):
-        log(f"Restarting {service} for {self.name} ...", console=True)
-        cmd(f"sudo systemctl {action} {service} ", host=self.lmid)
+        messages = {
+            "start": "Starting",
+            "stop": "Stopping",
+            "restart": "Restarting",
+            "reload": "Reloading",
+            }
 
-    def status_service(self, service):
-        out = cmd(f"sudo systemctl status {service}", catch=True)
-        if "active (running)" in out:
-            log(f"{service} is active.", console=True)
-            return 1
+        if service == "postgresql":
+            if action == "status":
+                pass
+            else:
+                cmd(f"sudo pg_ctlcluster {self.pg_version} main {action}", host=self.lmid)
+        else:
+            if action == "status":
+                out = cmd(f"sudo systemctl status {service}", catch=True)
+                if "active (running)" in out:
+                    log(f"{service} is active.", console=True)
+                    return 1
 
-        elif "failed" in out:
-            log(f"{service} failed!", level=4, console=True)
-            return 0
+                elif "failed" in out:
+                    log(f"{service} failed!", level=4, console=True)
+                    return 0
+            else:
+                msg = messages.get(action)
+                log(f"{msg} {service} for {self.name} ...", console=True)
+                cmd(f"sudo systemctl {action} {service} ", host=self.lmid)
 
     # Nets
     def config_dhcp(self):
@@ -98,12 +114,12 @@ class HostServices:
         self.manage_service("restart", "isc-dhcp-server")
 
     def status_dhcp(self):
-        self.status_service("isc-dhcp-server")
+        self.manage_service("status", "isc-dhcp-server")
 
     # Nginx
     def config_nginx(self):
         log(f"Configuring Nginx for {self.name} ...")
-        utils.copy(hal.tpls_dir + "web/nginx.tpl", "/etc/nginx/nginx.conf", host=self.lmid)
+        self.send_file(hal.tpls_dir + "web/nginx.tpl", "/etc/nginx/nginx.conf")
         self.manage_service("restart", "nginx")
 
     def reload_nginx(self):
@@ -119,12 +135,11 @@ class HostServices:
         self.manage_service("restart", "nginx")
 
     def status_nginx(self):
-        self.status_service("nginx")
+        self.manage_service("status", "nginx")
 
     # Postgres
     def config_postgres(self):
         """
-        :public
         Manages /etc/postgresql/13/main/postgresql.conf
                 /etc/postgresql/13/main/pg_hba.conf
         Assigns a new port to the PostgreSQL server.
@@ -133,7 +148,7 @@ class HostServices:
         log(f"Configuring PostgreSQL for {self.name} ...", console=True)
         port = self.next_port()
 
-        pg_dir = f"/etc/postgresql/{os.listdir('/etc/postgresql/')[-1]}/main/"
+        pg_dir = f"/etc/postgresql/{self.pg_version}/main/"
         config_file = pg_dir + "postgresql.conf"
 
         # Create backup for default configs
@@ -148,16 +163,11 @@ class HostServices:
 
         # Write new config file and restart service
         utils.write(config_file, config, owner="postgres", host=self.lmid)
-        utils.copy(hal.tpls_dir + "pg/pg_hba.tpl", pg_dir + "pg_hba.conf", owner="postgres", host=self.lmid)
+        self.send_file(hal.tpls_dir + "pg/pg_hba.tpl", pg_dir + "pg_hba.conf", owner="postgres")
 
         # Update ports in Hal projects and in db
+        utils.write(utils.dbs.port_file, str(port), host=self.lmid)
         hal.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
-
-        if self.dbid == hal.host_dbid:
-            details_path = hal.app_dir + "db/details.ast"
-            details = utils.read(details_path, host=self.lmid)
-            details["port"] = port
-            utils.write(details_path, details, host=self.lmid)
 
         self.pg_port = port
         self.manage_service("restart", "postgresql")
@@ -175,7 +185,7 @@ class HostServices:
         self.manage_service("restart", "postgresql")
 
     def status_postgres(self):
-        self.status_service("postgres")
+        self.manage_service("status", "postgresql")
 
     # Supervisor
     def start_supervisor(self):
@@ -188,103 +198,173 @@ class HostServices:
         self.manage_service("restart", "supervisor")
 
     def status_supervisor(self):
-        self.status_service("supervisor")
+        self.manage_service("status", "supervisor")
 
     # SSH
+    def restart_ssh(self):
+        self.manage_service("restart", "ssh")
+
     def config_ssh_client(self):
         if not utils.isfile("/home/hal/.ssh/", host=self.lmid):
             cmd("mkdir /home/hal/.ssh/", host=self.lmid)
 
         log(f"Configuring SSH client for {self.name} ...", console=True)
-        hosts = ""
+        hosts = []
 
         if self.dbid == hal.host_dbid:
             query = "select a.lmid, a.alias, b.ip, b.ssh_port from lmobjs a, host.hosts b where a.id = b.lmobj and a.id != %s;"
             params = hal.host_dbid,
 
             for host in hal.db.execute(query, params):
-                hosts += utils.format_tpl("ssh/host.tpl", {
+                hosts.append(utils.format_tpl("ssh/host.tpl", {
                     "lmid": host[0],
                     "ip": host[2],
                     "port": host[3],
                     "user": "hal",
                     "privkey": utils.ssh_dir + host[0],
-                    })
+                    }))
 
                 if host[1]:
-                    hosts += utils.format_tpl("ssh/host.tpl", {
+                    hosts.append(utils.format_tpl("ssh/host.tpl", {
                         "lmid": host[1],
                         "ip": host[2],
                         "port": host[3],
                         "user": "hal",
                         "privkey": utils.ssh_dir + host[0],
-                    })
+                    }))
 
-        hosts += utils.format_tpl("ssh/host.tpl", {
-            "lmid": self.gitlab.domain,
-            "ip": self.gitlab.domain,
+        hosts.append(utils.format_tpl("ssh/host.tpl", {
+            "lmid": gitlab.domain,
+            "ip": gitlab.domain,
             "port": 22,
             "user": "git",
             "privkey": utils.ssh_dir + self.lmid + "-gitlab",
-            })
+            }))
+
+        hosts = '\n\n'.join(hosts)
 
         utils.write("/home/hal/.ssh/config", utils.format_tpl("ssh/client_config.tpl", {
             "hosts": hosts,
         }), host=self.lmid)
 
     def config_ssh_server(self):
-        log(f"Configuring SSH server for {self.name} ...", console=True)
-        port = self.next_port()
+        if self.ssh_port == -1:
+            log(f"{self.name} is not a SSH server!", level=4, console=True)
+        else:
+            log(f"Configuring SSH server for {self.name} ...", console=True)
+            port = self.next_port()
 
-        hal.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
+            hal.db.execute("update host.hosts set ssh_port=%s where lmobj=%s;", (port, self.dbid))
 
-        if self.dbid != hal.host_dbid:
             config = utils.format_tpl("ssh/server_config.tpl", {
                 "port": port,
                 })
 
             utils.write("/etc/ssh/sshd_config", config, host=self.lmid)
+            self.restart_ssh()
+            hal.pools.get(hal.host_dbid).config_ssh_client()
 
-        self.config_ssh_client()
+    def create_ssh_key(self, for_gitlab:'bool'=False):
+        log(f"Generating SSH key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}'. This may take a while ...", console=True)
 
-    def create_ssh_key(self, gitlab=False):
-        log(f"Generating SSH key to access {'Gitlab from ' if gitlab else ''}host '{self.name}'. This may take a while ...", console=True)
+        host = self.lmid if for_gitlab else hal.host_lmid
+        privkey = utils.ssh_dir + self.lmid + ("-gitlab" if for_gitlab else '')
 
-        privkey = utils.ssh_dir + self.lmid + ("-gitlab" if gitlab else '')
-        cmd(f'ssh-keygen -b 4096 -t ed25519 -a 100 -f {privkey} -q -N ""', host=self.lmid)
+        if utils.isfile(privkey, host=host):
+            log(f"SSH key already exists!", level=3, console=True)
+            yes = utils.yes_no("Overwrite it?")
+            if yes:
+                cmd(f"mv {privkey} {privkey}.old", host=host)
+                cmd(f"mv {privkey}.pub {privkey}.pub.old", host=host)
+            else:
+                return
 
-        if utils.isfile(privkey):
-            cmd("chmod 600 " + privkey, host=self.lmid)
-            cmd("chmod 600 " + privkey + ".pub", host=self.lmid)
-            self.config_ssh_client()
+        cmd(ssh.keygen.format(privkey), host=host)
+
+        if utils.isfile(privkey, host=host):
+            cmd("chmod 600 " + privkey, host=host)
+            cmd("chmod 600 " + privkey + ".pub", host=host)
+
+            if for_gitlab:
+                self.config_ssh_client()
+                gitlab.add_ssh_key(self.lmid, utils.read(utils.ssh_dir + self.lmid + "-gitlab.pub", host=self.lmid))
+            else:
+                hal.pools.get(hal.host_dbid).config_ssh_client()
 
             return 1
         else:
-            log(f"Couldn't generate SSH key to access {'Gitlab from ' if gitlab else ''}host '{self.name}'!", level=4, console=True)
+            log(f"Couldn't generate SSH key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}'!", level=4, console=True)
 
             return 0
 
-    def delete_ssh_key(self, gitlab=False):
-        log(f"Removing {'Gitlab ' if gitlab else ''}SSH key for host '{self.name}' ...", console=True)
+    def delete_ssh_key(self, for_gitlab:'bool'=False):
+        log(f"Removing {'Gitlab ' if for_gitlab else ''}SSH key for host '{self.name}' ...", console=True)
 
-        privkey = utils.ssh_dir + self.lmid + ("-gitlab" if gitlab else '')
-        cmd(f"rm {privkey} {privkey}.pub", host=self.lmid)
+        host = self.lmid if for_gitlab else hal.host_lmid
+        privkey = utils.ssh_dir + self.lmid + ("-gitlab" if for_gitlab else '')
 
-        self.config_ssh_client()
+        cmd(f"rm {privkey} {privkey}.pub", host=host)
+
+    ## GPG
+    def get_gpg_pubkey(self, email:'str'=None):
+        if not email: email = self.email
+        pubkey_path = utils.tmp_dir + "gpg_pubkey"
+        output = cmd(f"gpg2 --export -a {self.get_gpg_key_id(email)} > {pubkey_path}", catch=True, host=self.lmid)
+
+        if "nothing exported" in output:
+            log(f"Couldn't get GPG pubkey for {email}!", level=4, console=True)
+
+        else:
+            log(f"GPG pubkey for {email} saved at {pubkey_path}!", console=True)
+            return utils.read(pubkey_path, host=self.lmid)
+
+    def get_gpg_key_id(self, email:'str'=None):
+        if not email: email = self.email
+        key_id = cmd(f"gpg2 --list-keys --keyid-format LONG {email}", catch=True, host=self.lmid)
+
+        if "No public key" in key_id:
+            log(f"Couldn't find GPG key for '{email}'!", level=4, console=True)
+            yes = utils.yes_no("Create one?")
+            if yes:
+                return self.create_gpg_key(email)
+            return 0
+        else:
+            return re.findall(r'\bpub   rsa4096/\w+', key_id)[0].split('/')[1]
+
+    def create_gpg_key(self, email:'str'=None):
+        if not email: email = self.email
+        log(f"Generating GPG key for '{email}'. This may take a while ...", console=True)
+
+        key_config = utils.format_tpl("gpg-key.tpl", {
+            "user": email.split('@')[0],
+            "email": email
+            })
+        utils.write(utils.tmp_dir + "gpg_batch", key_config, host=self.lmid)
+
+        cmd(f"gpg2 --batch --gen-key {utils.tmp_dir}gpg_batch", host=self.lmid)
+        key_id = self.get_gpg_key_id(email)
+        log(f"Key ID: {key_id}", console=True)
+
+        return key_id
+
+    def delete_gpg_key(self, email:'str'=None):
+        if not email: email = self.email
+        cmd(f"gpg2 --batch --delete-secret-keys {email}", host=self.lmid)
+        cmd(f"gpg2 --batch --delete-keys {email}", host=self.lmid)
+        log(f"Deleted GPG key for {email}!", console=True)
 
 
 class Host(lmObj, HostServices):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
-        query = "select mac, net, ip, client, env, ssh_port, pg_port from host.hosts where lmobj=%s;"
+        query = "select mac, net, ip, client, env, ssh_port, pg_port, pm from host.hosts where lmobj=%s;"
         params = dbid,
 
-        self.mac, self.net_id, self.ip, self.client_id, self.env, self.ssh_port, self.pg_port = hal.db.execute(query, params)[0]
+        self.mac, self.net_id, self.ip, self.client_id, self.env, self.ssh_port, self.pg_port, self.pm_id = hal.db.execute(query, params)[0]
 
         self.mnt_dir = utils.mnt_dir + self.name + "/"
-        self.gitlab = Gitlab(self.dbid, self.lmid)
-
+        self.email = self.lmid + "@" + utils.hosts.domain
         self.check()
 
     def next_port(self, service=False):
@@ -309,64 +389,56 @@ class Host(lmObj, HostServices):
         return True
 
     # Projects
-    def create_project(self, lmid, module, name, description, alias, host):
-        host_dbid = hal.lmobjs.get(host, 0)
-        if isinstance(hal.pools[host_dbid], Host):
-            if hal.pools[host_dbid].env == utils.hosts.envs.get("dev"):
-                if hal.pools[host_dbid].has_storage("10mb"):
-                    gitlab.create_project(data={
-                        'path': lmid,
-                        'name': name,
-                        'description': description,
-                        'visibility': 'private',
-                        'initialize_with_readme': True,
-                        })
-                else:
-                    log(f"Not enough storage on {host}!", level=4, console=True)
-                    return 0
-            else:
-                log(f"{host} is not a dev machine!", level=4, console=True)
-                return 0
-        else:
-            log(f"{host} is not a host!", level=4, console=True)
-            return 0
+    def create_project(self, lmid, module, alias, name, description):
+        if self.gitlab.create_project(data={
+            'path': lmid,
+            'name': name,
+            'description': description,
+            'visibility': 'private',
+            'initialize_with_readme': True,
+            }):
 
-        if gitlab.get_projects(lmid):
             dbid = hal.insert_lmobj(lmid, module, alias)
 
             query = f"insert into project.projects (lmobj, dev_host, dev_version, prod_host, prod_version, name, description) values (%s, %s, %s, %s, %s, %s, %s);"
-            params = dbid, host_dbid, 0.1, None, None, name, description,
+            params = dbid, self.dbid, 0.1, None, None, name, description,
             hal.db.execute(query, params)
 
-            gitlab.clone(lmid)
+            self.gitlab.clone(lmid)
             return dbid
 
-        log(f"Couldn't create project {lmid}!", level=4, console=True)
         return 0
 
     # Web
-    def create_web(self, name, description, alias, host, domain, modules, langs, themes, default_lang, default_theme, has_top, has_animations, has_domain_in_title):
+    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations=False):
+
+        # To do: validate parameters
+
+        #if domain in utils.get_keys(hal.domains):
+            #log("Domain already exists!", level=4, console=True)
+            #return 0
+
         lmid = hal.next_lmid()
-        dbid = self.create_project(lmid, "Web", name, description, alias, host)
+        dbid = self.create_project(lmid, "Web", alias, name, description)
 
         if dbid:
             module_ids = [x for x in [utils.webs.modules.get(m, 0) for m in modules] if x]
             lang_ids = [x for x in [utils.projects.langs.get(l, 0) for l in langs] if x]
             theme_ids = [x for x in [utils.projects.themes.get(t, 0) for t in themes] if x]
 
-            query = "insert into web.webs (lmobj, domain, port, ssl_last_gen, modules, langs, themes, default_lang, default_theme, has_top, has_animations, has_domain_in_title) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
-            params = hal.lmobjs[lmid], domain, self.next_port(), None, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], has_top, has_animations, has_domain_in_title
+            query = "insert into web.webs (lmobj, domain, port, ssl_last_gen, modules, langs, themes, default_lang, default_theme, has_animations) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
+            params = hal.lmobjs[lmid], domain, self.next_port(), None, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], has_animations,
 
             if hal.db.execute(query, params)[0][0]:
-                log(f"{lmid} web app created!", console=True)
+                log(f"{name if name else (alias if alias else lmid)} web app created!", console=True)
                 hal.create_pool(dbid)
-                return
+                return 1
 
         log(f"Couldn't create web app '{lmid}'!", level=4, console=True)
 
     def generate_dh(self):
         if utils.isfile(utils.ssl_dir + "dhparam.pem", host=self.lmid):
-            log("DH parameters are already in place!")
+            log("DH parameters are already in place!", level=3, console=True)
             yes = utils.yes_no("Purge them?")
 
             if yes: cmd(f"rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
@@ -376,26 +448,23 @@ class Host(lmObj, HostServices):
         cmd(f"openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096", host=self.lmid)
 
     # Hosts
-    def create_host(self, env="dev", alias=None, mem=1024, cpus=1, disk=2):
+    def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):
         log("Creating new VM ...", console=True)
         lmid = hal.next_lmid()
-        hostname = alias if alias else lmid
 
-        query = "select lmobj from nets where pm=%s;"
-        params = self.dbid,
-        vm_net_id = hal.db.execute(query, params)[0][0]
+        ip = utils.nets.get_free_ip(self.net_id)
+        ssh.create_ssh_key(lmid)
+        ssh_port = self.next_port(service=True)
+        utils.hosts.preseed_host(lmid, self.net_id, ip, ssh_port, host=self.lmid)
 
-        ip = utils.get_free_ip(vm_net_id)
-        utils.hosts.preseed_host(hostname, vm_net_id, ip)
-
-        cmd(f"sudo virt-install " + ' '.join([
-            f"--name {hostname}",
+        output = cmd(f"sudo virt-install " + ' '.join([
+            f"--name {lmid}",
             f"--memory {mem}",
             f"--vcpus {cpus}",
-            f"--cdrom {utils.tmp_dir + hostname}.iso",
+            f"--cdrom {utils.tmp_dir + lmid}.iso",
             "--os-variant generic",
             f"--disk {utils.vms_dir + lmid}.qcow2,size={disk},format=qcow2,cache=none",
-            f"--network network={hal.pools.get(vm_net_id).lmid}",
+            f"--network bridge={self.lmid}",
             "--noautoconsole",
             ]), host=self.lmid)
 
@@ -405,14 +474,16 @@ class Host(lmObj, HostServices):
             dbid = hal.insert_lmobj(lmid, 'Host', alias)
 
             query = "insert into host.hosts (lmobj, mac, net, ip, client, env, ssh_port, pg_port, pm) values (%s, %s, %s, %s, %s, %s, %s, %s, %s);"
-            params = dbid, mac, vm_net_id, ip, None, utils.envs.get(env), None, None, self.dbid,
+            params = dbid, mac, self.net_id, ip, None, utils.hosts.envs.get(env), ssh_port, self.next_port(service=True), self.dbid,
 
             hal.db.execute(query, params)
-            self.config_dhcp()
+            hal.pools.get(hal.host_dbid).config_ssh_client()
 
-            log(f"{hostname} VM created on {self.name}!", console=True)
+            log(f"{lmid} VM created on {self.name}!", console=True)
+            hal.create_pool(dbid)
 
-        log(f"Couldn't create {hostname} VM on {self.name}!", level=4, console=True)
+        else:
+            log(f"Couldn't create {lmid} VM on {self.name}!", level=4, console=True)
 
     # Mount
     def is_mounted(self):
@@ -424,13 +495,13 @@ class Host(lmObj, HostServices):
         if self.dbid == hal.host_dbid:
             log("You can't mount the host!", level=4, console=True)
         else:
-            if not os.path.isdir(self.mnt_dir):
+            if not utils.isfile(self.mnt_dir):
                 log(f"Creating mount point at {self.mnt_dir} ...")
                 cmd("mkdir " + self.mnt_dir)
 
             if not self.is_mounted():
-                cmd(f"sshfs -p {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} hal@{self.ip}:/home {self.mnt_dir}")
-                log(f"{self.name} mounted {util.now()}", console=True)
+                cmd(f"sshfs -p {self.ssh_port} -o allow_other,identityfile={utils.ssh_dir}{self.lmid} hal@{self.ip}:/home/hal {self.mnt_dir}")
+                log(f"{self.name} mounted at {utils.now()}", console=True)
             else:
                 log(f"{self.name} is already mounted!", console=True)
 
@@ -440,16 +511,109 @@ class Host(lmObj, HostServices):
         else:
             if self.is_mounted():
                 cmd(f"fusermount -u {self.mnt_dir}")
-                log(f"{self.name} unmounted {util.now()}", console=True)
+                log(f"{self.name} unmounted at {utils.now()}", console=True)
             else:
                 log(f"{self.name} is already unmounted!", console=True)
 
-            # Double check that it's unmounted
-            if os.path.isdir(self.mnt_dir) and not self.is_mounted():
-                log(f"Removing mount point from {self.mnt_dir} ...")
-                cmd("rmdir " + self.mnt_dir)
-
     # System
+    def reach(self):
+        if self.dbid == hal.host_dbid:
+            print("It's this machine, dumbass!")
+        else:
+            response = cmd("echo 1", catch=True, host=self.lmid)
+            if response == "1":
+                log(f"Host '{self.name}' reached!", console=True)
+            else:
+                log(f"Couldn't reach host '{self.name}'!", level=3, console=True)
+
+    def build_dir_tree(self):
+        log(f"Creating Hal's directory tree on {self.name} ...", console=True)
+
+        dir_tree = [utils.logs_dir, utils.projects_dir, utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir]
+        if self.pm_id:
+            dir_tree.append(utils.vms_dir)
+
+        for node in dir_tree:
+            # It's a directory
+            if node.endswith('/') and not utils.isfile(node, host=self.lmid):
+                cmd(f"mkdir {node}", host=self.lmid)
+
+            # It's a file
+            elif not utils.isfile(node, host=self.lmid):
+                cmd(f"touch {node}", host=self.lmid)
+
+    def build_venv(self):
+        if utils.isfile(f"{utils.projects_dir}venv/", host=self.lmid):
+            log("There's already a Virtual Env!", level=3, console=True)
+            yes = utils.yes_no("Purge it?")
+
+            if yes: cmd(f"rm -r {utils.projects_dir}venv/", host=self.lmid)
+            else: return
+
+        log("Creating Virtual Env ...", console=True)
+        cmd(f"python3 -m venv {utils.projects_dir}venv", host=self.lmid)
+
+        packages = "netifaces requests uwsgi libsass pyyaml psycopg2"
+
+        cmd(f"{utils.projects_dir}venv/bin/pip install wheel", host=self.lmid)
+        cmd(f"{utils.projects_dir}venv/bin/pip install {packages}", host=self.lmid)
+
+    def config_git(self):
+        log(f"Configuring Git for {self.name} ...", console=True)
+
+        config = utils.format_tpl("gitconfig.tpl", {
+            "user": self.lmid,
+            "email": self.email,
+            "gpg_key_id": self.get_gpg_key_id(self.email),
+            })
+
+        utils.write(f"/home/hal/.gitconfig", config, host=self.lmid)
+
+        exists = False
+        gpg_pubkey = self.get_gpg_pubkey(self.email)
+        gpg_keys = gitlab.request(endpoint = f"/user/gpg_keys")
+
+        for k in gpg_keys:
+            if k["key"] == gpg_pubkey:
+                exists = True
+                break
+
+        if not exists:
+            gitlab.add_gpg_key(self.email, gpg_pubkey)
+
+    def setup(self):
+        self.config_ssh_server()
+        self.build_dir_tree()
+        self.build_venv()
+        self.generate_dh()
+        self.config_nginx()
+        self.config_postgres()
+        self.config_git()
+        self.create_ssh_key(for_gitlab=True)
+
+    def has_file(self, path:'str'):
+        if utils.isfile(path, host=self.lmid):
+            log("File exists!", console=True)
+
+    def send_file(self, src_path:'str', dest_path:'str', owner:'str'="root"):
+        final_path = None
+        if dest_path.startswith("/etc/"):
+            final_path = dest_path
+            dest_path = utils.tmp_dir + 'restricted'
+
+        cmd(f"scp -P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path} hal@{self.lmid}:{dest_path}", catch=True)
+
+        if final_path:
+            cmd(f"sudo mv {dest_path} {final_path}", host=self.lmid)
+            if owner != "root": cmd(f"sudo chown {owner}:{owner} {final_path}", host=self.lmid)
+
+    def retrieve_file(self, src_path:'str', dest_path:'str'):
+        # Handle permissions
+        cmd(f"scp -P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} hal@{self.lmid}:{src_path} {dest_path}", catch=True)
+
+    def status(self):
+        print("OK")
+
     def update(self):
         log(f"Updating {self.lmid} ...", console=True)
         cmd("apt update && apt upgrade -y", host=self.lmid)
@@ -458,11 +622,8 @@ class Host(lmObj, HostServices):
         log(f"Rebooting {self.lmid} ...", console=True)
         cmd("sudo systemctl reboot now", host=self.lmid)
 
+    def get_name(self):
+        log(self.name, console=True)
+
     def check(self):
-        if not self.ssh_port:
-            self.config_ssh_server()
-
-        if not self.pg_port:
-            self.config_postgres()
-
-        print(cmd("echo 1", catch=True, host=self.lmid))
+        pass

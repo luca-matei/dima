@@ -5,4 +5,5 @@
 'domain': 'lucamatei.net',
 'gitlab_domain': 'gitlab.com',
 'gitlab_user': 'lucamatei',
+'hosts_domain': 'nebula.lucamatei.net',
 }

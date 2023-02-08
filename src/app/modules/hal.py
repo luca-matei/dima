@@ -14,11 +14,10 @@ class Hal:
     net_lmid = "lm3"
     host_lmid = "lm4"
 
-    modules = {}
-
     domain = None
-    domains = {}
 
+    modules = {}
+    domains = {}
     lmobjs = {}
     pools = {}
 
@@ -51,8 +50,9 @@ class Hal:
             setattr(self, attr, settings.get(attr))
 
         logs.level = settings.get("log_level", 1)
-        Gitlab.domain = settings.get("gitlab_domain")
-        Gitlab.user = settings.get("gitlab_user")
+        gitlab.domain = settings.get("gitlab_domain")
+        gitlab.user = settings.get("gitlab_user")
+        utils.hosts.domain = settings.get("hosts_domain")
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
@@ -64,11 +64,19 @@ class Hal:
         log("Phase 5: Checking services ...")
         self.check()
         #ssh.check()
+        gitlab.get_token()
 
         log("Phase 6: Creating object pools ...")
+        for kind in (self.modules["Net"], self.modules["Host"], self.modules["Soft"], self.modules["App"], self.modules["Web"]):
+            for dbid in utils.get_keys(self.lmobjs):
+                if isinstance(dbid, int) and self.lmobjs[dbid][1] == kind:
+                    self.create_pool(dbid)
+
+        """
+        log("Phase 7: Checking objects ...")
         for dbid in utils.get_keys(self.lmobjs):
-            if isinstance(dbid, int):
-                self.create_pool(dbid)
+            self.pools.get(dbid).check()
+        """
 
     def load_database(self):
         log("Phase 4.1: Loading modules ...")
@@ -110,7 +118,7 @@ class Hal:
 
         log("Phase 4.8: Loading command objects ...")
         module_ids = []
-        for obj in hal.db.execute("select id, module, name, acts, args from command.objs;"):
+        for obj in hal.db.execute("select id, module, name, acts from command.objs;"):
             module_id = obj[1]
             if module_id not in module_ids:
                 cli.objs[module_id] = {}
@@ -121,11 +129,7 @@ class Hal:
             cli.objs[module_id][obj[0]] = obj[2:]    # id = name, acts, args
             cli.objs[module_id][name] = obj[0]     # name = id
 
-        log("Phase 4.9: Loading command arguments ...")
-        for arg in hal.db.execute("select id, name, act, positional, regex, is_bool, short, long from command.args;"):
-            cli.args[arg[0]] = arg[1:]    # id = act, req etc.
-
-        log("Phase 4.10: Loading objects data ...")
+        log("Phase 4.9: Loading objects data ...")
         # Load lm objects
         for lmobj in self.db.execute("select id, lmid, module, alias from lmobjs order by id;"):
             self.lmobjs[lmobj[0]] = lmobj[1:]      # 1 = lm1, 10 ('app' module id), astatin
@@ -257,5 +261,6 @@ class Hal:
 
         if reload:
             self.load_database()
+
 
 hal = Hal()

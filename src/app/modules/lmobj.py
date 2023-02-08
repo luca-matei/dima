@@ -19,3 +19,4 @@ class lmObj:
         self.alias = None
         hal.db.execute("update lmobjs set alias=%s where id=%s;", (None, self.dbid,))
         log("Alias deleted.", console=True)
+        

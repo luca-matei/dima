@@ -2,14 +2,11 @@ class Web(Project):
     def __init__(self, dbid):
         Project.__init__(self, dbid)
 
-        query = "select a.id, b.dev_version, c.id, b.prod_version, b.name, b.description, d.name, e.port, e.modules, e.langs, e.themes, e.default_lang, e.default_theme, e.has_top, e.has_animations, e.title_format from lmobjs a, project.projects b, lmobjs c, domains d, web.webs e where a.id=b.dev_host and c.id=b.prod_host and e.domain=d.id and e.lmobj=%s;"
+        query = "select a.name, b.port, b.modules, b.langs, b.themes, b.default_lang, b.default_theme, b.has_animations from domains a, web.webs b where b.domain=a.id and b.lmobj=%s;"
         params = dbid,
-        self.dev_host_id, self.dev_version, self.prod_host_id, self.prod_version, self.name, self.description, self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_top, self.has_animations, self.title_format = hal.db.execute(query, params)[0]
+        self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = hal.db.execute(query, params)[0]
 
-        dev_domain = self.domain.split('.')
-        dev_domain.insert(-2, 'dev')
-        self.dev_domain = '.'.join(dev_domain)
-
+        self.dev_domain = "dev." + self.domain
         self.modules = [utils.webs.modules[m] for m in self.module_ids]
         self.langs = [utils.projects.langs[l] for l in self.lang_ids]
         self.themes = [utils.projects.themes[t] for t in self.theme_ids]
@@ -260,6 +257,7 @@ class Web(Project):
         hal.pools[self.host].restart("nginx")
 
     def check(self):
+        return
         is_empty = len(os.listdir(self.repo_dir)) == 2     # There's just .git
 
         # Has valid SSL Certificates

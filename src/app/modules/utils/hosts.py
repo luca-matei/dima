@@ -1,25 +1,33 @@
 class HostUtils:
     envs = {}
+    domain = None
 
-    def preseed_host(self, hostname, net_id, ip):
+    def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):
+        self.__doc__ = Host.create_host.__doc__
+        # To do: choose a pm and invoke create_host()
+        host_dbid = hal.lmobjs["lm4"]
+
+        hal.pools.get(host_dbid).create_host(env, alias, mem, cpus, disk)
+
+    def preseed_host(self, hostname, net_id, ip, ssh_port, host=hal.host_lmid):
+        # To do: preseed static ip
         arch = "amd" # "386"
         iso_dir = f"{utils.tmp_dir}debian-{utils.debian_version}/"
-        print(iso_dir)
-        iso_file = f"{hal.src_dir}assets/debian-{utils.debian_version}.iso"
+        iso_file = f"{utils.res_dir}debian-{utils.debian_version}.iso"
         preseed_file = iso_dir + "preseed.cfg"
         isolinux_file = iso_dir + "isolinux/isolinux.cfg"
         tmp_iso = utils.tmp_dir + hostname + ".iso"
 
-        if os.path.isfile(tmp_iso):
+        if utils.isfile(tmp_iso, host=host, quiet=True):
             log(f"Removing {tmp_iso}", level=3)
-            cmd(f"sudo rm {tmp_iso}")
+            cmd(f"sudo rm {tmp_iso}", host=host)
 
-        if os.path.isdir(iso_dir):
+        if utils.isfile(iso_dir, host=host, quiet=True):
             log(f"Removing {iso_dir} ...", level=3)
-            cmd("sudo rm -r " + iso_dir)
+            cmd("sudo rm -r " + iso_dir, host=host)
 
         log("Extracting files from iso ...")
-        cmd(f"7z x -bd -o{iso_dir} {iso_file} > /dev/null")
+        cmd(f"7z x -bd -o{iso_dir} {iso_file} > /dev/null", host=host)
 
         log("Creating preseed file ...")
         # utils.new_pass(64)
@@ -31,15 +39,15 @@ class HostUtils:
             "dns": hal.pools.get(net.dns_id).ip,
             "hostname": hostname,
             "domain_name": net.domain,
-            "root_pass": "test",
-            "root_pass_hash": "",
-            "user_fullname": "hal",
+            "root_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),
             "username": "hal",
-            "user_pass": "test",
-            "user_pass_hash": ""
+            "user_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),
+            "packages": "sudo openssh-server build-essential python3 python3-dev python3-venv python3-pip postgresql libpq-dev openssl nginx supervisor git curl wget gnupg2",
+            "ssh_key": utils.read(utils.ssh_dir + hostname + ".pub"),
+            "ssh_port": ssh_port,
             })
 
-        utils.write(preseed_file, preseed_config)
+        utils.write(preseed_file, preseed_config, host=host)
 
         log("Configuring boot options ...")
         utils.write(isolinux_file, '\n'.join([
@@ -51,10 +59,10 @@ class HostUtils:
             "default lminstall",
             "prompt 0",
             "timeout 1",
-            ]))
+            ]), host=host)
 
         """
-        # Adding the preseed file to the Initrd
+        # Adding the preseed file to Initrd
         log("Adding preseed file ...")
         cmd(f"chmod +w {iso_dir}install.{arch}/")
         cmd(f"gunzip {iso_dir}install.{arch}/initrd.gz")
@@ -65,23 +73,23 @@ class HostUtils:
 
         # Regenerating md5sum.txt
         log("Regenerating md5sum ...")
-        cmd(f"chmod +w {iso_dir}md5sum.txt")
-        cmd(f"md5sum `find {iso_dir} -follow -type f` > {iso_dir}md5sum.txt")
+        cmd(f"chmod +w {iso_dir}md5sum.txt", host=host)
+        cmd(f"md5sum `find {iso_dir} -follow -type f` > {iso_dir}md5sum.txt", host=host)
 
-        md5sum = utils.read(iso_dir + "md5sum.txt")
+        md5sum = utils.read(iso_dir + "md5sum.txt", host=host)
         md5sum = md5sum.replace(iso_dir, "./")
-        utils.write(iso_dir + "md5sum.txt", md5sum)
+        utils.write(iso_dir + "md5sum.txt", md5sum, host=host)
 
-        cmd(f"chmod -w {iso_dir}md5sum.txt")
+        cmd(f"chmod -w {iso_dir}md5sum.txt", host=host)
 
-        log(f"Creating {lmid}.iso ...")
-        cmd(f"genisoimage -quiet -r -J -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o {tmp_iso} {iso_dir[:-1]}")
+        log(f"Creating {hostname}.iso ...")
+        cmd(f"genisoimage -quiet -r -J -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o {tmp_iso} {iso_dir[:-1]}", host=host)
 
-        if os.path.isdir(iso_dir):
+        if utils.isfile(iso_dir, host=host, quiet=True):
             log(f"Removing {iso_dir} ...", level=3)
-            cmd("sudo rm -r " + iso_dir)
+            cmd("sudo rm -r " + iso_dir, host=host)
 
-        log(f"Preseeded ISO image for {hostname} stored at {self.tmp_iso}", console=True)
+        log(f"Preseeded ISO image for {hostname} stored at {tmp_iso}", console=True)
 
     def register_host(self, mode=None):
         # This host can only be a PM

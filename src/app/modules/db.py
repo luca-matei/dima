@@ -10,29 +10,23 @@ class Db:
             self.build()
 
     def connect(self):
-        def try2connect():
+        try:
             # To do: get passwords securely
             details = utils.read(utils.src_dir + "app/db/details.ast")
             host = details['host']
-            port = details['port']
             password = details['pass']
+            port = int(utils.read(utils.projects_dir + "pg_port.txt", host=self.host_dbid))
 
             self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
 
-        try:
-            try2connect()
-        except:
-            # Maybe PostgreSQL port has updated in the meantime
-            #requests.get(f"https://hal.lucamatei.net/c/{self.lmid}/update/db")
-            try:
-                try2connect()
-            except:
-                log(f"Cannot connect to {self.lmid} database!", level=5, console=True)
+        except Exception as e:
+            log(e, level=4)
+            log(f"Cannot connect to {self.lmid} database!", level=5, console=True)
 
         log(self.lmid + " database connected.")
 
     def erase(self):
-        log(f"Erasing {self.lmid} database ...", console=True)
+        log(f"Erasing {self.lmid} database ...", level=3, console=True)
 
         # Drop all user created schemas
         schemas = [x[0] for x in self.execute("select s.nspname as table_schema, s.oid as schema_id, u.usename as owner from pg_catalog.pg_namespace s join pg_catalog.pg_user u on u.usesysid = s.nspowner where nspname not in ('information_schema', 'pg_catalog', 'public') and nspname not like 'pg_toast%%' and nspname not like 'pg_temp_%%' order by table_schema;")]
@@ -112,8 +106,8 @@ class Db:
 
                 # To do: validate data
                 if has_nmsps:
-                    nmsp_tables = ', '.join(nmsp_tables)
                     for row in table[1][2:]:    # Data rows
+                        tmp_nmsp_tables = nmsp_tables
                         new_row = []
                         wheres = []    # where clause in query
 
@@ -140,8 +134,12 @@ class Db:
                                     else:
                                         new_row.append("'{}'")
                                 else:
-                                    new_row.append(nmsps[i][2] + '.' + nmsps[i][0])                 # Table name . Translated column
-                                    wheres.append(nmsps[i][2] + '.' + nmsps[i][1] + f"='{col}'")    # Table name . Column to translate
+                                    if col:
+                                        new_row.append(nmsps[i][2] + '.' + nmsps[i][0])                 # Table letter . Translated column
+                                        wheres.append(nmsps[i][2] + '.' + nmsps[i][1] + f"='{col}'")    # Table letter . Column to translate
+                                    else:
+                                        new_row.append("null")
+                                        tmp_nmsp_tables = [x for x in tmp_nmsp_tables if x[-1] != nmsps[i][2]]
 
                             # Column doesn't have a namespace
                             else:
@@ -156,7 +154,7 @@ class Db:
                         new_row = ', '.join(new_row)
                         wheres = ' and '.join(wheres)
 
-                        self.execute(f"insert into {schema[0]}.{table[0]} ({struct_row}) select {new_row} from {nmsp_tables} where {wheres};")
+                        self.execute(f"insert into {schema[0]}.{table[0]} ({struct_row}) select {new_row} from {', '.join(tmp_nmsp_tables)} where {wheres};")
                 else:
                     rows = []
                     ss = []

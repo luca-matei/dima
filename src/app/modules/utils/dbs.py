@@ -1,5 +1,6 @@
 class DbUtils:
     query = """sudo -u hal psql -tAc \"{}\""""
+    port_file = utils.projects_dir + "pg_port.txt"
 
     def create_db(self, host=None):
         pass

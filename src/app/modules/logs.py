@@ -37,11 +37,15 @@ class Logs:
             sys.exit()
 
     def create_record(self, call_info, level, message):
-        filename, lineno, function = call_info
-        if function == "execute" and level == 2 and len(message) > 256:
+        if type(call_info) == list and len(call_info) == 4: host = f" {call_info[3]}:"
+        else: host = ""
+        filename, lineno, function = call_info[:3]
+
+        # function == "execute" and "Data" in message and 
+        if level == 2 and len(message) > 256:
             message = message[:253] + "..."
 
-        record = f"{utils.now()} {filename.split('/')[-1]} l{lineno} {function}() {self.levels[level][0]}: {message}\n"
+        record = f"{utils.now()} l{lineno} {function}(){host} {self.levels[level][0]}: {message}\n"
 
         utils.write(self.log_file, record, mode='a')
 
@@ -53,5 +57,5 @@ logs = Logs()
 
 def log(*args, **kwargs):
     a = inspect.currentframe()
-    call_info = inspect.getframeinfo(a.f_back)[:3]
+    call_info = list(inspect.getframeinfo(a.f_back)[:3])
     logs._log(call_info, *args, **kwargs)

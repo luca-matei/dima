@@ -1,4 +1,4 @@
-import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress
+import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress, crypt
 from datetime import datetime
 
 class Utils:
@@ -66,6 +66,9 @@ class Utils:
         is_ast = path.endswith('.ast')
         is_json = path.endswith('.json')
 
+        if path.startswith("/etc/"): root = True
+        else: root = False
+
         if is_ast or is_json:
             with open(path, mode='r', encoding='utf-8') as f:
                 if is_ast:
@@ -75,29 +78,40 @@ class Utils:
                     else: return ""
 
         elif lines:
-            return [x+'\n' for x in no_logs_cmd(f"cat {path}", catch=True, host=host).split('\n')]
+            return [x+'\n' for x in no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host).split('\n')]
 
         else:
-            return no_logs_cmd(f"cat {path}", catch=True, host=host)
+            return no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host)
 
     def write(self, path, content, lines=False, mode='w', owner="root", host=None):
-        final_path = None
-        if path.startswith("/etc/"):
-            final_path = path
-            path = utils.tmp_dir + 'tmp_file'
-
-        with open(path, mode=mode, encoding='utf-8') as f:
-            if lines:
-                f.writelines(content)
-            else:
-                if path.endswith(".ast"):
-                    pprint.pprint(content, stream=f)
+        def write_contents(path, content, lines, mode):
+            with open(path, mode=mode, encoding='utf-8') as f:
+                if lines:
+                    f.writelines(content)
                 else:
-                    f.write(content)
+                    if path.endswith(".ast"):
+                        pprint.pprint(content, stream=f)
+                    else:
+                        f.write(content)
 
-        if final_path:
-            cmd(f"sudo mv {path} {final_path}")
-            cmd(f"sudo chown {owner}:{owner} {final_path}", host=host)
+        #if host == None:
+            #print("utils.write NONE!")
+
+        if host == None or host == hal.host_lmid:
+            final_path = None
+            if path.startswith("/etc/"):
+                final_path = path
+                path = utils.tmp_dir + 'restricted'
+
+            write_contents(path, content, lines, mode)
+
+            if final_path:
+                cmd(f"sudo mv {path} {final_path}")
+                cmd(f"sudo chown {owner}:{owner} {final_path}")
+
+        else:
+            write_contents(self.tmp_dir + "export", content, lines, mode)
+            hal.pools.get(hal.lmobjs[host]).send_file(self.tmp_dir + "export", path, owner=owner)
 
     def copy(self, src, dest, owner="root", host=None):
         if dest.startswith("/etc/"):
@@ -172,9 +186,13 @@ class Utils:
 
         return '\n'.join(table)
 
-    def isfile(self, path, root=False, host=None):
-        if path.startswith('/etc'): root = True
-        if "No such file or directory" in cmd(f"{'sudo ' if root else ''}ls {path}", catch=True, host=host):
+    def isfile(self, path, host=None, quiet=False):
+        response = cmd(f"ls {path}", catch=True, host=host)
+        if response == path:
+            return 1
+        elif "No such file or directory" in response:
+            if not quiet:
+                log(f"'{path}' doesn't exist!", level=3, console=True)
             return 0
         return 1
 
@@ -218,11 +236,14 @@ class Utils:
             return ordered_opts[resp - 1]
         return 0
 
-    def _cmd(self, call_info, command, catch=False, host=None):
-        # To do: modify to transfer files via ssh (stp)
-        # Executing scripts from host: ssh lm32 'bash -s' < /path/to/host/script.sh
-        if host != None and host != hal.host_lmid:
-            command = f"ssh {host} '{command}'"
+    def _cmd(self, call_info, command, catch=False, host=""):
+        if call_info: call_info.append(host)
+        # To do: display the functions that have called execute, isfile, send_file
+
+        if host and host != hal.host_lmid:
+            if call_info: logs._log(call_info, command)
+            self.write(self.tmp_dir + "script.sh", command)
+            command = f"ssh {host} 'bash -s' < {self.tmp_dir}script.sh"
 
         output = subprocess.run([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
@@ -230,7 +251,7 @@ class Utils:
         output.stderr = output.stderr.strip('\n')
 
         if call_info:
-            logs._log(call_info, command)
+            if not command.startswith("ssh "): logs._log(call_info, command)
             logs._log(call_info, output.stdout, level=1)
             if output.stderr: logs._log(call_info, output.stderr, level=4)
         else:
@@ -245,7 +266,7 @@ utils = Utils()
 
 def cmd(*args, **kwargs):
     a = inspect.currentframe()
-    call_info = inspect.getframeinfo(a.f_back)[:3]
+    call_info = list(inspect.getframeinfo(a.f_back)[:3])
     return utils._cmd(call_info, *args, **kwargs)
 
 def no_logs_cmd(*args, **kwargs):

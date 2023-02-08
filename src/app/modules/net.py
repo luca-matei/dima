@@ -8,7 +8,7 @@ class Net(lmObj):
 
         self.domain = hal.domains.get(self.domain_id)
 
-        self.check()
+        #self.check()
 
     def set_dhcp(self, host=None):
         def get_opt(opts, db_opts):
