@@ -57,7 +57,7 @@ external_pid_file = '/var/run/postgresql/13-main.pid'			# write an extra PID fil
 
 # - Connection Settings -
 
-#listen_addresses = 'localhost'		# what IP address(es) to listen on;
+listen_addresses = '127.0.0.1%LISTEN'		# what IP address(es) to listen on;
 					# comma-separated list of addresses;
 					# defaults to 'localhost'; use '*' for all
 					# (change requires restart)
@@ -89,7 +89,7 @@ unix_socket_directories = '/var/run/postgresql'	# comma-separated list of direct
 # - Authentication -
 
 #authentication_timeout = 1min		# 1s-600s
-#password_encryption = md5		# md5 or scram-sha-256
+password_encryption = scram-sha-256		# md5 or scram-sha-256
 #db_user_namespace = off
 
 # GSSAPI using Kerberos

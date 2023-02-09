@@ -152,7 +152,7 @@
         ("App", "", ("check", "start", "stop", "restart", "save")),
         ("App", "alias", ("set", "delete")),
 
-        ("Web", "", ("check", "start", "stop", "restart", "save",)),
+        ("Web", "", ("check", "start", "stop", "restart", "save", "build")),
         ("Web", "alias", ("set", "delete")),
         ("Web", "nginx", ("config",)),
         ("Web", "ssl", ("renew",)),
@@ -171,14 +171,6 @@
         ("lm1", "lm4", 0.1, "lm4", 0.1, "Hal", ""),
         ("lm2", "lm4", 0.1, "lm4", 0.1, "Hal Portal", ""),
         ("lm5", "lm6", 0.1, "lm6", 0.1, "Hello World", ""),
-        )),
-
-    ("dbs", (
-        ("host", "project"),
-        ("id:lmid:lmobjs", "id:lmid:lmobjs"),
-        ("lm4", "lm1"),
-        ("lm4", "lm2"),
-        ("lm6", "lm5"),
         )),
 
     ("langs", (

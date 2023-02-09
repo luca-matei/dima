@@ -69,27 +69,37 @@ class Utils:
         if path.startswith("/etc/"): root = True
         else: root = False
 
-        if is_ast or is_json:
-            with open(path, mode='r', encoding='utf-8') as f:
-                if is_ast:
-                    return ast.literal_eval(f.read())
-                elif is_json:
-                    if f: return json.loads(f)
-                    else: return ""
+        contents = no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host)
+
+        if f"cat: {path}: No such file or directory" in contents:
+            try:
+                log(f"'{path}' doesn't exist!", level=4, console=True)
+            except:
+                print(f"Error: '{path}' doesn't exist!")
+            if lines: return []
+            else: return ""
+
+        if is_ast:
+            return ast.literal_eval(contents)
+
+        elif is_json:
+            if contents: return json.loads(contents)
+            else: return ""
 
         elif lines:
-            return [x+'\n' for x in no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host).split('\n')]
+            return [x+'\n' for x in contents.split('\n')]
 
         else:
-            return no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host)
+            return contents
 
     def write(self, path, content, lines=False, mode='w', owner="root", host=None):
+        is_ast = path.endswith('.ast')
         def write_contents(path, content, lines, mode):
             with open(path, mode=mode, encoding='utf-8') as f:
                 if lines:
                     f.writelines(content)
                 else:
-                    if path.endswith(".ast"):
+                    if is_ast:
                         pprint.pprint(content, stream=f)
                     else:
                         f.write(content)
@@ -110,8 +120,9 @@ class Utils:
                 cmd(f"sudo chown {owner}:{owner} {final_path}")
 
         else:
-            write_contents(self.tmp_dir + "export", content, lines, mode)
-            hal.pools.get(hal.lmobjs[host]).send_file(self.tmp_dir + "export", path, owner=owner)
+            filename = "export" + (".ast" if is_ast else "")
+            write_contents(self.tmp_dir + filename, content, lines, mode)
+            hal.pools.get(hal.lmobjs[host]).send_file(self.tmp_dir + filename, path, owner=owner)
 
     def copy(self, src, dest, owner="root", host=None):
         if dest.startswith("/etc/"):

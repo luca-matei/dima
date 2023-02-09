@@ -1,8 +1,10 @@
 class Db:
-    def __init__(self, lmid, dbid=None, host_dbid=None):
+    def __init__(self, lmid, dbid=None, host=None):
         self.lmid = lmid
         self.dbid = dbid
-        self.host_dbid = host_dbid
+        self.host = host
+        self.db_dir = utils.projects_dir + self.lmid + "/src/app/db/"
+
         self.connect()
 
         # Check if database is empty
@@ -11,11 +13,12 @@ class Db:
 
     def connect(self):
         try:
-            # To do: get passwords securely
-            details = utils.read(utils.src_dir + "app/db/details.ast")
-            host = details['host']
-            password = details['pass']
-            port = int(utils.read(utils.projects_dir + "pg_port.txt", host=self.host_dbid))
+            if self.host and self.host != hal.host_lmid:
+                host = hal.pools.get(hal.lmobjs.get(self.host)).ip
+            else:
+                host = "127.0.0.1"
+            password = utils.read(self.db_dir + "db_pass", host=self.host)
+            port = int(utils.read(utils.projects_dir + "pg_port.txt", host=self.host))
 
             self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
 
@@ -40,13 +43,8 @@ class Db:
 
     def build(self):
         log(f"Building {self.lmid} database ...", console=True)
-        if self.dbid:
-            if self.lmid[2] == 'w':
-                struct = utils.read(hal.tpl_dir + "web/app/db/struct.ast")
-                default_file = hal.tpl_dir + "web/app/db/default.ast"
-        else:
-            struct = utils.read(hal.app_dir + "db/struct.ast")
-            default_file = hal.app_dir + "db/default.ast"
+        struct = utils.read(self.db_dir + "struct.ast", host=self.host)
+        default_file = self.db_dir + "default.ast"
 
         for group in struct:
             # Check if the group is a schema
@@ -78,7 +76,7 @@ class Db:
         Special first row for translating columns from a table
         """
 
-        db_data = utils.read(file)
+        db_data = utils.read(file, host=self.host)
         for schema in db_data:
             for table in schema[1]:
                 struct_row = ', '.join(table[1][0])    # Db structure row

@@ -18,81 +18,118 @@ class Web(Project):
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
 
-        #self.db = Db(self.dbid)
+        if not utils.isfile(self.app_dir + "db/db_pass", host=self.dev_host):
+            self.build()
+
+        self.db = Db(self.lmid, self.dbid, self.dev_host)
         #self.check()
 
-    def set_default(self):
+    def build(self):
+        log(f"Building {self.lmid} ...", console=True)
+        dir_tree = (
+            "docs/",
+            "src/",
+                "src/app/",
+                    "src/app/db/",
+                    "src/app/html/",
+                "src/assets/",
+                    "src/assets/icons/",
+                    "src/assets/img/",
+                    "src/assets/css/",
+                    "src/assets/js/",
+            "LICENSE",
+            "README.md",
+            )
+
+        for node in dir_tree:
+            node = self.repo_dir + node
+            if not utils.isfile(node, host=self.dev_host):
+                if node.endswith('/'):
+                    cmd(f"mkdir " + node, host=self.dev_host)
+                else:
+                    cmd(f"touch " + node, host=self.dev_host)
+
+        host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
+        remote_struct_file = self.app_dir + "db/struct.ast"
+        host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
+        remote_default_file = self.app_dir + "db/default.ast"
+
+        if self.dev_host_id == hal.host_dbid:
+            utils.copy(host_struct_file, remote_struct_file)
+            utils.copy(host_default_file, remote_default_file)
+        else:
+            hal.pools.get(self.dev_host_id).send_file(host_struct_file, remote_struct_file)
+            hal.pools.get(self.dev_host_id).send_file(host_default_file, remote_default_file)
+
+        has_db = cmd(utils.dbs.query.format(f"select 1 from pg_database where datname='{self.lmid}';"), catch=True)
+        if not has_db:
+            hal.pools.get(self.dev_host_id).create_pg_role(self.lmid)
+            hal.pools.get(self.dev_host_id).create_pg_db(self.lmid)
+
+        self.default()
+        #self.config()
+
+    def default(self):
+        yes = utils.yes_no(f"Are you sure you want to format {self.name}?")
+        if not yes:
+            log("Aborted.", console=True)
+            return
+
         log(f"Setting {self.domain} to 'Hello World' ...", console=True)
 
-        app_main = util.read(hal.tpl_dir + "web/app/app.py") \
-            .replace("%APP_DIR", self.app_dir) \
-            .replace("%LOG_FILE", self.log_file)
-        util.write(self.app_dir + "app.py", app_main)
+        modules = (
+            "utils/utils.py",
+            "app.py",
+            "logs.py",
+            "db.py",
+            "html.py",
+            "http.py",
+            "process.py",
+            "request.py",
+            "response.py",
+            "main.py",
+            )
+
+        utils.write(self.app_dir + "app.py", "", host=self.dev_host)
+
+        for module in modules:
+            utils.write(self.app_dir + "app.py", utils.read(utils.src_dir + "assets/web/app/modules/" + module) + "\n\n", mode='a', host=self.dev_host)
 
         settings = {
-            "lmid": self.lmid,
-            "name": self.name,
-            "description": self.description,
-            "domain": self.domain,
-            "host": hal.lmobjs[self.host][0],
             "log_level": 2,
-            "modules": self.modules,
-            "langs": self.langs,
-            "themes": self.themes,
-            "default_lang": hal.putil.langs[self.default_lang_id],
-            "default_theme": hal.putil.themes[self.default_theme_id],
-            "has_top": self.has_top,
-            "has_animations": self.has_animations,
-            "has_domain_in_title": self.has_domain_in_title,
             }
 
-        util.write(self.app_dir + "settings.ast", settings)
+        utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
 
-        query = "select host, port, password from dbs where lmobj=%s;"
-        params = self.dbid,
-        db_data = hal.db.execute(query, params)[0]
-        db_details = {
-            "host": db_data[0],
-            "port": db_data[1],
-            "password": db_data[2]
-        }
-
-        util.write(self.app_dir + "db.ast", db_details)
-
-        # Delete old html
-        # To do: move files to Hal's trash for reversal
-        cmd(f"rm -r {self.app_dir}html/")
-        cmd(f"rsync -r {hal.tpl_dir}web/app/html/* {self.app_dir}html/")
+        # Replace old html
+        cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
+        hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
 
         self.update_html()
-        self.restart()
-
-    def update(self, data):
-        if data in ("html",):
-            getattr(self, "update_" + data)()
+        #self.restart()
 
     def update_html(self):
-        log(f"Updating html for {self.lmid}.{self.domain} ...")
+        log(f"Updating html for {self.domain} ...", console=True)
 
         self.db.erase()
         self.db.build()
 
-        query = f"insert into methods (name) values {', '.join(['(%s)' for m in hal.wutil.methods])} returning id, name;"
-        params = hal.wutil.methods
+        query = f"insert into methods (name) values {', '.join(['(%s)' for m in utils.webs.methods])} returning id, name;"
+        params = utils.webs.methods
         methods = dict(self.db.execute(query, params))
-        methods.update(util.reverse_dict(methods))
+        methods.update(utils.reverse_dict(methods))
 
         query = f"insert into langs (code) values {', '.join(['(%s)' for l in self.langs])} returning id, code;"
         params = self.langs
         langs = dict(self.db.execute(query, params))
-        langs.update(util.reverse_dict(langs))
+        langs.update(utils.reverse_dict(langs))
 
         query = f"insert into modules (name) values {', '.join(['(%s)' for m in self.modules])} returning id, name;"
         params = self.modules
         modules = dict(self.db.execute(query, params))
-        modules.update(util.reverse_dict(modules))
+        modules.update(utils.reverse_dict(modules))
 
-        app_wrapper = util.read(f"{hal.tpl_dir}web/app/html/wrapper.html")
+        app_wrapper = utils.read(self.app_dir + "html/wrapper.html", host=self.dev_host)
         if self.has_top:
             top_button = YML2HTML(util.read(f"{hal.tpl_dir}web/app/html/top-button.yml"), self.default_lang, self.default_lang).html
         else:
@@ -160,7 +197,7 @@ class Web(Project):
         for section in [s for s in os.listdir(self.html_dir) if os.path.isdir(self.html_dir + s + '/')]:
             solve_section(self.html_dir + section + '/', section, 0)
 
-    def ssl(self):
+    def generate_ssl(self):
         if not os.path.isdir(self.ssl_dir):
             cmd("mkdir " + self.ssl_dir)
 
@@ -177,51 +214,16 @@ class Web(Project):
         params = datetime.now(), self.dbid,
         hal.db.execute(query, params)
 
-    def build(self):
-        log(f"Building {self.lmid} ...", console=True)
-        dir_tree = (
-            "docs/",
-            "src/",
-                "src/app/",
-                    "src/app/html/",
-                "src/assets/",
-                    "src/assets/icons/",
-                    "src/assets/img/",
-                    "src/assets/css/",
-                    "src/assets/js/",
-            "LICENSE",
-            "README.md",
-            )
-
-        for node in dir_tree:
-            node = self.repo_dir + node
-            if not utils.isfile(node, host=self.dev_host):
-                if node.endswith('/'):
-                    cmd(f"mkdir " + node, host=self.dev_host)
-                else:
-                    cmd(f"touch " + node, host=self.dev_host)
-
-        self.default()
-        self.config()
-
     def restart(self):
         log(f"Restarting {self.lmid} ...", console=True)
         # To do: Save log file
         cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;")
         cmd(f"sudo supervisorctl restart {self.lmid}")
 
-    def config(self, service=""):
-        if not service: all = True
-        else: all = False
-
-        services = ("uwsgi", "nginx", "supervisor")
-        if all:
-            for s in services:
-                getattr(self, "config_" + s)()
-        elif service in services:
-            getattr(self, "config_" + service)()
-        else:
-            log(f"Can't config service '{service}'!", level=4, console=True)
+    def config(self):
+        self.config_uwsgi()
+        self.config_supervisor()
+        self.config_nginx()
 
     def config_uwsgi(self):
         log(f"Configuring uWSGI for {self.lmid}.{self.domain} ...", console=True)

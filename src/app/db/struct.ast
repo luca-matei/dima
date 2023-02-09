@@ -75,12 +75,6 @@
         "description varchar",
         )),
 
-    ("dbs", (
-        "id serial primary key",
-        "host int",
-        "project int",
-        )),
-
     ("langs", (
         "id serial primary key",
         "code varchar(2)",

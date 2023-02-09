@@ -69,27 +69,37 @@ class Utils:
         if path.startswith("/etc/"): root = True
         else: root = False
 
-        if is_ast or is_json:
-            with open(path, mode='r', encoding='utf-8') as f:
-                if is_ast:
-                    return ast.literal_eval(f.read())
-                elif is_json:
-                    if f: return json.loads(f)
-                    else: return ""
+        contents = no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host)
+
+        if f"cat: {path}: No such file or directory" in contents:
+            try:
+                log(f"'{path}' doesn't exist!", level=4, console=True)
+            except:
+                print(f"Error: '{path}' doesn't exist!")
+            if lines: return []
+            else: return ""
+
+        if is_ast:
+            return ast.literal_eval(contents)
+
+        elif is_json:
+            if contents: return json.loads(contents)
+            else: return ""
 
         elif lines:
-            return [x+'\n' for x in no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host).split('\n')]
+            return [x+'\n' for x in contents.split('\n')]
 
         else:
-            return no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host)
+            return contents
 
     def write(self, path, content, lines=False, mode='w', owner="root", host=None):
+        is_ast = path.endswith('.ast')
         def write_contents(path, content, lines, mode):
             with open(path, mode=mode, encoding='utf-8') as f:
                 if lines:
                     f.writelines(content)
                 else:
-                    if path.endswith(".ast"):
+                    if is_ast:
                         pprint.pprint(content, stream=f)
                     else:
                         f.write(content)
@@ -110,8 +120,9 @@ class Utils:
                 cmd(f"sudo chown {owner}:{owner} {final_path}")
 
         else:
-            write_contents(self.tmp_dir + "export", content, lines, mode)
-            hal.pools.get(hal.lmobjs[host]).send_file(self.tmp_dir + "export", path, owner=owner)
+            filename = "export" + (".ast" if is_ast else "")
+            write_contents(self.tmp_dir + filename, content, lines, mode)
+            hal.pools.get(hal.lmobjs[host]).send_file(self.tmp_dir + filename, path, owner=owner)
 
     def copy(self, src, dest, owner="root", host=None):
         if dest.startswith("/etc/"):
@@ -518,11 +529,6 @@ class Hal:
             params = self.app_dbid, self.host_dbid, self.version, None, None, "Hal", None,
             self.db.execute(query, params)
 
-            # Register database
-            query = "insert into project.dbs (host, project) values (%s, %s);"
-            params = self.host_dbid, self.app_dbid,
-            self.db.execute(query, params)
-
             # Register app
             query = "insert into project.apps (lmobj, port) values (%s, %s);"
             params = self.app_dbid, None,
@@ -605,56 +611,15 @@ class DbUtils:
     query = """sudo -u hal psql -tAc \"{}\""""
     port_file = utils.projects_dir + "pg_port.txt"
 
-    def create_db(self, host=None):
-        pass
-
-    def create_pgrole(self, lmid, host=None):
-        # https://www.postgresql.org/docs/current/sql-createrole.html
-        log(f"Creating '{lmid}' role ...", console=True)
-        password = utils.new_pass(64)
-
-        role_query = self.query.format(f"create role {lmid} with login password '{password}';")
-        output = cmd(role_query, catch=True)
-        if "already exists" in output:
-            log(f"'{lmid}' role already exists!", console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(self.query.format(f"drop database {lmid} if exists; drop role {lmid};"))
-            else: return
-
-            cmd(role_query)
-
-        if lmid.startswith("lm"):
-            details_path = utils.projects_dir + lmid + "/src/app/db/details.ast"
-            details = utils.read(details_path)
-            details['pass'] = password
-            utils.write(details_path, details)
-            return password
-
-        else:
-            utils.write(utils.tmp_dir + "db_pass.tmp", password)
-            log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
-
-    def create_pgdb(self, lmid, host=None):
-        log(f"Creating {lmid} database ...", console=True)
-        db_query = self.query.format(f"create database {lmid} owner {lmid} encoding 'utf-8';")
-        output = cmd(db_query, catch=True)
-        if "already exists" in output:
-            log(f"{lmid} database already exists!", console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(self.query.format(f"drop database {lmid};"))
-            else: return
-
-            cmd(db_query, catch=True)
-
 utils.dbs = DbUtils()
 
 class Db:
-    def __init__(self, lmid, dbid=None, host_dbid=None):
+    def __init__(self, lmid, dbid=None, host=None):
         self.lmid = lmid
         self.dbid = dbid
-        self.host_dbid = host_dbid
+        self.host = host
+        self.db_dir = utils.projects_dir + self.lmid + "/src/app/db/"
+
         self.connect()
 
         # Check if database is empty
@@ -663,11 +628,12 @@ class Db:
 
     def connect(self):
         try:
-            # To do: get passwords securely
-            details = utils.read(utils.src_dir + "app/db/details.ast")
-            host = details['host']
-            password = details['pass']
-            port = int(utils.read(utils.projects_dir + "pg_port.txt", host=self.host_dbid))
+            if self.host and self.host != hal.host_lmid:
+                host = hal.pools.get(hal.lmobjs.get(self.host)).ip
+            else:
+                host = "127.0.0.1"
+            password = utils.read(self.db_dir + "db_pass", host=self.host)
+            port = int(utils.read(utils.projects_dir + "pg_port.txt", host=self.host))
 
             self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
 
@@ -692,13 +658,8 @@ class Db:
 
     def build(self):
         log(f"Building {self.lmid} database ...", console=True)
-        if self.dbid:
-            if self.lmid[2] == 'w':
-                struct = utils.read(hal.tpl_dir + "web/app/db/struct.ast")
-                default_file = hal.tpl_dir + "web/app/db/default.ast"
-        else:
-            struct = utils.read(hal.app_dir + "db/struct.ast")
-            default_file = hal.app_dir + "db/default.ast"
+        struct = utils.read(self.db_dir + "struct.ast", host=self.host)
+        default_file = self.db_dir + "default.ast"
 
         for group in struct:
             # Check if the group is a schema
@@ -730,7 +691,7 @@ class Db:
         Special first row for translating columns from a table
         """
 
-        db_data = utils.read(file)
+        db_data = utils.read(file, host=self.host)
         for schema in db_data:
             for table in schema[1]:
                 struct_row = ', '.join(table[1][0])    # Db structure row
@@ -1433,6 +1394,45 @@ class HostServices:
         self.manage_service("status", "nginx")
 
     # Postgres
+    def create_pg_role(self, role:'str'):
+        # https://www.postgresql.org/docs/current/sql-createrole.html
+        log(f"Creating '{role}' role ...", console=True)
+        password = utils.new_pass(64)
+
+        role_query = utils.dbs.query.format(f"create role {role} with login password '{password}';")
+        output = cmd(role_query, catch=True, host=self.lmid)
+        if "already exists" in output:
+            log(f"'{role}' role already exists!", console=True)
+            yes = utils.yes_no("Purge it?")
+
+            if yes: cmd(utils.dbs.query.format(f"drop database if exists {role}; drop role if exists {role};"), host=self.lmid)
+            else: return
+
+            cmd(role_query, host=self.lmid)
+
+        cmd(utils.dbs.query.format(f"grant {role} to hal;"), host=self.lmid)
+
+        if role.startswith("lm"):
+            utils.write(utils.projects_dir + role + "/src/app/db/db_pass", password, host=self.lmid)
+            return password
+
+        else:
+            utils.write(utils.tmp_dir + "db_pass.tmp", password)
+            log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
+
+    def create_pg_db(self, db:'str'):
+        log(f"Creating {db} database ...", console=True)
+        db_query = utils.dbs.query.format(f"create database {db} owner {db} encoding 'utf-8';")
+        output = cmd(db_query, catch=True, host=self.lmid)
+        if "already exists" in output:
+            log(f"'{db}' database already exists!", console=True)
+            yes = utils.yes_no("Purge it?")
+
+            if yes: cmd(utils.dbs.query.format(f"drop database {db};"), host=self.lmid)
+            else: return
+
+            cmd(db_query, catch=True, host=self.lmid)
+
     def config_postgres(self):
         """
         Manages /etc/postgresql/13/main/postgresql.conf
@@ -1445,20 +1445,27 @@ class HostServices:
 
         pg_dir = f"/etc/postgresql/{self.pg_version}/main/"
         config_file = pg_dir + "postgresql.conf"
+        hba_file = pg_dir + "pg_hba.conf"
 
         # Create backup for default configs
-        for cfg_file in (config_file, pg_dir + "pg_hba.conf"):
+        for cfg_file in (config_file, hba_file):
             if not utils.isfile(cfg_file + ".bak", host=self.lmid):
                 utils.copy(cfg_file, cfg_file + ".bak", owner="postgres", host=self.lmid)
 
         # Modify port in config file
         config = utils.format_tpl("pg/postgresql.tpl", {
+            "listen": "" if self.dbid == hal.host_dbid else "," + self.ip,
             "port": port
+            })
+
+        # Allow remote access
+        hba = utils.format_tpl("pg/pg_hba.tpl", {
+            "remote_auth": "" if self.dbid == hal.host_dbid else f"host all all {hal.pools.get(hal.host_dbid).ip}/32 scram-sha-256"
             })
 
         # Write new config file and restart service
         utils.write(config_file, config, owner="postgres", host=self.lmid)
-        self.send_file(hal.tpls_dir + "pg/pg_hba.tpl", pg_dir + "pg_hba.conf", owner="postgres")
+        utils.write(hba_file, hba, owner="postgres", host=self.lmid)
 
         # Update ports in Hal projects and in db
         utils.write(utils.dbs.port_file, str(port), host=self.lmid)
@@ -1466,6 +1473,12 @@ class HostServices:
 
         self.pg_port = port
         self.manage_service("restart", "postgresql")
+
+        query = utils.dbs.query.replace("hal", "postgres")
+        has_db = cmd(query.format(f"select 1 from pg_database where datname='hal';"), catch=True)
+        if not has_db:
+            cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"), host=self.lmid)
+            cmd(query.format("create database hal owner hal encoding 'utf-8';"), host=self.lmid)
 
     def reload_postgres(self):
         self.manage_service("reload", "postgresql")
@@ -1811,6 +1824,9 @@ class Host(lmObj, HostServices):
                 log(f"{self.name} is already unmounted!", console=True)
 
     # System
+    def generate_hosts_file(self):
+        pass
+
     def reach(self):
         if self.dbid == hal.host_dbid:
             print("It's this machine, dumbass!")
@@ -1891,12 +1907,14 @@ class Host(lmObj, HostServices):
             log("File exists!", console=True)
 
     def send_file(self, src_path:'str', dest_path:'str', owner:'str'="root"):
+        is_dir = src_path.endswith('/')
+
         final_path = None
         if dest_path.startswith("/etc/"):
             final_path = dest_path
-            dest_path = utils.tmp_dir + 'restricted'
+            dest_path = utils.tmp_dir + 'restricted' + ('/' if is_dir else '')
 
-        cmd(f"scp -P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path} hal@{self.lmid}:{dest_path}", catch=True)
+        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path.rstrip('/')} hal@{self.lmid}:{dest_path.rstrip('/')}", catch=True)
 
         if final_path:
             cmd(f"sudo mv {dest_path} {final_path}", host=self.lmid)
@@ -1993,81 +2011,118 @@ class Web(Project):
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
 
-        #self.db = Db(self.dbid)
+        if not utils.isfile(self.app_dir + "db/db_pass", host=self.dev_host):
+            self.build()
+
+        self.db = Db(self.lmid, self.dbid, self.dev_host)
         #self.check()
 
-    def set_default(self):
+    def build(self):
+        log(f"Building {self.lmid} ...", console=True)
+        dir_tree = (
+            "docs/",
+            "src/",
+                "src/app/",
+                    "src/app/db/",
+                    "src/app/html/",
+                "src/assets/",
+                    "src/assets/icons/",
+                    "src/assets/img/",
+                    "src/assets/css/",
+                    "src/assets/js/",
+            "LICENSE",
+            "README.md",
+            )
+
+        for node in dir_tree:
+            node = self.repo_dir + node
+            if not utils.isfile(node, host=self.dev_host):
+                if node.endswith('/'):
+                    cmd(f"mkdir " + node, host=self.dev_host)
+                else:
+                    cmd(f"touch " + node, host=self.dev_host)
+
+        host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
+        remote_struct_file = self.app_dir + "db/struct.ast"
+        host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
+        remote_default_file = self.app_dir + "db/default.ast"
+
+        if self.dev_host_id == hal.host_dbid:
+            utils.copy(host_struct_file, remote_struct_file)
+            utils.copy(host_default_file, remote_default_file)
+        else:
+            hal.pools.get(self.dev_host_id).send_file(host_struct_file, remote_struct_file)
+            hal.pools.get(self.dev_host_id).send_file(host_default_file, remote_default_file)
+
+        has_db = cmd(utils.dbs.query.format(f"select 1 from pg_database where datname='{self.lmid}';"), catch=True)
+        if not has_db:
+            hal.pools.get(self.dev_host_id).create_pg_role(self.lmid)
+            hal.pools.get(self.dev_host_id).create_pg_db(self.lmid)
+
+        self.default()
+        #self.config()
+
+    def default(self):
+        yes = utils.yes_no(f"Are you sure you want to format {self.name}?")
+        if not yes:
+            log("Aborted.", console=True)
+            return
+
         log(f"Setting {self.domain} to 'Hello World' ...", console=True)
 
-        app_main = util.read(hal.tpl_dir + "web/app/app.py") \
-            .replace("%APP_DIR", self.app_dir) \
-            .replace("%LOG_FILE", self.log_file)
-        util.write(self.app_dir + "app.py", app_main)
+        modules = (
+            "utils/utils.py",
+            "app.py",
+            "logs.py",
+            "db.py",
+            "html.py",
+            "http.py",
+            "process.py",
+            "request.py",
+            "response.py",
+            "main.py",
+            )
+
+        utils.write(self.app_dir + "app.py", "", host=self.dev_host)
+
+        for module in modules:
+            utils.write(self.app_dir + "app.py", utils.read(utils.src_dir + "assets/web/app/modules/" + module) + "\n\n", mode='a', host=self.dev_host)
 
         settings = {
-            "lmid": self.lmid,
-            "name": self.name,
-            "description": self.description,
-            "domain": self.domain,
-            "host": hal.lmobjs[self.host][0],
             "log_level": 2,
-            "modules": self.modules,
-            "langs": self.langs,
-            "themes": self.themes,
-            "default_lang": hal.putil.langs[self.default_lang_id],
-            "default_theme": hal.putil.themes[self.default_theme_id],
-            "has_top": self.has_top,
-            "has_animations": self.has_animations,
-            "has_domain_in_title": self.has_domain_in_title,
             }
 
-        util.write(self.app_dir + "settings.ast", settings)
+        utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
 
-        query = "select host, port, password from dbs where lmobj=%s;"
-        params = self.dbid,
-        db_data = hal.db.execute(query, params)[0]
-        db_details = {
-            "host": db_data[0],
-            "port": db_data[1],
-            "password": db_data[2]
-        }
-
-        util.write(self.app_dir + "db.ast", db_details)
-
-        # Delete old html
-        # To do: move files to Hal's trash for reversal
-        cmd(f"rm -r {self.app_dir}html/")
-        cmd(f"rsync -r {hal.tpl_dir}web/app/html/* {self.app_dir}html/")
+        # Replace old html
+        cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
+        hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
 
         self.update_html()
-        self.restart()
-
-    def update(self, data):
-        if data in ("html",):
-            getattr(self, "update_" + data)()
+        #self.restart()
 
     def update_html(self):
-        log(f"Updating html for {self.lmid}.{self.domain} ...")
+        log(f"Updating html for {self.domain} ...", console=True)
 
         self.db.erase()
         self.db.build()
 
-        query = f"insert into methods (name) values {', '.join(['(%s)' for m in hal.wutil.methods])} returning id, name;"
-        params = hal.wutil.methods
+        query = f"insert into methods (name) values {', '.join(['(%s)' for m in utils.webs.methods])} returning id, name;"
+        params = utils.webs.methods
         methods = dict(self.db.execute(query, params))
-        methods.update(util.reverse_dict(methods))
+        methods.update(utils.reverse_dict(methods))
 
         query = f"insert into langs (code) values {', '.join(['(%s)' for l in self.langs])} returning id, code;"
         params = self.langs
         langs = dict(self.db.execute(query, params))
-        langs.update(util.reverse_dict(langs))
+        langs.update(utils.reverse_dict(langs))
 
         query = f"insert into modules (name) values {', '.join(['(%s)' for m in self.modules])} returning id, name;"
         params = self.modules
         modules = dict(self.db.execute(query, params))
-        modules.update(util.reverse_dict(modules))
+        modules.update(utils.reverse_dict(modules))
 
-        app_wrapper = util.read(f"{hal.tpl_dir}web/app/html/wrapper.html")
+        app_wrapper = utils.read(self.app_dir + "html/wrapper.html", host=self.dev_host)
         if self.has_top:
             top_button = YML2HTML(util.read(f"{hal.tpl_dir}web/app/html/top-button.yml"), self.default_lang, self.default_lang).html
         else:
@@ -2135,7 +2190,7 @@ class Web(Project):
         for section in [s for s in os.listdir(self.html_dir) if os.path.isdir(self.html_dir + s + '/')]:
             solve_section(self.html_dir + section + '/', section, 0)
 
-    def ssl(self):
+    def generate_ssl(self):
         if not os.path.isdir(self.ssl_dir):
             cmd("mkdir " + self.ssl_dir)
 
@@ -2152,51 +2207,16 @@ class Web(Project):
         params = datetime.now(), self.dbid,
         hal.db.execute(query, params)
 
-    def build(self):
-        log(f"Building {self.lmid} ...", console=True)
-        dir_tree = (
-            "docs/",
-            "src/",
-                "src/app/",
-                    "src/app/html/",
-                "src/assets/",
-                    "src/assets/icons/",
-                    "src/assets/img/",
-                    "src/assets/css/",
-                    "src/assets/js/",
-            "LICENSE",
-            "README.md",
-            )
-
-        for node in dir_tree:
-            node = self.repo_dir + node
-            if not utils.isfile(node, host=self.dev_host):
-                if node.endswith('/'):
-                    cmd(f"mkdir " + node, host=self.dev_host)
-                else:
-                    cmd(f"touch " + node, host=self.dev_host)
-
-        self.default()
-        self.config()
-
     def restart(self):
         log(f"Restarting {self.lmid} ...", console=True)
         # To do: Save log file
         cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;")
         cmd(f"sudo supervisorctl restart {self.lmid}")
 
-    def config(self, service=""):
-        if not service: all = True
-        else: all = False
-
-        services = ("uwsgi", "nginx", "supervisor")
-        if all:
-            for s in services:
-                getattr(self, "config_" + s)()
-        elif service in services:
-            getattr(self, "config_" + service)()
-        else:
-            log(f"Can't config service '{service}'!", level=4, console=True)
+    def config(self):
+        self.config_uwsgi()
+        self.config_supervisor()
+        self.config_nginx()
 
     def config_uwsgi(self):
         log(f"Configuring uWSGI for {self.lmid}.{self.domain} ...", console=True)

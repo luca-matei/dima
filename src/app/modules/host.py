@@ -138,6 +138,45 @@ class HostServices:
         self.manage_service("status", "nginx")
 
     # Postgres
+    def create_pg_role(self, role:'str'):
+        # https://www.postgresql.org/docs/current/sql-createrole.html
+        log(f"Creating '{role}' role ...", console=True)
+        password = utils.new_pass(64)
+
+        role_query = utils.dbs.query.format(f"create role {role} with login password '{password}';")
+        output = cmd(role_query, catch=True, host=self.lmid)
+        if "already exists" in output:
+            log(f"'{role}' role already exists!", console=True)
+            yes = utils.yes_no("Purge it?")
+
+            if yes: cmd(utils.dbs.query.format(f"drop database if exists {role}; drop role if exists {role};"), host=self.lmid)
+            else: return
+
+            cmd(role_query, host=self.lmid)
+
+        cmd(utils.dbs.query.format(f"grant {role} to hal;"), host=self.lmid)
+
+        if role.startswith("lm"):
+            utils.write(utils.projects_dir + role + "/src/app/db/db_pass", password, host=self.lmid)
+            return password
+
+        else:
+            utils.write(utils.tmp_dir + "db_pass.tmp", password)
+            log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
+
+    def create_pg_db(self, db:'str'):
+        log(f"Creating {db} database ...", console=True)
+        db_query = utils.dbs.query.format(f"create database {db} owner {db} encoding 'utf-8';")
+        output = cmd(db_query, catch=True, host=self.lmid)
+        if "already exists" in output:
+            log(f"'{db}' database already exists!", console=True)
+            yes = utils.yes_no("Purge it?")
+
+            if yes: cmd(utils.dbs.query.format(f"drop database {db};"), host=self.lmid)
+            else: return
+
+            cmd(db_query, catch=True, host=self.lmid)
+
     def config_postgres(self):
         """
         Manages /etc/postgresql/13/main/postgresql.conf
@@ -150,20 +189,27 @@ class HostServices:
 
         pg_dir = f"/etc/postgresql/{self.pg_version}/main/"
         config_file = pg_dir + "postgresql.conf"
+        hba_file = pg_dir + "pg_hba.conf"
 
         # Create backup for default configs
-        for cfg_file in (config_file, pg_dir + "pg_hba.conf"):
+        for cfg_file in (config_file, hba_file):
             if not utils.isfile(cfg_file + ".bak", host=self.lmid):
                 utils.copy(cfg_file, cfg_file + ".bak", owner="postgres", host=self.lmid)
 
         # Modify port in config file
         config = utils.format_tpl("pg/postgresql.tpl", {
+            "listen": "" if self.dbid == hal.host_dbid else "," + self.ip,
             "port": port
+            })
+
+        # Allow remote access
+        hba = utils.format_tpl("pg/pg_hba.tpl", {
+            "remote_auth": "" if self.dbid == hal.host_dbid else f"host all all {hal.pools.get(hal.host_dbid).ip}/32 scram-sha-256"
             })
 
         # Write new config file and restart service
         utils.write(config_file, config, owner="postgres", host=self.lmid)
-        self.send_file(hal.tpls_dir + "pg/pg_hba.tpl", pg_dir + "pg_hba.conf", owner="postgres")
+        utils.write(hba_file, hba, owner="postgres", host=self.lmid)
 
         # Update ports in Hal projects and in db
         utils.write(utils.dbs.port_file, str(port), host=self.lmid)
@@ -171,6 +217,12 @@ class HostServices:
 
         self.pg_port = port
         self.manage_service("restart", "postgresql")
+
+        query = utils.dbs.query.replace("hal", "postgres")
+        has_db = cmd(query.format(f"select 1 from pg_database where datname='hal';"), catch=True)
+        if not has_db:
+            cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"), host=self.lmid)
+            cmd(query.format("create database hal owner hal encoding 'utf-8';"), host=self.lmid)
 
     def reload_postgres(self):
         self.manage_service("reload", "postgresql")
@@ -516,6 +568,9 @@ class Host(lmObj, HostServices):
                 log(f"{self.name} is already unmounted!", console=True)
 
     # System
+    def generate_hosts_file(self):
+        pass
+
     def reach(self):
         if self.dbid == hal.host_dbid:
             print("It's this machine, dumbass!")
@@ -596,12 +651,14 @@ class Host(lmObj, HostServices):
             log("File exists!", console=True)
 
     def send_file(self, src_path:'str', dest_path:'str', owner:'str'="root"):
+        is_dir = src_path.endswith('/')
+
         final_path = None
         if dest_path.startswith("/etc/"):
             final_path = dest_path
-            dest_path = utils.tmp_dir + 'restricted'
+            dest_path = utils.tmp_dir + 'restricted' + ('/' if is_dir else '')
 
-        cmd(f"scp -P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path} hal@{self.lmid}:{dest_path}", catch=True)
+        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path.rstrip('/')} hal@{self.lmid}:{dest_path.rstrip('/')}", catch=True)
 
         if final_path:
             cmd(f"sudo mv {dest_path} {final_path}", host=self.lmid)

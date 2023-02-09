@@ -244,11 +244,6 @@ class Hal:
             params = self.app_dbid, self.host_dbid, self.version, None, None, "Hal", None,
             self.db.execute(query, params)
 
-            # Register database
-            query = "insert into project.dbs (host, project) values (%s, %s);"
-            params = self.host_dbid, self.app_dbid,
-            self.db.execute(query, params)
-
             # Register app
             query = "insert into project.apps (lmobj, port) values (%s, %s);"
             params = self.app_dbid, None,
