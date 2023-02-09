@@ -6,6 +6,6 @@ class lmHttp:
     }
 
     def __init__(self):
-        self.packs.update(util.reverse_dict(self.packs))
+        self.packs.update(utils.reverse_dict(self.packs))
 
 lm.http = lmHttp()

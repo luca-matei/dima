@@ -106,6 +106,7 @@
         ("reach", ""),
         ("has", ""),
         ("get", ""),
+        ("make", ""),
         )),
 
     ("objs", (
@@ -160,6 +161,8 @@
         ("Web", "nginx", ("config",)),
         ("Web", "ssl", ("generate",)),
         ("Web", "html", ("update",)),
+        ("Web", "css", ("update",)),
+        ("Web", "py", ("update",)),
 
         ("Soft", "", ("check", "save",)),
         ("Soft", "alias", ("set", "delete")),

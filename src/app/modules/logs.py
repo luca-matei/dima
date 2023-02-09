@@ -1,5 +1,4 @@
 class Logs:
-    # Projects have a cron job to tell Hal to retrieve logs
     # To do: method to change log level
     file_path = __file__.split('/')
     file_dir, file_name = '/'.join(file_path[:-1]) + '/', file_path[-1]
@@ -41,7 +40,7 @@ class Logs:
         else: host = ""
         filename, lineno, function = call_info[:3]
 
-        # function == "execute" and "Data" in message and 
+        # function == "execute" and "Data" in message and
         if level == 2 and len(message) > 256:
             message = message[:253] + "..."
 

@@ -87,29 +87,7 @@ class Web(Project):
 
         log(f"Setting {self.dev_domain} to 'Hello World' ...", console=True)
 
-        modules = (
-            "utils/utils.py",
-            "app.py",
-            "logs.py",
-            "db.py",
-            "html.py",
-            "http.py",
-            "process.py",
-            "request.py",
-            "response.py",
-            "main.py",
-            )
-
-        utils.write(self.app_dir + "app.py", "", host=self.dev_host)
-
-        for module in modules:
-            utils.write(self.app_dir + "app.py", utils.read(utils.src_dir + "assets/web/app/modules/" + module) + "\n\n", mode='a', host=self.dev_host)
-
-        settings = {
-            "log_level": 2,
-            }
-
-        utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
+        self.update_py()
 
         # Replace old html
         cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
@@ -203,6 +181,56 @@ class Web(Project):
         for section in utils.get_dirs(self.html_dir, self.dev_host):
             solve_section(self.html_dir + section + '/', section, 0)
 
+    def update_py(self):
+        log(f"Updating source code for {self.name} ...", console=True)
+        utils.join_modules((
+            "utils/utils.py",
+            "app.py",
+            "logs.py",
+            "db.py",
+            "html.py",
+            "http.py",
+            "static.py",
+            "process.py",
+            "request.py",
+            "response.py",
+            "main.py",
+            ),
+            module_path = utils.src_dir + "assets/web/app/modules/",
+            file_path = self.app_dir + "app.py",
+            file_host = self.dev_host)
+
+        settings = {
+            "lmid": self.lmid,
+            "domain": self.domain,
+            "log_level": 2,
+            }
+
+        utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
+        self.restart()
+
+    def update_css(self):
+        log(f"Updating CSS for {self.name} ...", console=True)
+
+        scss_file = utils.tmp_dir + "css.scss"
+        utils.join_modules((
+            "palettes.scss",
+            "document.scss",
+            "structure.scss",
+            "text.scss",
+            "spacing.scss",
+            "objects.scss",
+            "forms.scss",
+            "animations.scss",
+            "media.scss",
+            ),
+            module_path = utils.src_dir + "assets/web/assets/css/",
+            file_path = scss_file)
+
+        css = sass.compile(string=utils.read(scss_file), output_style='compressed')
+        # TAKE CLASSES
+        utils.write(self.repo_dir + "src/assets/css/app.css", css, host=self.dev_host)
+
     def generate_ssl(self):
         if not utils.isfile(self.dev_ssl_dir, host=self.dev_host):
             cmd("mkdir " + self.dev_ssl_dir, host=self.dev_host)
@@ -216,17 +244,6 @@ class Web(Project):
         query = "update web.webs set ssl_last_gen=%s where lmobj=%s;"
         params = datetime.now(), self.dbid,
         hal.db.execute(query, params)
-
-    def restart(self):
-        log(f"Restarting {self.dev_domain} ...", console=True)
-        # To do: Save log file
-        cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;", host=self.dev_host)
-        cmd(f"sudo supervisorctl restart {self.lmid}", host=self.dev_host)
-
-    def config(self):
-        self.config_uwsgi()
-        self.config_supervisor()
-        self.config_nginx()
 
     def config_uwsgi(self):
         log(f"Configuring uWSGI for {self.dev_domain} ...", console=True)
@@ -263,3 +280,14 @@ class Web(Project):
             })
         utils.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, host=self.dev_host)
         hal.pools.get(self.dev_host_id).reload_nginx()
+
+    def config(self):
+        self.config_uwsgi()
+        self.config_supervisor()
+        self.config_nginx()
+
+    def restart(self):
+        log(f"Restarting {self.dev_domain} ...", console=True)
+        # To do: Save log file
+        cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;", host=self.dev_host)
+        cmd(f"sudo supervisorctl restart {self.lmid}", host=self.dev_host)

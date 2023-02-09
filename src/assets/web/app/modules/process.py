@@ -16,7 +16,7 @@ class lmProcess:
         method_id = lm.http.methods[method]
 
         browser = env.get("HTTP_USER_AGENT")
-        endpoint = lm.util.normalize_url(env.get("PATH_INFO")).strip('/').split('/')
+        endpoint = utils.normalize_url(env.get("PATH_INFO")).strip('/').split('/')
         pack = env.get("HTTP_ACCEPT")
 
         log(pprint.pformat(env, indent=4))

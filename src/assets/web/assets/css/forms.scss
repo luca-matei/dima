@@ -1,0 +1,218 @@
+
+/* Input fields */
+
+a, label, button {cursor: pointer;}
+
+input:disabled, textarea:disabled, .disabled {
+    opacity: 0.6;
+    cursor: not-allowed !important;
+}
+
+input, textarea, button {
+    background: none;
+    color: var(--tp-1);
+    outline: none;  // For focus
+    border: none;
+}
+
+input, textarea, .lmtpl-form-f2>* {
+    padding: 10px 12px;
+    background-color: var(--p-2);
+    border-bottom: 2px solid $blue-1;
+}
+
+textarea {
+    min-height: 150px;
+    resize: none;
+}
+
+input[type=text],
+input[type=email],
+input[type=tel],
+input[type=password],
+textarea {width: 100%;}
+
+
+/* Form objects */
+
+.lmtpl-switch {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+
+    a {
+        display: inline-block;
+        width: 50px;
+        margin: 0 10px;
+        color: var(--s-1);
+        background-color: var(--s-1);
+        border: none;
+        border-radius: 18px;
+
+        &:before {
+            display: block;
+            content: "";
+            height: 15px;
+            width: 15px;
+            background-color: var(--s-1);
+            border: 4px solid $green-1;
+            border-radius: 50%;
+            transition: transform $tr-t;
+        }
+    }
+
+    .fa {font-size: 1rem;}
+
+    input {
+        display: none;
+        &[type=checkbox]:checked ~ a {
+            background-color: $green-1;
+            &:before {transform: translateX(26px);}
+        }
+    }
+}
+
+@mixin lmbtn($var, $color: null) {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 8px 16px;
+    transition: background-color $tr-t, color $tr-t, transform $tr-t;
+    border-radius: $bd-r;
+
+    .fa-check {margin-right: 8px;}
+
+    @if $var == 1 or $var == 3 {
+        @if $color == red {
+            background-color: $red-1;
+            color: #fff;
+            font-weight: bold;
+        }
+        @else {
+            background-color: var(--p-1-i);
+            color: var(--tp-1-i);
+        }
+
+        &:hover {
+            @if $color == red {background-color: $red-2;}
+            @else {
+                background-color: var(--p-2-i);
+                color: var(--tp-2-i);
+            }
+        }
+    }
+
+    @if $var == 2 or $var == 4 {
+        @if $color == red {
+            font-weight: bold;
+            &:hover {
+                background-color: $red-1;
+                color: #fff;
+            }
+        }
+        border: 1px solid var(--p-1-i);
+    }
+
+    @if $var == 3 or $var == 4 {
+        &:hover {transform: scale(1.05)}
+    }
+}
+
+// Find out why it doesn't work with @each (it isn't executing the @if statements)
+.lmbtn-1 {@include lmbtn(1);}
+.lmbtn-1-red {@include lmbtn(1, red);}
+.lmbtn-2 {@include lmbtn(2);}
+.lmbtn-2-red {@include lmbtn(2, red);}
+.lmbtn-3 {@include lmbtn(3);}
+.lmbtn-3-red {@include lmbtn(3, red);}
+.lmbtn-4 {@include lmbtn(4);}
+.lmbtn-4-red {@include lmbtn(4, red);}
+
+.lmtpl-form-f1 {
+    margin-bottom: 10px;
+    h4 {
+        margin-bottom: 10px;
+        &>span:nth-child(2) {
+            color: $red-1;
+            margin-left: 5px;
+        }
+    }
+}
+
+.lmtpl-form-f2 {
+    display: flex;
+    flex-flow: row nowrap;
+    margin-bottom: 10px;
+
+    &>:first-child {
+        padding: 9px 12px;
+        flex-grow: 1;
+    }
+
+    &>:last-child {
+        padding: 9px 12px; // Not ok, needs to be solved
+        &:hover {color: var(--tp-1);}
+    }
+}
+
+.lmtpl-select {
+    position: relative;
+
+    div {
+        &:first-of-type {
+            cursor: pointer;
+        }
+
+        &:last-of-type {
+            position: absolute;
+            display: none;
+            flex-flow: column nowrap;
+            background-color: var(--p-1);
+            width: 100%;
+            z-index: 1;
+
+            &.opened {
+                display: flex;
+            }
+
+            .selected {
+                background-color: var(--p-2);
+            }
+
+            span {
+                display: block;
+                padding: 10px 12px;
+                transition: background-color $tr-t;
+            }
+
+            span:hover {
+                background-color: var(--s-1);
+                cursor: pointer;
+            }
+        }
+    }
+}
+
+.lmtpl-spinner {
+    // Add width, height, margin for when we use this in places other than hide-all
+    &:after {
+        content: " ";
+        display: block;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border-width: 5px;
+        border-style: solid;
+        border-color: var(--s-2) transparent var(--s-2) transparent;
+        animation-name: R360;
+        animation-duration: 1.2s;
+        animation-delay: 1s;
+        animation-direction: linear;
+        animation-iteration-count: infinite;
+    }
+}
+
+#unsaved-changes {
+    display: none;
+    color: $red-1;
+}

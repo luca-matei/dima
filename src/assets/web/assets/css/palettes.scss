@@ -1,0 +1,106 @@
+$gold-1: #e69500;
+$silver-1: #9A9A9A;
+$blue-1: #53a2e3;
+$blue-2-hex: #95C6EE;
+$green-1: #2ecc71;
+$green-2: #55d98c;
+$orange-1: #f4ad49;
+$purple-hex: #6757e2;
+$red-1: #ef4658;
+$red-2: #f1725d;
+$sh-1: 0 0 2px 2px rgba(0, 0, 0, 0.12);
+$sh-2: 2px 4px 3px 4px rgba(0, 0, 0, 0.06);
+
+html {
+    --p-1-1: #faf9f9;   // Primary color 1, light
+    --p-2-1: #f1eeee;   // Primary color 2, light
+    --s-1-1: #e8e4e4;   // Secondary color 1, light
+    --s-2-1: #dfd9d9;   // Secondary color 2, light
+    --tp-1-1: #36454f;   // Primary text color 1, light
+    --tp-2-1: #40525e;   // Primary text color 2, light
+    --ts-1-1: #4b5f6d;   // Secondary text color 1, light
+    --ts-2-1: #556d7c;   // Secondary text color 2, light
+
+    --p-1-2: #27343C;   // Primary color 1, dark
+    --p-2-2: #32424C;   // Primary color 2, dark
+    --s-1-2: #3E525E;   // Secondary color 1, dark
+    --s-2-2: #496170;   // Secondary color 2, dark
+    --tp-1-2: #ced9df;   // Primary text color 1, dark
+    --tp-2-2: #fcfdfd;   // Primary text color 2, dark
+    --ts-1-2: #A6B9C5;   // Secondary text color 1, dark
+    --ts-2-2: #B8C7D0;   // Secondary text color 2, dark
+
+    &[data-theme='1'] {
+      --p-1: var(--p-1-1);
+      --p-2: var(--p-2-1);
+      --s-1: var(--s-1-1);
+      --s-2: var(--s-2-1);
+      --tp-1: var(--tp-1-1);
+      --tp-2: var(--tp-2-1);
+      --ts-1: var(--ts-1-1);
+      --ts-2: var(--ts-2-1);
+
+      --p-1-i: var(--p-1-2);
+      --p-2-i: var(--p-2-2);
+      --s-1-i: var(--s-1-2);
+      --s-2-i: var(--s-2-2);
+      --tp-1-i: var(--tp-1-2);
+      --tp-2-i: var(--tp-2-2);
+      --ts-1-i: var(--ts-1-2);
+      --ts-2-i: var(--ts-2-2);
+    }
+
+    &[data-theme='2'] {
+      --p-1: var(--p-1-2);
+      --p-2: var(--p-2-2);
+      --s-1: var(--s-1-2);
+      --s-2: var(--s-2-2);
+      --tp-1: var(--tp-1-2);
+      --tp-2: var(--tp-2-2);
+      --ts-1: var(--ts-1-2);
+      --ts-2: var(--ts-2-2);
+
+      --p-1-i: var(--p-1-1);
+      --p-2-i: var(--p-2-1);
+      --s-1-i: var(--s-1-1);
+      --s-2-i: var(--s-2-1);
+      --tp-1-i: var(--tp-1-1);
+      --tp-2-i: var(--tp-2-1);
+      --ts-1-i: var(--ts-1-1);
+      --ts-2-i: var(--ts-2-1);
+    }
+
+}
+
+/* Text */
+
+span.red {color: $red-1;}
+span.blue {color: $blue-1;}
+a.red:hover {
+    background-color: $red-1;
+    color: var(--tp-1-2);
+}
+
+.lmtpl-a-blue {
+    color: $blue-1;
+    font-weight: bold;
+    &:hover {color: $blue-2-hex;}
+}
+
+/* Backgrounds */
+
+.lmbg-blue {background-color: $blue-1;}
+.lmbg-silver {
+    background-color: $silver-1;
+    &>* {color: #fff !important;}
+    font-weight: bold;
+}
+.lmbg-green {
+    background-color: $green-1;
+    &>* {color: #fff !important;}
+    font-weight: bold;
+}
+.lmbg-orange {background-color: $orange-1; color: var(--tp-1-1);}
+.lmbg-red {background-color: $red-1;}
+
+.lmbg-p-2 {background-color: var(--p-2);}

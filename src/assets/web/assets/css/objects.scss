@@ -1,0 +1,338 @@
+@mixin lmtpl-drop($var) {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+
+    @if $var == r {position: relative;}
+
+    a:hover {background-color: var(--s-1);}
+
+    &>a {
+        flex-grow: 1;
+        display: inline-block;
+        padding: 8px 12px;
+        margin: 4px 0 4px 6px;
+        border-radius: $bd-r;
+    }
+
+    &>label {
+        margin-right: 6px;
+        padding: 8px;
+        font-size: 0.8rem;
+        line-height: 1.6;
+        transition: transform $tr-t;
+    }
+
+    &>div {
+        flex: 100%;
+        display: none;
+        background-color: var(--p-1);
+        margin: 0 6px 4px;
+        min-width: 160px;
+        border: 2px solid var(--s-2);
+        border-radius: $bd-r;
+
+        @if $var == r {right: 27px;} // Width of drop arrow
+
+        .lmtpl-switch {padding: 12px 16px;}
+        &>a {
+            display: block;
+            padding: 12px 16px;
+
+            &:first-child {border-radius: 4px 4px 0 0;}
+            &:last-child {border-radius: 0 0 4px 4px;}
+        }
+    }
+
+    &:hover>div, input:checked ~ div {display: block;}
+    &:hover>label, input:checked + label {transform: rotate(180deg);}
+
+}
+
+.lmtpl-drop-l {@include lmtpl-drop(l);}
+.lmtpl-drop-r {@include lmtpl-drop(r);}
+
+.lmtpl-ilust {
+    display: flex;
+    order: -1;
+
+    img {
+        width: 100%;
+        max-width: 500px;
+        height: auto;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    a {
+        display: inline-block;
+        margin: 15px 0;
+    }
+}
+
+.lmtpl-bgimg {
+    /* Replace 'backgorund: cover;' because of CSP */
+    position: relative;
+    overflow: hidden;
+    &>img {
+        position: absolute;
+        min-width: 1000%;
+        min-height: 1000%;
+        left: 50%;
+        top: 50%;
+        transform: translateX(-50%) translateY(-50%) scale(0.1);
+    }
+}
+
+.lmtpl-crsl {
+    &-elems {
+        display: flex;
+        justify-content: center;
+        position: relative;
+
+        &>div {
+            width: calc(100% - 30px);
+            transition: transform 0.3s, filter 0.3s, opacity 0.3s;
+
+            &[data-pos="-1"],
+            &[data-pos="1"] {
+                position: absolute;
+                opacity: 0.3;
+                filter: blur(2px);
+                z-index: 1;
+            }
+
+            &[data-pos="-1"] {transform: translateX(-45%) translateY(10px) scale(0.9);}
+            &[data-pos="1"] {transform: translateX(45%) translateY(10px) scale(0.9);}
+            &[data-pos="0"] {
+                position: relative;
+                z-index: 2;
+            }
+        }
+    }
+
+    &-ctrls {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: center;
+        padding-top: 30px;
+
+        button>i {
+            padding: 8px 10px;
+            margin: 0;
+        }
+    }
+}
+
+.lmtpl-slideshow {
+    display: flex;
+    flex-flow: row wrap;
+
+    &>button>i {
+        padding: 8px 10px;
+        margin: 0;
+    }
+}
+
+.lmtpl-slides {
+    text-align: left;
+    margin-bottom: 10px;
+
+    &>div {
+        display: flex;
+        flex-flow: row wrap;
+        justify-content: center;
+        border-radius: var(--r);
+        animation-duration: 0.5s;
+        animation-name: FI;
+
+        &:not(:first-of-type) {display: none;}
+    }
+}
+
+.lmtpl-bullets>span {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-color: var(--s-2);
+    border-radius: 50%;
+    vertical-align: middle;
+
+    &:not(:last-of-type) {margin-right: 8px;}
+    &.active {background-color: var(--ts-2);}
+}
+
+.lmtpl-card- {
+    &1, &2 {
+        min-height: 300px;
+        p {font-size: 1.05rem;}
+    }
+
+    &1>:first-child, &2>:last-child {
+        flex: 60%;
+        border-radius: $bd-r 0 0 $bd-r;
+    }
+
+    &1>:last-child, &2>:first-child {
+        flex: 40%;
+        padding: 15px;
+        background-color: var(--p-2);
+        border-radius: 0 $bd-r $bd-r 0;
+    }
+
+    &3 {
+        border-radius: 20px;
+        box-shadow: $sh-1;
+
+        &>div:first-of-type {
+            min-height: 220px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        &>div:last-of-type {
+            padding: 12px 24px 36px;
+            background-color: var(--p-2);
+            font-size: 1.1rem;
+            border-radius: 0 0 20px 20px;
+        }
+
+        a {@extend .lmtpl-a-blue;}
+    }
+}
+
+.lmtpl-notice {
+    p {
+        margin: 0;
+        padding: 8px;
+        text-align: center;
+        a  {
+            color: var(--ts-2-1);
+            border-bottom: 1px solid var(--ts-2-1);
+            &:hover {
+                color: var(--tp-1-1);
+                border-bottom-color: var(--tp-1-1);
+            }
+        }
+    }
+}
+
+.lmtpl-sign {
+    color: $blue-1;
+    font-size: 2rem;
+}
+
+.lmtpl-cta {
+    &>a {
+        margin-top: 8px;
+        margin-bottom: 8px;
+
+        &:not(:last-of-type) {
+            margin-right: 15px;
+        }
+    }
+}
+
+.lmtpl-setting {
+    display: flex;
+    flex-flow: row wrap;
+    p {
+        font-size: 1rem;
+    }
+    &>div:first-of-type {
+        flex-grow: 1;
+    }
+}
+
+.lmtpl-steps {
+    margin: 25px 0;
+    font-size: 1.12rem;
+    .fa-check-circle {margin-right: 6px; color: $green-1;}
+    .fa-arrow-circle-right {margin-right: 6px; color: $silver-1;}
+    .fa-chevron-right {margin: 0 15px;}
+}
+
+@mixin lmtpl-tbl($var) {
+    background-color: var(--p-2);
+    width: 100%;
+    margin: 15px 0;
+    border-radius: $bd-r;
+
+    div {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+
+        &:first-of-type {
+            border-top-left-radius: $bd-r;
+            border-top-right-radius: $bd-r;
+        }
+        &:not(:last-of-type) {border-bottom: 1px solid var(--s-2);}
+        &:last-of-type {
+            border-bottom-left-radius: $bd-r;
+            border-bottom-right-radius: $bd-r;
+        }
+
+        &>span {
+            min-width: 80px;
+
+            &:nth-child(1) {
+                text-align: left;
+                @if $var == 1 {
+                    color: $blue-1;
+                    span {font-size: 0.85rem;}
+                }
+            }
+
+            &:nth-child(2) {
+                flex-grow: 1;
+                text-align: right;
+            }
+        }
+    }
+}
+
+// Price table
+.lmtpl-tbl-1 {@include lmtpl-tbl(1);}
+
+@mixin lmtpl-tbl-r($hex) {
+    background-color: $hex;
+    border-radius: $bd-r;
+    font-weight: bold;
+    transform: scale(1.03);
+    border-bottom: none !important;
+
+    &>span {
+        color: #fff !important;
+    }
+}
+
+.lmtpl-tbl-r1 {@include lmtpl-tbl-r($green-2);}
+.lmtpl-tbl-r2 {@include lmtpl-tbl-r($silver-1);}
+
+.lmtpl-tbl-h1 {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 30px;
+}
+
+@each $c, $v in (gold: $gold-1, silver: $silver-1, green: $green-1) {
+    .lmtpl-tag-#{$c} {
+        padding: 4px 14px;
+        font-size: 0.8rem;
+        border-radius: 20px;
+        vertical-align: middle;
+        color: $v;
+        background-color: rgba($v, 0.16);
+    }
+}
+
+.fa-question-circle {
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: opacity $tr-t;
+    &:hover {opacity: 0.8;}
+}

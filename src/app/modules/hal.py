@@ -38,7 +38,7 @@ class Hal:
         packages_path = lib_path + os.listdir(lib_path)[0] + "/site-packages"
         sys.path.append(packages_path)
 
-        for module in ('psycopg2', 'yaml', 'netifaces', 'requests'):
+        for module in ('psycopg2', 'yaml', 'netifaces', 'requests', 'sass'):
             globals()[module] = __import__(module)
 
         log("Phase 3: Loading settings ...")

@@ -1,0 +1,53 @@
+/* Text */
+
+$text-aligns: (
+    l: left,
+    c: center,
+    r: right,
+    j: justify
+);
+
+@each $short, $long in $text-aligns {
+    .lmt-#{$short} {text-align: $long;}
+}
+
+/* Links */
+
+p a {
+    padding-bottom: 2px;
+    border-bottom: 1px solid var(--ts-2);
+    transition: border-bottom $tr-t;
+    &:hover {border-bottom-color: var(--tp-1);}
+}
+
+a  {
+    color: var(--ts-2);
+    text-decoration: none;
+    transition: background-color $tr-t, color $tr-t;
+
+    &.active {
+        background-color: var(--p-2);
+        color: var(--tp-1);
+
+        &:hover {
+            background-color: var(--s-1);
+        }
+    }
+
+    .fa-angle-right, .fa-chevron-right {@include arrow-right;}
+
+    &:hover {
+        color: var(--tp-1);
+        .fa-angle-right, .fa-chevron-right {@include arrow-right-hvr;}
+    }
+}
+
+/* Headings */
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    padding: 0.67em 0 0 0;
+    color: var(--tp-2);
+}
+h1 ~ p, h2 ~ p {font-size: 1.18rem;}
+h3 ~ p, ul {font-size: 1.12rem;}

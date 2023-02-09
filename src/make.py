@@ -4,18 +4,18 @@ from app.modules.utils.utils import utils, no_logs_cmd as cmd
 src_dir = utils.get_src_dir()
 if len(sys.argv) > 1:
     if sys.argv[1] == "--install":
-        modules = (
+        print("Making install.py ...")
+        utils.join_modules((
             "utils/utils.py",
             "logs.py",
             "install.py",
-            )
-        print("Making install.py ...")
-        utils.write(src_dir + "install.py", "")
-        for module in modules:
-            utils.write(src_dir + "install.py", utils.read(src_dir + "app/modules/" + module) + "\n\n", mode='a')
+            ),
+            module_path = src_dir + "app/modules/",
+            file_path = src_dir + "install.py")
 
 else:
-    modules = (
+    print("Making app.py ...")
+    utils.join_modules((
         "utils/utils.py",
         "hal.py",
         "logs.py",
@@ -41,9 +41,6 @@ else:
         "utils/yml2html.py",
         "utils/md2html.py",
         "main.py",
-        )
-
-    print("Making app.py ...")
-    utils.write(src_dir + "app/app.py", "")
-    for module in modules:
-        utils.write(src_dir + "app/app.py", utils.read(src_dir + "app/modules/" + module) + "\n\n", mode='a')
+        ),
+        module_path = src_dir + "app/modules/",
+        file_path = src_dir + "app/app.py")

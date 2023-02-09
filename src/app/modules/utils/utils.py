@@ -257,6 +257,10 @@ class Utils:
         else: files = files.split(" ")
         return [f.split('/')[-1] for f in files]
 
+    def join_modules(self, modules, module_path, file_path, module_host=None, file_host=None):
+        mammoth = [self.read(module_path + m, host=module_host) for m in modules]
+        self.write(file_path, "\n\n".join(mammoth), host=file_host)
+
     def _cmd(self, call_info, command, catch=False, host=""):
         if call_info: call_info.append(host)
         # To do: display the functions that have called execute, isfile, send_file

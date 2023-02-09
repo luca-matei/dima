@@ -1,0 +1,84 @@
+
+/*
+
+-webkit-   Used by Chrome, Safari, Android, & iOS
+-moz-      Used by Mozilla Firefox
+-o-        Used by Opera
+-ms-       Used by Internet Explorer
+
+lm<type>-<pos|name>-<amount|variation>
+Scrolling rows will have a trailing x
+
+lm - trademark
+
+Type
+p - padding
+a - alignment
+t - text alignment
+c - columns
+b - background
+bd - border
+tpl - template
+
+Position
+t - top
+b - bottom
+l - left
+r - right
+
+Amount
+px 15, 30, 45, 60
+% 30p, 50p, 70p, 100p
+
+Order
+from darkest to brightest
+
+*/
+
+$bd-r: 4px;   // Border radius
+$tr-t: 0.1s;  // Transition time
+
+:root {
+    --max-pad: 30px;    // 30px -> 60px -> 50%-600px
+    --lmc-s-1: 30px; // 30px -> 60px
+    --lmc-s-2: var(--lmc-s-1);
+}
+
+@font-face {
+    font-family: Muli-Light;
+    src: url('/commons/font/Muli-Light.ttf');
+}
+
+* {box-sizing: border-box;}
+
+html {
+    background-color: var(--p-1);
+    color: var(--tp-1);
+    font-family: "Muli-Light";
+    height: 100%;
+    line-height: 1.6;
+    letter-spacing: 0.01rem;
+    overflow: hidden;
+}
+
+body {
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+@mixin arrow-right {
+    margin-left: 0;
+    width: 0;
+    font-size: 0.8rem;
+    opacity: 0;
+    transition: margin 0.2s, width 0.4s, opacity 0.2s;
+}
+
+@mixin arrow-right-hvr {
+    margin-left: 6px;
+    width: auto;
+    opacity: 1;
+}
+
+.grow {flex-grow: 1;}

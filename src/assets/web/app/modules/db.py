@@ -1,18 +1,13 @@
 class lmDb:
-    def connect(self):
-        # To do: get passwords securely
-        details = util.read(lm.app_dir + "db.ast")
-        host = details['host']
-        port = details['port']
-        password = details['password']
+    def __init__(self):
+        self.db_dir = lm.app_dir + "db/"
 
-        self.conn = psycopg2.connect(
-            dbname = lm.lmid,
-            user = lm.lmid,
-            host = host,
-            port = port,
-            password = password,
-            )
+    def connect(self):
+        host = "127.0.0.1"
+        port = int(utils.read(utils.projects_dir + "pg_port.txt"))
+        password = utils.read(self.db_dir + "db_pass")
+
+        self.conn = psycopg2.connect(f"dbname={lm.lmid} user={lm.lmid} host={host} password={password} port={port}")
 
         log(lm.lmid + " database connected.")
 
@@ -38,6 +33,10 @@ class lmDb:
                     log(f"Data: {data}")
 
             except (Exception, psycopg2.Error) as e:
+                if "server closed the connection" in str(e):
+                    self.connect()
+                    return self.execute(query, params)
+
                 log(f"Query error: {e}", level=4)
                 log(f"Database error!", level=5, console=True)
 

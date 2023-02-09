@@ -1,0 +1,53 @@
+/* Padding */
+
+$pad-pos: (
+    t: top,
+    b: bottom,
+    l: left,
+    r: right
+);
+
+$pad-comb: (
+    tb top bottom,
+    lr left right
+);
+
+$pad-val: (15, 30, 45, 60);
+
+@each $val in $pad-val {
+    @each $pos-s, $pos-l in $pad-pos {
+        .lmp-#{$pos-s}-#{$val} {padding-#{$pos-l}: #{$val}px;}
+    }
+
+    @each $comb, $pos1, $pos2 in $pad-comb {
+        .lmp-#{$comb}-#{$val} {
+            padding-#{$pos1}: #{$val}px;
+            padding-#{$pos2}: #{$val}px;
+        }
+    }
+
+    .lmp-a-#{$val}-max {padding: #{$val}px var(--max-pad);}
+}
+
+.lmp-lr-auto {padding-left: auto; padding-right: auto;}
+.lmp-lr-max {padding-left: var(--max-pad); padding-right: var(--max-pad);}
+
+/* Alignment */
+
+.lma-h-center {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+}
+
+.lma-hv-center {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    min-height: 100%;
+}
+
+.lma-v-top>div {
+    justify-content: flex-start !important;
+}

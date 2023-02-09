@@ -1,0 +1,119 @@
+
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+}
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {
+    .lmtpl-crsl-elems>div {width: calc(66.66% - 30px;)}
+}
+
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {
+    footer {justify-content: space-between;}
+
+    .lmtpl-ilust>img {width: 75%;}
+    .lmtpl-crsl-elems>div {width: calc(50% - 30px);}
+}
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {
+    :root {--max-pad: 60px;}
+
+    /* Template */
+    section {
+        aside {
+            transform: translate(0, 0);
+
+            label[for=aside-collapse] {
+                display: none;
+            }
+
+            & ~ main {
+                padding-left: 310px; // aside width + main padding-left
+            }
+        }
+    }
+
+    /* Columns */
+
+    @each $cols in (28, 37, 46, 55, 82, 73, 64) {
+        .lmc-2-#{$cols} {
+            flex-flow: row wrap;
+            justify-content: space-between;
+
+            &>div {
+                display: flex;
+                flex-flow: column nowrap;
+                justify-content: center;
+            }
+        }
+    }
+
+    .lmc-3 {
+        flex-flow: row wrap;
+        justify-content: space-between;
+    }
+
+    .lmc-2-28>div:first-of-type, .lmc-2-82>div:last-of-type {flex: 0 1 calc(20% - var(--lmc-s-2));}
+    .lmc-2-28>div:last-of-type, .lmc-2-82>div:first-of-type {flex: 0 1 calc(80% - var(--lmc-s-2));}
+    .lmc-2-37>div:first-of-type, .lmc-2-73>div:last-of-type {flex: 0 1 calc(30% - var(--lmc-s-2));}
+    .lmc-2-37>div:last-of-type, .lmc-2-73>div:first-of-type {flex: 0 1 calc(70% - var(--lmc-s-2));}
+    .lmc-2-46>div:first-of-type, .lmc-2-64>div:last-of-type {flex: 0 1 calc(40% - var(--lmc-s-2));}
+    .lmc-2-46>div:last-of-type, .lmc-2-64>div:first-of-type {flex: 0 1 calc(60% - var(--lmc-s-2));}
+    .lmc-2-55>div {flex: 0 1 calc(50% - var(--lmc-s-2));}
+
+    .lmc-3>div {
+        flex: 0 0 calc(33.33% - 40px);
+        border-radius: $bd-r;
+    }
+
+    /* Templates */
+
+    .lmtpl-ilust {
+        order: 0;
+        &>img {width: 100%;}
+    }
+
+    /* Custom */
+
+    #home-welcome>div {
+        text-align: left;
+        &.lmtpl-ilust {display: flex;}
+    }
+}
+
+/* Header break */
+@media only screen and (min-width: 1054px) {
+    #app-header>nav {
+        overflow: visible;
+        &>label {display: none;}
+        &>span {flex: 0;}
+    }
+
+    #nav-links {
+        flex: 0 0 auto;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        max-width: initial;
+        margin: 0;
+    }
+
+    .lmtpl-drop-l, .lmtpl-drop-r {
+        display: inline-block;
+        &>div {position: absolute;}
+    }
+
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {
+    html {--col-space: 60px;}
+    .lmtpl-crsl-elems>div {width: calc(33.33% - 30px);}
+}
+
+/* Maximum page width */
+@media only screen and (min-width: 1330px) {
+    :root {--max-pad: calc(50% - 600px);}
+}
