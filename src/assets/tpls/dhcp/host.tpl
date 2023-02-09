@@ -1,4 +1,4 @@
-host %LMID {
-    hardware ethernet  %MAC;
-    fixed-address      %IP;
+host %LMID% {
+    hardware ethernet  %MAC%;
+    fixed-address      %IP%;
 }

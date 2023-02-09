@@ -569,7 +569,71 @@ class Host(lmObj, HostServices):
 
     # System
     def generate_hosts_file(self):
-        pass
+        log(f"Generating /etc/hosts for {self.name} ...", console=True)
+        spaces = 4 * ' '
+        hosts = [
+            f"127.0.1.1{spaces}{self.lmid}.{utils.hosts.domain}{spaces*2}{self.lmid}"
+            ]
+
+        if self.name != self.lmid:
+            hosts.append(f"127.0.1.1{spaces}{self.name}.{utils.hosts.domain}{spaces}{self.name}")
+
+        host_entry = '\n'.join(hosts)
+        hosts = []
+
+        if self.dbid == hal.host_dbid:
+            # Hosts
+            query = "select a.ip, b.lmid, b.alias from host.hosts a, lmobjs b where b.id = a.lmobj and b.id != %s;"
+            params = self.dbid,
+            db_hosts = [list(h) for h in hal.db.execute(query, params)]
+
+            for host in db_hosts:
+                fill_spaces1 = (len("255.255.255.255") - len(host[0]))*' ' + spaces
+                fill_spaces2 = (len("astatin") - len(host[1]))*' ' + spaces
+
+                hosts.append(host[0] + fill_spaces1 + host[1] + '.' + utils.hosts.domain + fill_spaces2 + host[1])
+
+                # Has alias
+                if host[2]:
+                    fill_spaces3 = (len("astatin") - len(host[2]))*' ' + spaces
+                    hosts.append(host[0] + fill_spaces1 + host[2] + '.' + utils.hosts.domain + fill_spaces3 + host[2])
+
+
+            host_entries = "\n".join(hosts)
+            hosts = []
+
+            # Web apps
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.dev_host and b.lmobj = f.prod_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj;"
+            db_webs = [list(h) for h in hal.db.execute(query, params)]
+
+            for web in db_webs:
+                # Prod host
+                if web[0] == self.dbid:
+                    web[0] = "127.0.0.1"
+                    fill_spaces1 = (len("255.255.255.255") - len(web[0]))*' ' + spaces
+
+                fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+
+                hosts.append(web[0] + fill_spaces1 + web[2] + fill_spaces2 + web[3])
+
+                # Dev host
+                if web[1] == self.dbid:
+                    web[1] = "127.0.0.1"
+                    fill_spaces1 = (len("255.255.255.255") - len(web[1]))*' ' + spaces
+
+                web[2] = "dev." + web[2]
+                fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+
+                hosts.append(web[1] + fill_spaces1 + web[2] + fill_spaces2 + "dev." + web[3])
+
+            web_entries = "\n".join(hosts)
+
+        hosts_file = utils.format_tpl("hosts.tpl", {
+            "host": host_entry,
+            "hosts": host_entries,
+            "webs": web_entries
+            })
+        utils.write("/etc/hosts", hosts_file, host=self.lmid)
 
     def reach(self):
         if self.dbid == hal.host_dbid:
@@ -584,7 +648,7 @@ class Host(lmObj, HostServices):
     def build_dir_tree(self):
         log(f"Creating Hal's directory tree on {self.name} ...", console=True)
 
-        dir_tree = [utils.logs_dir, utils.projects_dir, utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir]
+        dir_tree = [utils.logs_dir, utils.projects_dir, utils.projects_dir + "pids/", utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir]
         if self.pm_id:
             dir_tree.append(utils.vms_dir)
 
@@ -596,6 +660,8 @@ class Host(lmObj, HostServices):
             # It's a file
             elif not utils.isfile(node, host=self.lmid):
                 cmd(f"touch {node}", host=self.lmid)
+
+        cmd(f"sudo chown www-data:www-data {utils.projects_dir}pids", host=self.lmid)
 
     def build_venv(self):
         if utils.isfile(f"{utils.projects_dir}venv/", host=self.lmid):

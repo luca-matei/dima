@@ -121,7 +121,7 @@ class Install:
     def create_dir_tree(self):
         print("Creating Hal's directory tree ...")
 
-        dir_tree = utils.logs_dir, utils.mnt_dir, utils.projects_dir, utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir, utils.vms_dir,
+        dir_tree = utils.logs_dir, utils.mnt_dir, utils.projects_dir, utils.projects_dir + "pids/", utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir, utils.vms_dir,
 
         if not os.path.isdir(utils.hal_dir):
             cmd(f"mkdir {utils.hal_dir}")
@@ -135,6 +135,8 @@ class Install:
             # It's a file
             elif not os.path.isfile(node):
                 cmd(f"sudo -u hal touch {node}")
+
+        cmd(f"chown www-data:www-data {utils.projects_dir}pids", host=self.lmid)
 
     def create_env(self):
         if os.path.isdir(f"{utils.projects_dir}venv/"):

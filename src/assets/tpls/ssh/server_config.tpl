@@ -1,4 +1,4 @@
-Port %PORT
+Port %PORT%
 AddressFamily inet
 ListenAddress 0.0.0.0
 

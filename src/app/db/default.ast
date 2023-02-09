@@ -148,15 +148,17 @@
         ("Host", "dir_tree", ("build",)),
         ("Host", "venv", ("build",)),
         ("Host", "name", ("get",)),
+        ("Host", "hosts_file", ("generate",)),
 
         ("App", "", ("check", "start", "stop", "restart", "save")),
         ("App", "alias", ("set", "delete")),
 
-        ("Web", "", ("check", "start", "stop", "restart", "save", "build")),
+        ("Web", "", ("check", "start", "stop", "restart", "save", "build", "config", "default")),
         ("Web", "alias", ("set", "delete")),
+        ("Web", "uwsgi", ("config",)),
+        ("Web", "supervisor", ("config",)),
         ("Web", "nginx", ("config",)),
-        ("Web", "ssl", ("renew",)),
-        ("Web", "default", ("set",)),
+        ("Web", "ssl", ("generate",)),
         ("Web", "html", ("update",)),
 
         ("Soft", "", ("check", "save",)),

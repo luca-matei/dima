@@ -1,7 +1,7 @@
 [user]
-name = %USER
-email = %EMAIL
-signingkey = %GPG_KEY_ID
+name = %USER%
+email = %EMAIL%
+signingkey = %GPG_KEY_ID%
 
 [gpg]
 program = gpg2

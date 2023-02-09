@@ -32,9 +32,9 @@ d-i netcfg/disable_autoconfig boolean true
 #d-i netcfg/dhcp_options select Configure network manually
 
 ### Static network
-d-i netcfg/get_ipaddress string %IP
-d-i netcfg/get_netmask string %NETMASK
-d-i netcfg/get_gateway string %GATEWAY
+d-i netcfg/get_ipaddress string %IP%
+d-i netcfg/get_netmask string %NETMASK%
+d-i netcfg/get_gateway string %GATEWAY%
 # to do: configure DNS
 d-i netcfg/get_nameservers string 8.8.8.8
 d-i netcfg/confirm_static boolean true
@@ -42,9 +42,9 @@ d-i netcfg/confirm_static boolean true
 ### Hostname and domain name
 #d-i netcfg/get_hostname string unassigned-hostname
 #d-i netcfg/get_domain string unassigned-domain
-d-i netcfg/get_hostname string %HOSTNAME
-d-i netcfg/get_domain string %DOMAIN_NAME
-d-i netcfg/hostname string %HOSTNAME
+d-i netcfg/get_hostname string %HOSTNAME%
+d-i netcfg/get_domain string %DOMAIN_NAME%
+d-i netcfg/hostname string %HOSTNAME%
 d-i netcfg/wireless_wep string
 
 
@@ -57,10 +57,10 @@ d-i mirror/http/proxy string
 
 
 ## Account setup
-d-i passwd/root-password-crypted password %ROOT_PASS
-d-i passwd/user-fullname string %USERNAME
-d-i passwd/username string %USERNAME
-d-i passwd/user-password-crypted password %USER_PASS
+d-i passwd/root-password-crypted password %ROOT_PASS%
+d-i passwd/user-fullname string %USERNAME%
+d-i passwd/username string %USERNAME%
+d-i passwd/user-password-crypted password %USER_PASS%
 
 
 ## Clock
@@ -107,7 +107,7 @@ d-i apt-setup/disable-cdrom-entries boolean true
 
 ## Package selection
 tasksel tasksel/first multiselect standard
-d-i pkgsel/include string %PACKAGES
+d-i pkgsel/include string %PACKAGES%
 d-i pkgsel/upgrade select safe-upgrade
 d-i pkgsel/update-policy select none
 d-i pkgsel/updatedb boolean true
@@ -128,8 +128,8 @@ d-i preseed/late_command string \
 cd /target/; \
 mkdir home/hal/.ssh/; \
 mkdir home/hal/tmp/; \
-echo "%SSH_KEY" > home/hal/.ssh/authorized_keys; \
-echo "Port %SSH_PORT" >> etc/ssh/sshd_config; \
+echo "%SSH_KEY%" > home/hal/.ssh/authorized_keys; \
+echo "Port %SSH_PORT%" >> etc/ssh/sshd_config; \
 echo "PasswordAuthentication no" >> etc/ssh/sshd_config; \
 echo "hal ALL=(ALL) NOPASSWD:ALL" > etc/sudoers.d/hal; \
 in-target chown -R hal:hal home/hal/; \

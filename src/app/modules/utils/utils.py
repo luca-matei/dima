@@ -26,9 +26,6 @@ class Utils:
     apps = None
     softs = None
 
-    md2html = None
-    yml2html = None
-
     def __init__(self):
         self.get_debian_version()
         self.src_dir = self.get_src_dir()
@@ -211,7 +208,7 @@ class Utils:
         tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl)
 
         for key in self.get_keys(keys):
-            tpl = tpl.replace("%" + key.upper(), str(keys[key]))
+            tpl = tpl.replace("%" + key.upper() + "%", str(keys[key]))
 
         return tpl
 
@@ -247,6 +244,19 @@ class Utils:
             return ordered_opts[resp - 1]
         return 0
 
+    def get_dirs(self, path, host=None):
+        dirs = cmd(f"ls -d {path}*/", catch=True, host=host)
+        if "No such file or directory" in dirs: dirs = []
+        else: dirs = dirs.split(" ")
+
+        return [d.split('/')[-2] for d in dirs]
+
+    def get_files(self, path, host=None):
+        files = cmd(f"ls {path}", catch=True, host=host)
+        if "No such file or directory" in files: files = []
+        else: files = files.split(" ")
+        return [f.split('/')[-1] for f in files]
+
     def _cmd(self, call_info, command, catch=False, host=""):
         if call_info: call_info.append(host)
         # To do: display the functions that have called execute, isfile, send_file
@@ -272,6 +282,7 @@ class Utils:
             response = '\n'.join([output.stdout, output.stderr]).strip('\n')
             #print(response)
             return response
+
 
 utils = Utils()
 

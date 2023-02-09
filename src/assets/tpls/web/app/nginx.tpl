@@ -1,22 +1,16 @@
-#server {
-#    listen 80;
-#    server_name %NAME.%DOMAIN;
-#    return 301 ## TO ADD
-#}
-
 server {
     listen 80;
-    server_name %LMID.%DOMAIN;
+    server_name %DOMAIN%;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name %LMID.%DOMAIN;
+    server_name %DOMAIN%;
     keepalive_timeout 70;
 
-    ssl_certificate      %SSL_DIRpubkey.pem; # fullchain.pem
-    ssl_certificate_key  %SSL_DIRprivkey.pem; # privkey.pem
+    ssl_certificate      %SSL_DIR%pubkey.pem; # fullchain.pem
+    ssl_certificate_key  %SSL_DIR%privkey.pem; # privkey.pem
     ssl_protocols TLSv1.3;
 
     ssl_prefer_server_ciphers on;
@@ -26,12 +20,12 @@ server {
     ssl_session_cache shared:SSL:10m;
     ssl_session_tickets off;
 
-    ssl_dhparam %HAL_SSL_DIRdhparam.pem;
+    ssl_dhparam %HAL_SSL_DIR%dhparam.pem;
     ssl_ecdh_curve secp521r1:secp384r1;
 
-    ssl_stapling %OCSP;
-    ssl_stapling_verify %OCSP;
-    ssl_trusted_certificate %SSL_DIRpubkey.pem; # fullchain.pem
+    ssl_stapling %OCSP%;
+    ssl_stapling_verify %OCSP%;
+    ssl_trusted_certificate %SSL_DIR%pubkey.pem; # fullchain.pem
     resolver 1.1.1.1 1.0.0.1 [2606:4700:4700::1111] [2606:4700:4700::1001] valid=300s;
     resolver_timeout 5s;
 
@@ -46,24 +40,24 @@ server {
     }
 
     location /assets/ {
-        valid_referers none blocked %DOMAIN *.%DOMAIN;
+        valid_referers none blocked %DOMAIN% *.%DOMAIN%;
         if ($invalid_referer) {
             return 403;
         }
-        root %REPO_DIRsrc;
+        root %REPO_DIR%src;
     }
 
     location ~ ^(\/robots\.txt|\/sitemap\.xml|\/favicon\.ico)$ {
         log_not_found off;
         access_log off;
-        root %REPO_DIRsrc/assets;
+        root %REPO_DIR%src/assets;
     }
 
     location / {
         include uwsgi_params;
-        uwsgi_pass 127.0.0.1:%PORT;
+        uwsgi_pass 127.0.0.1:%PORT%;
     }
 
-    access_log /var/log/nginx/%LMID.acc.log;
-    error_log /var/log/nginx/%LMID.err.log warn;
+    access_log /var/log/nginx/%LMID%.acc.log;
+    error_log /var/log/nginx/%LMID%.err.log warn;
 }

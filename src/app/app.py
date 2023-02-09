@@ -26,9 +26,6 @@ class Utils:
     apps = None
     softs = None
 
-    md2html = None
-    yml2html = None
-
     def __init__(self):
         self.get_debian_version()
         self.src_dir = self.get_src_dir()
@@ -211,7 +208,7 @@ class Utils:
         tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl)
 
         for key in self.get_keys(keys):
-            tpl = tpl.replace("%" + key.upper(), str(keys[key]))
+            tpl = tpl.replace("%" + key.upper() + "%", str(keys[key]))
 
         return tpl
 
@@ -247,6 +244,19 @@ class Utils:
             return ordered_opts[resp - 1]
         return 0
 
+    def get_dirs(self, path, host=None):
+        dirs = cmd(f"ls -d {path}*/", catch=True, host=host)
+        if "No such file or directory" in dirs: dirs = []
+        else: dirs = dirs.split(" ")
+
+        return [d.split('/')[-2] for d in dirs]
+
+    def get_files(self, path, host=None):
+        files = cmd(f"ls {path}", catch=True, host=host)
+        if "No such file or directory" in files: files = []
+        else: files = files.split(" ")
+        return [f.split('/')[-1] for f in files]
+
     def _cmd(self, call_info, command, catch=False, host=""):
         if call_info: call_info.append(host)
         # To do: display the functions that have called execute, isfile, send_file
@@ -272,6 +282,7 @@ class Utils:
             response = '\n'.join([output.stdout, output.stderr]).strip('\n')
             #print(response)
             return response
+
 
 utils = Utils()
 
@@ -1825,7 +1836,71 @@ class Host(lmObj, HostServices):
 
     # System
     def generate_hosts_file(self):
-        pass
+        log(f"Generating /etc/hosts for {self.name} ...", console=True)
+        spaces = 4 * ' '
+        hosts = [
+            f"127.0.1.1{spaces}{self.lmid}.{utils.hosts.domain}{spaces*2}{self.lmid}"
+            ]
+
+        if self.name != self.lmid:
+            hosts.append(f"127.0.1.1{spaces}{self.name}.{utils.hosts.domain}{spaces}{self.name}")
+
+        host_entry = '\n'.join(hosts)
+        hosts = []
+
+        if self.dbid == hal.host_dbid:
+            # Hosts
+            query = "select a.ip, b.lmid, b.alias from host.hosts a, lmobjs b where b.id = a.lmobj and b.id != %s;"
+            params = self.dbid,
+            db_hosts = [list(h) for h in hal.db.execute(query, params)]
+
+            for host in db_hosts:
+                fill_spaces1 = (len("255.255.255.255") - len(host[0]))*' ' + spaces
+                fill_spaces2 = (len("astatin") - len(host[1]))*' ' + spaces
+
+                hosts.append(host[0] + fill_spaces1 + host[1] + '.' + utils.hosts.domain + fill_spaces2 + host[1])
+
+                # Has alias
+                if host[2]:
+                    fill_spaces3 = (len("astatin") - len(host[2]))*' ' + spaces
+                    hosts.append(host[0] + fill_spaces1 + host[2] + '.' + utils.hosts.domain + fill_spaces3 + host[2])
+
+
+            host_entries = "\n".join(hosts)
+            hosts = []
+
+            # Web apps
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.dev_host and b.lmobj = f.prod_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj;"
+            db_webs = [list(h) for h in hal.db.execute(query, params)]
+
+            for web in db_webs:
+                # Prod host
+                if web[0] == self.dbid:
+                    web[0] = "127.0.0.1"
+                    fill_spaces1 = (len("255.255.255.255") - len(web[0]))*' ' + spaces
+
+                fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+
+                hosts.append(web[0] + fill_spaces1 + web[2] + fill_spaces2 + web[3])
+
+                # Dev host
+                if web[1] == self.dbid:
+                    web[1] = "127.0.0.1"
+                    fill_spaces1 = (len("255.255.255.255") - len(web[1]))*' ' + spaces
+
+                web[2] = "dev." + web[2]
+                fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+
+                hosts.append(web[1] + fill_spaces1 + web[2] + fill_spaces2 + "dev." + web[3])
+
+            web_entries = "\n".join(hosts)
+
+        hosts_file = utils.format_tpl("hosts.tpl", {
+            "host": host_entry,
+            "hosts": host_entries,
+            "webs": web_entries
+            })
+        utils.write("/etc/hosts", hosts_file, host=self.lmid)
 
     def reach(self):
         if self.dbid == hal.host_dbid:
@@ -1840,7 +1915,7 @@ class Host(lmObj, HostServices):
     def build_dir_tree(self):
         log(f"Creating Hal's directory tree on {self.name} ...", console=True)
 
-        dir_tree = [utils.logs_dir, utils.projects_dir, utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir]
+        dir_tree = [utils.logs_dir, utils.projects_dir, utils.projects_dir + "pids/", utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir]
         if self.pm_id:
             dir_tree.append(utils.vms_dir)
 
@@ -1852,6 +1927,8 @@ class Host(lmObj, HostServices):
             # It's a file
             elif not utils.isfile(node, host=self.lmid):
                 cmd(f"touch {node}", host=self.lmid)
+
+        cmd(f"sudo chown www-data:www-data {utils.projects_dir}pids", host=self.lmid)
 
     def build_venv(self):
         if utils.isfile(f"{utils.projects_dir}venv/", host=self.lmid):
@@ -2006,16 +2083,26 @@ class Web(Project):
         self.default_lang = utils.projects.langs[self.default_lang_id]
         self.default_theme = utils.projects.themes[self.default_theme_id]
 
-        self.ssl_dir = utils.ssl_dir + self.domain
-        self.dev_ssl_dir = utils.ssl_dir + self.dev_domain
+        self.ssl_dir = utils.ssl_dir + self.domain + '/'
+        self.dev_ssl_dir = utils.ssl_dir + self.dev_domain + '/'
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
+
+        # Assign a process port
+        if not self.port:
+            self.port = hal.pools.get(self.dev_host_id).next_port()
+            query = "update web.webs set port=%s where lmobj=%s;"
+            params = self.port, self.dbid,
+            hal.db.execute(query, params)
+
+        if not utils.isfile(self.log_file, host=self.dev_host):
+            cmd(f"touch {self.log_file}", host=self.dev_host)
+            cmd(f"sudo chown www-data:www-data {self.log_file}", host=self.dev_host)
 
         if not utils.isfile(self.app_dir + "db/db_pass", host=self.dev_host):
             self.build()
 
         self.db = Db(self.lmid, self.dbid, self.dev_host)
-        #self.check()
 
     def build(self):
         log(f"Building {self.lmid} ...", console=True)
@@ -2059,8 +2146,8 @@ class Web(Project):
             hal.pools.get(self.dev_host_id).create_pg_role(self.lmid)
             hal.pools.get(self.dev_host_id).create_pg_db(self.lmid)
 
+        self.generate_ssl()
         self.default()
-        #self.config()
 
     def default(self):
         yes = utils.yes_no(f"Are you sure you want to format {self.name}?")
@@ -2068,7 +2155,7 @@ class Web(Project):
             log("Aborted.", console=True)
             return
 
-        log(f"Setting {self.domain} to 'Hello World' ...", console=True)
+        log(f"Setting {self.dev_domain} to 'Hello World' ...", console=True)
 
         modules = (
             "utils/utils.py",
@@ -2099,10 +2186,10 @@ class Web(Project):
         hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
 
         self.update_html()
-        #self.restart()
+        self.config()
 
     def update_html(self):
-        log(f"Updating html for {self.domain} ...", console=True)
+        log(f"Updating html for {self.dev_domain} ...", console=True)
 
         self.db.erase()
         self.db.build()
@@ -2122,18 +2209,15 @@ class Web(Project):
         modules = dict(self.db.execute(query, params))
         modules.update(utils.reverse_dict(modules))
 
-        app_wrapper = utils.read(self.app_dir + "html/wrapper.html", host=self.dev_host)
-        if self.has_top:
-            top_button = YML2HTML(util.read(f"{hal.tpl_dir}web/app/html/top-button.yml"), self.default_lang, self.default_lang).html
-        else:
-            top_button = ""
+        app_wrapper = utils.read(self.html_dir + "wrapper.html", host=self.dev_host)
+        top_button = YML2HTML(utils.read(self.html_dir + "top-button.yml", host=self.dev_host), self.default_lang, self.default_lang).html
 
         def solve_section(section_dir, section_name, parent_id):
             query = "insert into sections (name, parent) values (%s, %s) returning id;"
             params = section_name, parent_id
             section_id = self.db.execute(query, params)[0][0]
 
-            pages = [p for p in os.listdir(section_dir) if p.endswith(".yml")]
+            pages = utils.get_files(section_dir + "*.yml", host=self.dev_host)
             for page in pages:
                 filename = page.split(".")[0].split("-")
                 name, method = filename[:2]
@@ -2142,18 +2226,19 @@ class Web(Project):
                 if name == "lm_wrapper":
                     continue
 
-                meta, yml = util.read(section_dir + page).split("----")
+                meta, yml = utils.read(section_dir + page, host=self.dev_host).split("----")
                 meta = yaml.safe_load(meta)
                 for lang in self.langs:
                     body = YML2HTML(yml, self.default_lang, lang).html
-                    app_header = YML2HTML(util.read(f"{self.html_dir}app-header.yml"), self.default_lang, lang).html
-                    app_footer = YML2HTML(util.read(f"{self.html_dir}app-footer.yml"), self.default_lang, lang).html
-                    copyright = YML2HTML(util.read(f"{self.html_dir}copyright.yml"), self.default_lang, lang).html
-                    cookies_notice = YML2HTML(util.read(f"{self.html_dir}cookies-notice.yml"), self.default_lang, lang).html
+                    app_header = YML2HTML(utils.read(f"{self.html_dir}app-header.yml", host=self.dev_host), self.default_lang, lang).html
+                    app_footer = YML2HTML(utils.read(f"{self.html_dir}app-footer.yml", host=self.dev_host), self.default_lang, lang).html
+                    copyright = YML2HTML(utils.read(f"{self.html_dir}copyright.yml", host=self.dev_host), self.default_lang, lang).html
+                    cookies_notice = YML2HTML(utils.read(f"{self.html_dir}cookies-notice.yml", host=self.dev_host), self.default_lang, lang).html
 
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
-                    if self.has_domain_in_title:
-                        title += " | " + self.domain
+                    # FORMAT TITLE
+                    #if self.has_domain_in_title:
+                        #title += " | " + self.domain
 
                     description = meta["description"].get(lang, meta["description"][self.default_lang])
                     permalink = ""
@@ -2175,43 +2260,38 @@ class Web(Project):
                         .replace("%APP_FOOTER", app_footer)\
                         .replace("%COPYRIGHT", copyright)\
                         .replace("%TOP_BUTTON", top_button)\
-                        .replace("%COOKIES_NOTICE", cookies_notice)
-
-                    if self.has_top:
-                        html = html.replace("%PERMALINK", permalink)
+                        .replace("%COOKIES_NOTICE", cookies_notice)\
+                        .replace("%PERMALINK", permalink)
 
                     query = "insert into pages (name, module, section, method, lang, first, html) values (%s, %s, %s, %s, %s, %s, %s);"
                     params = name, modules[meta["module"]], section_id, methods[method], langs[lang], first, html,
                     self.db.execute(query, params)
 
-            for section in [s for s in os.listdir(section_dir) if os.path.isdir(section_dir + s + '/')]:
+            for section in utils.get_dirs(section_dir, self.dev_host):
                 solve_section(section_dir + section + '/', section, section_id)
 
-        for section in [s for s in os.listdir(self.html_dir) if os.path.isdir(self.html_dir + s + '/')]:
+        for section in utils.get_dirs(self.html_dir, self.dev_host):
             solve_section(self.html_dir + section + '/', section, 0)
 
     def generate_ssl(self):
-        if not os.path.isdir(self.ssl_dir):
-            cmd("mkdir " + self.ssl_dir)
+        if not utils.isfile(self.dev_ssl_dir, host=self.dev_host):
+            cmd("mkdir " + self.dev_ssl_dir, host=self.dev_host)
 
         # Production certificates
-        if hal.pools[self.host].env == hal.envs.get("prod"):
-            log(f"Generating Let's Encrypt SSL certs for {self.lmid}.{self.domain}. This may take a while ...", console=True)
+        #log(f"Generating Let's Encrypt SSL certs for {self.dev_domain}. This may take a while ...", console=True)
 
-        # Dev and test certificates
-        else:
-            log(f"Generating self-signed SSL certs for {self.lmid}.{self.domain}. This may take a while ...", console=True)
-            cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {self.ssl_dir}privkey.pem -out {self.ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={hal.domain}/CN={self.lmid}.{self.domain}"')
+        log(f"Generating self-signed SSL certs for {self.dev_domain}. This may take a while ...", console=True)
+        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {self.dev_ssl_dir}privkey.pem -out {self.dev_ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={hal.domain}/CN={self.dev_domain}"', host=self.dev_host)
 
-        query = "update projects.webs set ssl_last_gen=%s where lmobj=%s;"
+        query = "update web.webs set ssl_last_gen=%s where lmobj=%s;"
         params = datetime.now(), self.dbid,
         hal.db.execute(query, params)
 
     def restart(self):
-        log(f"Restarting {self.lmid} ...", console=True)
+        log(f"Restarting {self.dev_domain} ...", console=True)
         # To do: Save log file
-        cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;")
-        cmd(f"sudo supervisorctl restart {self.lmid}")
+        cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;", host=self.dev_host)
+        cmd(f"sudo supervisorctl restart {self.lmid}", host=self.dev_host)
 
     def config(self):
         self.config_uwsgi()
@@ -2219,65 +2299,40 @@ class Web(Project):
         self.config_nginx()
 
     def config_uwsgi(self):
-        log(f"Configuring uWSGI for {self.lmid}.{self.domain} ...", console=True)
-        uwsgi_config = util.read(hal.tpl_dir + "web/app/uwsgi.tpl") \
-            .replace("%LMID", self.lmid) \
-            .replace("%PORT", str(self.port)) \
-            .replace("%APP_DIR", self.app_dir) \
-            .replace("%PROJECTS_DIR", hal.projects_dir) \
-            .replace("%LOG_FILE", hal.logs_dir + self.lmid + ".log")
-        util.write(self.app_dir + "uwsgi.ini", uwsgi_config)
-        hal.pools[self.host].restart("supervisor")
+        log(f"Configuring uWSGI for {self.dev_domain} ...", console=True)
+        uwsgi_config = utils.format_tpl("web/app/uwsgi.tpl", {
+            "port": str(self.port),
+            "app_dir": self.app_dir,
+            "projects_dir": utils.projects_dir,
+            "lmid": self.lmid,
+            "log_file": self.log_file,
+            })
+        utils.write(self.app_dir + "uwsgi.ini", uwsgi_config, host=self.dev_host)
+        self.restart()
 
     def config_supervisor(self):
-        log(f"Configuring Supervisor for {self.lmid} ...", console=True)
-        supervisor_config = util.read(hal.tpl_dir + "web/app/supervisor.tpl") \
-            .replace("%LMID", self.lmid) \
-            .replace("%APP_DIR", self.app_dir) \
-            .replace("%PROJECTS_DIR", hal.projects_dir)
-        util.write(f"/etc/supervisor/conf.d/{self.lmid}.conf", supervisor_config, owner="root")
-        hal.pools[self.host].restart("supervisor")
+        log(f"Configuring Supervisor for {self.name} ...", console=True)
+        supervisor_config = utils.format_tpl("web/app/supervisor.tpl", {
+            "lmid": self.lmid,
+            "projects_dir": utils.projects_dir,
+            "app_dir": self.app_dir,
+            })
+        utils.write(f"/etc/supervisor/conf.d/{self.lmid}.conf", supervisor_config, host=self.dev_host)
+        hal.pools.get(self.dev_host_id).restart_supervisor()
 
     def config_nginx(self):
-        log(f"Configuring Nginx for {self.lmid}.{self.domain} ...", console=True)
-        nginx_config = util.read(hal.tpl_dir + "web/app/nginx.tpl") \
-            .replace("%LMID", self.lmid) \
-            .replace("%PORT", str(self.port)) \
-            .replace("%DOMAIN", self.domain) \
-            .replace("%REPO_DIR", self.repo_dir) \
-            .replace("%SSL_DIR", self.ssl_dir) \
-            .replace("%HAL_SSL_DIR", hal.ssl_dir) \
-            .replace("%OCSP", "on" if hal.pools[self.host].env == hal.envs.get("prod") else "off")
-        util.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, owner="root")
-        hal.pools[self.host].restart("nginx")
-
-    def check(self):
-        return
-        is_empty = len(os.listdir(self.repo_dir)) == 2     # There's just .git
-
-        # Has valid SSL Certificates
-        # To do: check if they've expired
-        if not cmd("ls " + self.ssl_dir, catch=True):
-            self.ssl()
-
-        # Assign a process port
-        if not self.port:
-            self.port = hal.pools[self.host].next_port()
-            query = "update projects.webs set port=%s where lmobj=%s;"
-            params = self.port, self.dbid,
-            hal.db.execute(query, params)
-
-            # For when I'm doing a db reset
-            if not is_empty:
-                self.config()
-
-        # Check if project is initiated
-        if is_empty:
-            self.build()
-
-        if not util.isfile(self.log_file):
-            cmd(f"touch {self.log_file}")
-            cmd("sudo chown www-data:www-data " + self.log_file)
+        log(f"Configuring Nginx for {self.dev_domain} ...", console=True)
+        nginx_config = utils.format_tpl("web/app/nginx.tpl", {
+            "domain": self.dev_domain,
+            "ssl_dir": self.dev_ssl_dir,
+            "hal_ssl_dir": utils.ssl_dir,
+            "ocsp": "off", # Check environment, 'on' for production
+            "repo_dir": self.repo_dir,
+            "port": self.port,
+            "lmid": self.lmid
+            })
+        utils.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, host=self.dev_host)
+        hal.pools.get(self.dev_host_id).reload_nginx()
 
 class AppUtils:
     pass
