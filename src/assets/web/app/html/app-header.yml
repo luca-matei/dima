@@ -8,19 +8,28 @@ div:
                     text:
                         en: "To avoid possible errors, please allow JavaScript to run in your browser."
                         ro: "Pentru a evita posibilele erori, vă rugăm să permiteți JavaScript să ruleze în browserul dvs."
-        div:
-            class: "bobo"
+        nav:
             children:
+                input:
+                    type: "checkbox",
+                    id: "nav-check",
+
                 a:
-                    href: "https://lucamatei.eu"
+                    href: "https://hello.lucamatei.net"
                     text:
-                        en: "lucamatei.eu"
+                        en: "Hello World"
+
+                label:
+                    for: "nav-check"
+                    children:
+                        i:
+                            class: "fa fa-bars"
 
                 span:
-                    class: "separator-expand"
+                    class: "tmp"
 
                 div:
-                    id: "app-header-nav"
+                    id: "nav-links"
                     children:
                         a:
                             href: "/home"

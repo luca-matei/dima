@@ -68,6 +68,35 @@ class Gitlab:
             data =  {'key': pubkey}
             )
 
+    def create_project(self, data):
+        self.request(
+            method = "post",
+            endpoint = "/projects",
+            data = data
+        )
+
+        lmid = data['path']
+
+        if self.get_projects(lmid):
+            log(f"Gitlab repo '{lmid}' created!", console=True)
+            return 1
+        else:
+            log(f"Couldn't create Gitlab repo '{lmid}'!", level=4, console=True)
+            return 0
+
+    def get_projects(self, lmid=None):
+        projects = self.request(endpoint = "/projects")
+
+        if lmid:
+            project = None
+            for p in projects:
+                if p.get("path") == lmid:
+                    project = p
+                    break
+            return project
+
+        return projects
+
 
 
 
@@ -78,10 +107,6 @@ class Gitlab:
             endpoint = "/user/emails",
             data = {'email': email}
             )
-
-    def clone(self, lmid):
-        log(f"Cloning {lmid} Gitlab repository ...", console=True)
-        cmd(f"git clone git@{self.domain}:{self.user}/{lmid}.git {utils.projects_dir}{lmid}/", host=self.host_lmid)
 
     def delete_ssh_key(self):
         hal.pools.get(self.host_dbid).delete_ssh_key(gitlab=True)
@@ -101,35 +126,6 @@ class Gitlab:
     def get_gpg_keys(self):
         keys = self.request(endpoint = "/user/gpg_keys")
         return keys
-
-    def get_projects(self, lmid=None):
-        projects = self.request(endpoint = "/projects")
-
-        if lmid:
-            project = None
-            for p in projects:
-                if p.get("path") == lmid:
-                    project = p
-                    break
-            return project
-
-        return projects
-
-    def create_project(self, data):
-        self.request(
-            method = "post",
-            endpoint = "/projects",
-            data = data
-        )
-
-        lmid = data['path']
-
-        if self.get_projects(lmid):
-            log(f"Gitlab repo '{lmid}' created!", console=True)
-            return 1
-        else:
-            log(f"Couldn't create Gitlab repo '{lmid}'!", level=4, console=True)
-            return 0
 
     def check(self):
         if not utils.isfile("/home/hal/.gitconfig"):

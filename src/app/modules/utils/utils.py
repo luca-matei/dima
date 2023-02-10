@@ -205,7 +205,7 @@ class Utils:
         return 1
 
     def format_tpl(self, tpl, keys):
-        tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl)
+        tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl) if tpl.endswith(".tpl") else tpl
 
         for key in self.get_keys(keys):
             tpl = tpl.replace("%" + key.upper() + "%", str(keys[key]))

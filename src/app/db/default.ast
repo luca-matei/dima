@@ -31,6 +31,7 @@
         ("lm4", "Host", "astatin"),
         ("lm5", "Web", "hello"),
         ("lm6", "Host", ""),
+        ("lm7", "Web", "assets"),
         )),
 
     ("domains", (
@@ -106,7 +107,7 @@
         ("reach", ""),
         ("has", ""),
         ("get", ""),
-        ("make", ""),
+        ("default", ""),
         )),
 
     ("objs", (
@@ -160,7 +161,7 @@
         ("Web", "supervisor", ("config",)),
         ("Web", "nginx", ("config",)),
         ("Web", "ssl", ("generate",)),
-        ("Web", "html", ("update",)),
+        ("Web", "html", ("update", "default",)),
         ("Web", "css", ("update",)),
         ("Web", "py", ("update",)),
 
@@ -176,6 +177,7 @@
         ("lm1", "lm4", 0.1, "lm4", 0.1, "Hal", ""),
         ("lm2", "lm4", 0.1, "lm4", 0.1, "Hal Portal", ""),
         ("lm5", "lm6", 0.1, "lm6", 0.1, "Hello World", ""),
+        ("lm7", "lm6", 0.1, "lm6", 0.1, "Assets", ""),
         )),
 
     ("langs", (
@@ -214,6 +216,7 @@
         ("id:lmid:lmobjs", "id:name:domains", "", "", "id[]:name:web.modules", "id[]:code:project.langs", "id[]:code:project.themes", "id:code:project.langs", "id:code:project.themes", ""),
         ("lm2", "hal.lucamatei.net", "", "", ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
         ("lm5", "hello.lucamatei.net", "", "", ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
+        ("lm7", "assets.lucamatei.net", "", "", ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
         )),
     )),
 )

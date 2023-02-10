@@ -12,62 +12,92 @@ $sh-1: 0 0 2px 2px rgba(0, 0, 0, 0.12);
 $sh-2: 2px 4px 3px 4px rgba(0, 0, 0, 0.06);
 
 html {
-    --p-1-1: #faf9f9;   // Primary color 1, light
-    --p-2-1: #f1eeee;   // Primary color 2, light
-    --s-1-1: #e8e4e4;   // Secondary color 1, light
-    --s-2-1: #dfd9d9;   // Secondary color 2, light
-    --tp-1-1: #36454f;   // Primary text color 1, light
-    --tp-2-1: #40525e;   // Primary text color 2, light
-    --ts-1-1: #4b5f6d;   // Secondary text color 1, light
-    --ts-2-1: #556d7c;   // Secondary text color 2, light
+    // Light theme
+    // Background: From brightest to darkest
+    --bg-1-1: #faf9f9;
+    --bg-2-1: #f1eeee;
+    --bg-3-1: #e8e4e4;
+    --bg-4-1: #dfd9d9;
+    // Contrast background: From brightest to darkest
+    --rbg-1-1: #496170;
+    --rbg-2-1: #3E525E;
+    --rbg-3-1: #32424C;
+    --rbg-4-1: #27343C;
+    // Text: From darkest to brightest
+    --txt-1-1: #36454f;
+    --txt-2-1: #40525e;
+    --txt-3-1: #4b5f6d;
+    --txt-4-1: #556d7c;
+    // Contrast text: from brightest to darkest
+    --rtxt-1-1: #fcfdfd;
+    --rtxt-2-1: #ced9df;
+    --rtxt-3-1: #A6B9C5;
+    --rtxt-4-1: #B8C7D0;
 
-    --p-1-2: #27343C;   // Primary color 1, dark
-    --p-2-2: #32424C;   // Primary color 2, dark
-    --s-1-2: #3E525E;   // Secondary color 1, dark
-    --s-2-2: #496170;   // Secondary color 2, dark
-    --tp-1-2: #ced9df;   // Primary text color 1, dark
-    --tp-2-2: #fcfdfd;   // Primary text color 2, dark
-    --ts-1-2: #A6B9C5;   // Secondary text color 1, dark
-    --ts-2-2: #B8C7D0;   // Secondary text color 2, dark
+    // Dark theme
+    // Background: from darkest to brightest
+    --bg-1-2: #27343C;
+    --bg-2-2: #32424C;
+    --bg-3-2: #3E525E;
+    --bg-4-2: #496170;
+    // Contrast background: From darkest to brightest
+    --rbg-1-2: #dfd9d9;
+    --rbg-2-2: #e8e4e4;
+    --rbg-3-2: #f1eeee;
+    --rbg-4-2: #faf9f9;
+    // Text: from brightest to darkest
+    --txt-1-2: #fcfdfd;
+    --txt-2-2: #ced9df;
+    --txt-3-2: #A6B9C5;
+    --txt-4-2: #B8C7D0;
+    // Contrast text: From darkest to brightest
+    --rtxt-1-2: #36454f;
+    --rtxt-2-2: #40525e;
+    --rtxt-3-2: #4b5f6d;
+    --rtxt-4-2: #556d7c;
 
     &[data-theme='1'] {
-      --p-1: var(--p-1-1);
-      --p-2: var(--p-2-1);
-      --s-1: var(--s-1-1);
-      --s-2: var(--s-2-1);
-      --tp-1: var(--tp-1-1);
-      --tp-2: var(--tp-2-1);
-      --ts-1: var(--ts-1-1);
-      --ts-2: var(--ts-2-1);
+        --bg-1: var(--bg-1-1);
+        --bg-2: var(--bg-2-1);
+        --bg-3: var(--bg-3-1);
+        --bg-4: var(--bg-4-1);
 
-      --p-1-i: var(--p-1-2);
-      --p-2-i: var(--p-2-2);
-      --s-1-i: var(--s-1-2);
-      --s-2-i: var(--s-2-2);
-      --tp-1-i: var(--tp-1-2);
-      --tp-2-i: var(--tp-2-2);
-      --ts-1-i: var(--ts-1-2);
-      --ts-2-i: var(--ts-2-2);
+        --rbg-1: var(--rbg-1-1);
+        --rbg-2: var(--rbg-2-1);
+        --rbg-3: var(--rbg-3-1);
+        --rbg-4: var(--rbg-4-1);
+
+        --txt-1: var(--txt-1-1);
+        --txt-2: var(--txt-2-1);
+        --txt-3: var(--txt-3-1);
+        --txt-4: var(--txt-4-1);
+
+        --rtxt-1: var(--rtxt-1-1);
+        --rtxt-2: var(--rtxt-2-1);
+        --rtxt-3: var(--rtxt-3-1);
+        --rtxt-4: var(--rtxt-4-1);
     }
 
     &[data-theme='2'] {
-      --p-1: var(--p-1-2);
-      --p-2: var(--p-2-2);
-      --s-1: var(--s-1-2);
-      --s-2: var(--s-2-2);
-      --tp-1: var(--tp-1-2);
-      --tp-2: var(--tp-2-2);
-      --ts-1: var(--ts-1-2);
-      --ts-2: var(--ts-2-2);
+        --bg-1: var(--bg-1-2);
+        --bg-2: var(--bg-2-2);
+        --bg-3: var(--bg-3-2);
+        --bg-4: var(--bg-4-2);
 
-      --p-1-i: var(--p-1-1);
-      --p-2-i: var(--p-2-1);
-      --s-1-i: var(--s-1-1);
-      --s-2-i: var(--s-2-1);
-      --tp-1-i: var(--tp-1-1);
-      --tp-2-i: var(--tp-2-1);
-      --ts-1-i: var(--ts-1-1);
-      --ts-2-i: var(--ts-2-1);
+        --rbg-1: var(--rbg-1-2);
+        --rbg-2: var(--rbg-2-2);
+        --rbg-3: var(--rbg-3-2);
+        --rbg-4: var(--rbg-4-2);
+
+        --txt-1: var(--txt-1-2);
+        --txt-2: var(--txt-2-2);
+        --txt-3: var(--txt-3-2);
+        --txt-4: var(--txt-4-2);
+
+        --rtxt-1: var(--rtxt-1-2);
+        --rtxt-2: var(--rtxt-2-2);
+        --rtxt-3: var(--rtxt-3-2);
+        --rtxt-4: var(--rtxt-4-2);
     }
 
 }

@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="%LANG" dir="ltr" class="no-js" data-theme="%DEFAULT_THEME" prefix="og: https://ogp.me/ns#">
+<html lang="%LANG%" dir="ltr" class="no-js" data-theme="%DEFAULT_THEME%" prefix="og: https://ogp.me/ns#">
     <head>
         <meta charset="utf-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
 
-        <base href="/%LANG/">
+        <base href="/%LANG%/">
 
-        <meta name="application-name" content="%NAME" />
-        <meta name="description" content="%DESCRIPTION" />
+        <meta name="application-name" content="%NAME%" />
+        <meta name="description" content="%DESCRIPTION%" />
 
         <meta name="creator" content="lucamatei.eu" />
         <meta name="publisher" content="lucamatei.eu" />
@@ -17,23 +17,23 @@
         <meta name="robots" content="index, follow" />
 
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="%NAME" />
-        <meta property="og:url" content="%OG_URL" />
-        <meta property="og:locale" content="%LANG" />
-        <meta property="og:title" content="%TITLE" />
-        <meta property="og:description" content="%DESCRIPTION" />
-        <meta property="og:image" content="%OG_IMAGE" />
+        <meta property="og:site_name" content="%NAME%" />
+        <meta property="og:url" content="%OG_URL%" />
+        <meta property="og:locale" content="%LANG%" />
+        <meta property="og:title" content="%TITLE%" />
+        <meta property="og:description" content="%DESCRIPTION%" />
+        <meta property="og:image" content="%OG_IMAGE%" />
 
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="%OG_URL" />
-        <meta property="twitter:locale" content="%LANG" />
-        <meta property="twitter:title" content="%TITLE" />
-        <meta property="twitter:description" content="%DESCRIPTION" />
-        <meta property="twitter:image" content="%OG_IMAGE" />
+        <meta property="twitter:url" content="%OG_URL%" />
+        <meta property="twitter:locale" content="%LANG%" />
+        <meta property="twitter:title" content="%TITLE%" />
+        <meta property="twitter:description" content="%DESCRIPTION%" />
+        <meta property="twitter:image" content="%OG_IMAGE%" />
 
-        %ALT
+        %ALT%
 
-        <link rel="preload" href="https://assets.lucamatei.net/icons/fontawesome/css/all.min.css" as="style" type="text/css"/>
+        <link rel="preload" href="/commons/icons/fontawesome/css/all.min.css" as="style" type="text/css"/>
         <link rel="preload" href="/assets/css/app.css" as="style" type="text/css"/>
 
         <link rel="icon" type="image/png" sizes="256x256" href="/assets/icons/favicon-256x256.png">
@@ -44,28 +44,28 @@
         <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
         <link rel="shortcut icon" href="/assets/icons/favicon.ico">
 
-        <link rel="stylesheet" href="https://assets.lucamatei.net/icons/fontawesome/css/all.min.css"/>
+        <link rel="stylesheet" href="/commons/icons/fontawesome/css/all.min.css"/>
         <link rel="stylesheet" href="/assets/css/app.css"/>
         <script src="/assets/js/load-1.js" type="text/javascript"></script>
-        <title>%TITLE</title>
+        <title>%TITLE%</title>
     </head>
     <body>
-        <div id="hide-all">
-            <!-- Coming Soon -->
-            <!--
-            <div class="lmtpl-spinner"></div>
-            -->
+        <div id="hide-all"></div>
+        <div id="page-content">
+            %APP_HEADER%
+            <div id="page-wrapper">
+                %ASIDE%
+                <div id="page-scroll">
+                    <div id="top"></div>
+                    <section>%BODY%</section>
+                    %APP_FOOTER%
+                    %COPYRIGHT%
+                </div>
+            </div>
         </div>
-        %APP_HEADER
-        <div id="app-scroll">
-            <div id="top"></div>
-            <section>%BODY</section>
-            %APP_FOOTER
-            %COPYRIGHT
-        </div>
-        %TOP_BUTTON
+        %TOP_BUTTON%
         <button id="lmid-message-box"></button>
-        %COOKIES_NOTICE
+        %COOKIES_NOTICE%
         <div id="sensor-cpt"></div>
         <script src="/assets/js/load-2.js" type="text/javascript"></script>
         <script src="/assets/js/load-3.js" type="module"></script>

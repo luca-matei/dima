@@ -4,8 +4,8 @@ class YML2HTML:
     indent_width = 4
     box_indent = 0
     html = ""
-    tags = "div", "a", "i", "span", "button", "noscript",
-    attributes = "id", "class", "href",
+    tags = "div", "a", "i", "span", "button", "noscript", "nav", "label", "input",
+    attributes = "id", "class", "href", "for", "type",
 
     def __init__(self, yml, default_lang, lang):
         self.yml = yml.split('\n')

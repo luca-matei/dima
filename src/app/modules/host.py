@@ -442,7 +442,7 @@ class Host(lmObj, HostServices):
 
     # Projects
     def create_project(self, lmid, module, alias, name, description):
-        if self.gitlab.create_project(data={
+        if gitlab.create_project(data={
             'path': lmid,
             'name': name,
             'description': description,
@@ -453,13 +453,17 @@ class Host(lmObj, HostServices):
             dbid = hal.insert_lmobj(lmid, module, alias)
 
             query = f"insert into project.projects (lmobj, dev_host, dev_version, prod_host, prod_version, name, description) values (%s, %s, %s, %s, %s, %s, %s);"
-            params = dbid, self.dbid, 0.1, None, None, name, description,
+            params = dbid, self.dbid, 0.1, self.dbid, 0.1, name, description,
             hal.db.execute(query, params)
 
-            self.gitlab.clone(lmid)
+            self.clone_repo(lmid)
             return dbid
 
         return 0
+
+    def clone_repo(self, path):
+        log(f"Cloning {path} Gitlab repository ...", console=True)
+        cmd(f"git clone git@{self.domain}:{self.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
 
     # Web
     def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations=False):

@@ -205,7 +205,7 @@ class Utils:
         return 1
 
     def format_tpl(self, tpl, keys):
-        tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl)
+        tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl) if tpl.endswith(".tpl") else tpl
 
         for key in self.get_keys(keys):
             tpl = tpl.replace("%" + key.upper() + "%", str(keys[key]))
@@ -971,6 +971,35 @@ class Gitlab:
             data =  {'key': pubkey}
             )
 
+    def create_project(self, data):
+        self.request(
+            method = "post",
+            endpoint = "/projects",
+            data = data
+        )
+
+        lmid = data['path']
+
+        if self.get_projects(lmid):
+            log(f"Gitlab repo '{lmid}' created!", console=True)
+            return 1
+        else:
+            log(f"Couldn't create Gitlab repo '{lmid}'!", level=4, console=True)
+            return 0
+
+    def get_projects(self, lmid=None):
+        projects = self.request(endpoint = "/projects")
+
+        if lmid:
+            project = None
+            for p in projects:
+                if p.get("path") == lmid:
+                    project = p
+                    break
+            return project
+
+        return projects
+
 
 
 
@@ -981,10 +1010,6 @@ class Gitlab:
             endpoint = "/user/emails",
             data = {'email': email}
             )
-
-    def clone(self, lmid):
-        log(f"Cloning {lmid} Gitlab repository ...", console=True)
-        cmd(f"git clone git@{self.domain}:{self.user}/{lmid}.git {utils.projects_dir}{lmid}/", host=self.host_lmid)
 
     def delete_ssh_key(self):
         hal.pools.get(self.host_dbid).delete_ssh_key(gitlab=True)
@@ -1004,35 +1029,6 @@ class Gitlab:
     def get_gpg_keys(self):
         keys = self.request(endpoint = "/user/gpg_keys")
         return keys
-
-    def get_projects(self, lmid=None):
-        projects = self.request(endpoint = "/projects")
-
-        if lmid:
-            project = None
-            for p in projects:
-                if p.get("path") == lmid:
-                    project = p
-                    break
-            return project
-
-        return projects
-
-    def create_project(self, data):
-        self.request(
-            method = "post",
-            endpoint = "/projects",
-            data = data
-        )
-
-        lmid = data['path']
-
-        if self.get_projects(lmid):
-            log(f"Gitlab repo '{lmid}' created!", console=True)
-            return 1
-        else:
-            log(f"Couldn't create Gitlab repo '{lmid}'!", level=4, console=True)
-            return 0
 
     def check(self):
         if not utils.isfile("/home/hal/.gitconfig"):
@@ -1712,7 +1708,7 @@ class Host(lmObj, HostServices):
 
     # Projects
     def create_project(self, lmid, module, alias, name, description):
-        if self.gitlab.create_project(data={
+        if gitlab.create_project(data={
             'path': lmid,
             'name': name,
             'description': description,
@@ -1723,13 +1719,17 @@ class Host(lmObj, HostServices):
             dbid = hal.insert_lmobj(lmid, module, alias)
 
             query = f"insert into project.projects (lmobj, dev_host, dev_version, prod_host, prod_version, name, description) values (%s, %s, %s, %s, %s, %s, %s);"
-            params = dbid, self.dbid, 0.1, None, None, name, description,
+            params = dbid, self.dbid, 0.1, self.dbid, 0.1, name, description,
             hal.db.execute(query, params)
 
-            self.gitlab.clone(lmid)
+            self.clone_repo(lmid)
             return dbid
 
         return 0
+
+    def clone_repo(self, path):
+        log(f"Cloning {path} Gitlab repository ...", console=True)
+        cmd(f"git clone git@{self.domain}:{self.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
 
     # Web
     def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations=False):
@@ -2151,23 +2151,34 @@ class Web(Project):
 
         self.generate_ssl()
         self.default()
+        hal.pools.get(hal.host_dbid).generate_hosts_file()
 
-    def default(self):
-        yes = utils.yes_no(f"Are you sure you want to format {self.name}?")
+    def default(self, yes:'bool'=False):
         if not yes:
-            log("Aborted.", console=True)
-            return
+            yes = utils.yes_no(f"Are you sure you want to format {self.name}?")
+            if not yes:
+                log("Aborted.", console=True)
+                return
 
         log(f"Setting {self.dev_domain} to 'Hello World' ...", console=True)
 
         self.update_py()
+        self.default_html(True)
+        self.config()
 
-        # Replace old html
+    def default_html(self, yes:'bool'=False):
+        if not yes:
+            yes = utils.yes_no(f"Are you sure you want to format {self.name}?")
+            if not yes:
+                log("Aborted.", console=True)
+                return
+
+        log(f"Setting {self.dev_domain} html to 'Hello World' ...", console=True)
+
         cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
         hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
 
         self.update_html()
-        self.config()
 
     def update_html(self):
         log(f"Updating html for {self.dev_domain} ...", console=True)
@@ -2227,22 +2238,24 @@ class Web(Project):
                     og_image = ""
                     alt = ''.join([f'<link rel="alternate" href="/{l}/{permalink}" hreflang="{l}"' for l in self.langs if l != lang])
 
-                    html = app_wrapper\
-                        .replace("%LANG", lang)\
-                        .replace("%DEFAULT_THEME", self.default_theme)\
-                        .replace("%ALT", alt)\
-                        .replace("%NAME", self.name)\
-                        .replace("%TITLE", title)\
-                        .replace("%DESCRIPTION", description)\
-                        .replace("%OG_URL", og_url)\
-                        .replace("%OG_IMAGE", og_image)\
-                        .replace("%APP_HEADER", app_header)\
-                        .replace("%BODY", body)\
-                        .replace("%APP_FOOTER", app_footer)\
-                        .replace("%COPYRIGHT", copyright)\
-                        .replace("%TOP_BUTTON", top_button)\
-                        .replace("%COOKIES_NOTICE", cookies_notice)\
-                        .replace("%PERMALINK", permalink)
+                    html = utils.format_tpl(app_wrapper, {
+                        "lang": lang,
+                        "default_theme": str(self.default_theme_id),
+                        "alt": alt,
+                        "name": self.name,
+                        "title": title,
+                        "description": description,
+                        "og_url": og_url,
+                        "og_image": og_image,
+                        "app_header": app_header,
+                        "aside": "",
+                        "body": body,
+                        "app_footer": app_footer,
+                        "copyright": copyright,
+                        "top_button": top_button,
+                        "cookies_notice": cookies_notice,
+                        "permalink": permalink,
+                        })
 
                     query = "insert into pages (name, module, section, method, lang, first, html) values (%s, %s, %s, %s, %s, %s, %s);"
                     params = name, modules[meta["module"]], section_id, methods[method], langs[lang], first, html,
@@ -2649,8 +2662,8 @@ class YML2HTML:
     indent_width = 4
     box_indent = 0
     html = ""
-    tags = "div", "a", "i", "span", "button", "noscript",
-    attributes = "id", "class", "href",
+    tags = "div", "a", "i", "span", "button", "noscript", "nav", "label", "input",
+    attributes = "id", "class", "href", "for", "type",
 
     def __init__(self, yml, default_lang, lang):
         self.yml = yml.split('\n')
