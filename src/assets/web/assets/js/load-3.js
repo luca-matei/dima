@@ -126,28 +126,29 @@ class lmSettings {
 let settings = new lmSettings();
 
 class lmAnim {
-  constructor() {
-    let sensor = $('#sensor-cpt');
-    let scroll = $('#page-scroll');
-    let buffer = 0.25 * window.innerHeight;
+    constructor() {
+        this.sensor = $('#sensor-cpt');
+        this.scroll = $('#page-scroll');
+        this.buffer = 0.25 * window.innerHeight;
 
-    this.cpts = document.querySelectorAll('.cpt');
-    window.addEventListener('load', this.check, true);
-    scroll.addEventListener('scroll', this.check);
-  }
-
-  check() {
-    if (!this.cpts) {
-      scroll.removeEventListener('scroll', this.check);
-    } else {
-      cpt = this.cpts[0];
-      if (cpt.getBoundingClientRect().top < sensor.getBoundingClientRect().top - buffer) {
-        cpt.classList.add('anim'), cpt.classList.remove('cpt');
         this.cpts = document.querySelectorAll('.cpt');
-        this.check();
-      }
+        window.addEventListener('load', this.check, true);
+        this.scroll.addEventListener('scroll', this.check);
     }
-  }
+
+    check() {
+    if (!this.cpts) {
+        this.scroll.removeEventListener('scroll', this.check);
+    } else {
+        cpt = this.cpts[0];
+
+        if (cpt.getBoundingClientRect().top < this.sensor.getBoundingClientRect().top - buffer) {
+            cpt.classList.add('anim'), cpt.classList.remove('cpt');
+            this.cpts = document.querySelectorAll('.cpt');
+            this.check();
+            }
+        }
+    }
 }
 let anim = new lmAnim();
 
@@ -171,7 +172,7 @@ document.getElementById("lmid-message-box").addEventListener("click", utils.hide
 document.getElementById("lmid-policy-accept").addEventListener(
     "click", function() {cookies.setCookie('__Host-Consent', 1)});
 document.getElementById("lmid-toggle-theme").addEventListener("click", settings.toggleTheme);
-document.getElementById("scroll").addEventListener("scroll", topBtn.check);
+document.getElementById("page-scroll").addEventListener("scroll", topBtn.check);
 
 let tmp;
 tmp = document.getElementById("lmid-policy-withdraw");

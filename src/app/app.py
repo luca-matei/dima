@@ -2209,6 +2209,7 @@ class Web(Project):
         self.default_html(True)
         self.config()
         self.update_css()
+        self.default_js()
 
     def default_html(self, yes:'bool'=False, hello:'bool'=False):
         if not yes:
