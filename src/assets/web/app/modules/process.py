@@ -1,5 +1,7 @@
 class lmProcess:
-    def request(self, env):
+    def raw_request(self, env):
+        lm.request = Request()
+
         lang = None
         lang_id = None
 
@@ -17,6 +19,7 @@ class lmProcess:
 
         browser = env.get("HTTP_USER_AGENT")
         endpoint = utils.normalize_url(env.get("PATH_INFO")).strip('/').split('/')
+        lm.request.endpoint = list(endpoint)
         pack = env.get("HTTP_ACCEPT")
 
         log(pprint.pformat(env, indent=4))
@@ -62,7 +65,7 @@ class lmProcess:
         module = lm.modules[module_id]
 
         if module == "static":
-            body = getattr(lm, module).fetch(page_id)
+            body = lm.dynamic.solve_placeholders(getattr(lm, module).fetch_page(page_id))
         return Response(body)
 
 lm.process = lmProcess()

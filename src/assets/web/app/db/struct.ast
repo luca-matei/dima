@@ -32,4 +32,11 @@
     "html varchar",
     )),
 
+("fractions", (
+    "id serial primary key",
+    "name varchar",
+    "lang int references langs (id)",
+    "html varchar",
+    )),
+
 )

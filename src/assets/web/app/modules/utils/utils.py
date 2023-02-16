@@ -58,4 +58,10 @@ class Utils:
     def normalize_url(self, url):
         return url.lower()
 
+    def format_tpl(self, tpl, keys):
+        for key in self.get_keys(keys):
+            tpl = tpl.replace("%" + key.upper() + "%", str(keys[key]))
+
+        return tpl
+
 utils = Utils()

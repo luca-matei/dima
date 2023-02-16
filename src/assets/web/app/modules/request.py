@@ -1,2 +1,3 @@
 class Request:
-    pass
+    def __init__(self):
+        self.endpoint = None

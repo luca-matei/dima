@@ -48,18 +48,21 @@ class YML2HTML:
                     else:
                         attrs.append(list(prop))
 
-            tag_attrs = ' '.join([f"{a[0]}='{a[1]}'" for a in attrs])
+            attrs = dict(attrs)
+
+            custom = attrs.pop("custom", "")
+            tag_attrs = ' '.join([f"{k}='{v}'" for k, v in attrs.items()])
 
             if tag == "placeholder":
                 open_tag = ""
                 close_tag = ""
             else:
-                open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}>"
+                open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}{' ' if custom else ''}{custom}>"
 
                 if tag in ("meta", "link"):
                     open_tag = open_tag[:-1]
                     close_tag = " />"
-                elif tag in ("base", "br", "hr"):
+                elif tag in ("base", "input", "br", "hr"):
                     close_tag = ""
                 else:
                     close_tag = f"</{tag}>"

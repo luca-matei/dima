@@ -66,4 +66,8 @@ class lmApp:
             if p[6]:
                 self.first_pages[section_id][lang_id][method_id] = page_id
 
+        for f in self.db.execute("select id, name from fractions;"):
+            lm.static.fractions[f[0]] = f[1]
+            lm.static.fractions[f[1]] = f[0]
+
 lm = lmApp()

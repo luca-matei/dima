@@ -61,18 +61,6 @@ class Web(Project):
                 else:
                     cmd(f"touch " + node, host=self.dev_host)
 
-        host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
-        remote_struct_file = self.app_dir + "db/struct.ast"
-        host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
-        remote_default_file = self.app_dir + "db/default.ast"
-
-        if self.dev_host_id == hal.host_dbid:
-            utils.copy(host_struct_file, remote_struct_file)
-            utils.copy(host_default_file, remote_default_file)
-        else:
-            hal.pools.get(self.dev_host_id).send_file(host_struct_file, remote_struct_file)
-            hal.pools.get(self.dev_host_id).send_file(host_default_file, remote_default_file)
-
         has_db = cmd(utils.dbs.query.format(f"select 1 from pg_database where datname='{self.lmid}';"), catch=True)
         if not has_db:
             hal.pools.get(self.dev_host_id).create_pg_role(self.lmid)
@@ -98,6 +86,18 @@ class Web(Project):
             }
 
         utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
+
+        host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
+        remote_struct_file = self.app_dir + "db/struct.ast"
+        host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
+        remote_default_file = self.app_dir + "db/default.ast"
+
+        if self.dev_host_id == hal.host_dbid:
+            utils.copy(host_struct_file, remote_struct_file)
+            utils.copy(host_default_file, remote_default_file)
+        else:
+            hal.pools.get(self.dev_host_id).send_file(host_struct_file, remote_struct_file)
+            hal.pools.get(self.dev_host_id).send_file(host_default_file, remote_default_file)
 
         self.update_py()
         self.default_html(True)
@@ -159,6 +159,48 @@ class Web(Project):
 
         app_wrapper = "<!doctype html>" + YML2HTML(utils.read(self.html_dir + "wrapper.yml", host=self.dev_host), self.default_lang, self.default_lang).html
         top_button = YML2HTML(utils.read(self.html_dir + "top-button.yml", host=self.dev_host), self.default_lang, self.default_lang).html
+
+        query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
+        for lang in self.langs:
+            user_drop_html = YML2HTML(utils.read(self.html_dir + "user-drop.yml", host=self.dev_host), self.default_lang, lang).html
+            params = "user-drop", langs[lang], user_drop_html
+            self.db.execute(query, params)
+
+            if len(self.langs) == 1:
+                lang_selector = ""
+
+            elif len(self.langs) == 2:
+                if self.langs[0] == self.default_lang: other_lang = self.langs[1]
+                else: other_lang = self.langs[0]
+
+                if lang == self.langs[0]: to_lang = self.langs[1]
+                else: to_lang = self.langs[0]
+
+                lang_selector = YML2HTML(utils.read(self.html_dir + "lang-switch.yml", host=self.dev_host), self.default_lang, lang).html
+                lang_selector = utils.format_tpl(lang_selector, {
+                    "default_lang": self.default_lang.upper(),
+                    "to_lang": to_lang,
+                    "other_lang": other_lang.upper(),
+                    })
+
+            else:
+                lang_selector = YML2HTML(utils.read(self.html_dir + "lang-drop.yml", host=self.dev_host), self.default_lang, lang).html
+
+            if len(self.themes) == 1:
+                theme_selector = ""
+
+            elif len(self.themes) == 2:
+                theme_selector = YML2HTML(utils.read(self.html_dir + "theme-switch.yml", host=self.dev_host), self.default_lang, lang).html
+
+            else:
+                theme_selector = YML2HTML(utils.read(self.html_dir + "theme-drop.yml", host=self.dev_host), self.default_lang, lang).html
+
+            guest_drop_html = YML2HTML(utils.read(self.html_dir + "guest-drop.yml", host=self.dev_host), self.default_lang, lang).html
+            params = "guest-drop", langs[lang], utils.format_tpl(guest_drop_html, {
+                "lang_selector": lang_selector,
+                "theme_selector": theme_selector,
+                })
+            self.db.execute(query, params)
 
         def solve_section(section_dir, section_name, parent_id):
             query = "insert into sections (name, parent) values (%s, %s) returning id;"
@@ -244,6 +286,9 @@ class Web(Project):
             "html.py",
             "http.py",
             "static.py",
+            "dynamic.py",
+            "autho.py",
+            "authe.py",
             "process.py",
             "request.py",
             "response.py",
