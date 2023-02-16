@@ -466,7 +466,7 @@ class Host(lmObj, HostServices):
         cmd(f"git clone git@{self.domain}:{self.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
 
     # Web
-    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations=False):
+    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations:'bool'=False):
 
         # To do: validate parameters
 
@@ -572,7 +572,36 @@ class Host(lmObj, HostServices):
                 log(f"{self.name} is already unmounted!", console=True)
 
     # System
-    def generate_hosts_file(self):
+    def update_resources(self):
+        if self.dbid != hal.host_dbid:
+            cmd(f"rm -r {utils.res_dir}web/", host=self.lmid)
+            self.send_file(utils.res_dir + "web/", utils.res_dir + "web/")
+        else:
+            # Download resources
+            pass
+
+    def update_hosts_file(self):
+        def append_web(web):
+            # Prod host
+            if web[0] == self.ip:
+                web[0] = "127.0.0.1"
+
+            fill_spaces1 = (len("255.255.255.255") - len(web[0]))*' ' + spaces
+            fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+
+            hosts.append(web[0] + fill_spaces1 + web[2] + fill_spaces2 + web[3])
+
+            # Dev host
+            if web[1] == self.ip:
+                web[1] = "127.0.0.1"
+
+            fill_spaces1 = (len("255.255.255.255") - len(web[1]))*' ' + spaces
+            web[2] = "dev." + web[2]
+            fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+
+            hosts.append(web[1] + fill_spaces1 + web[2] + fill_spaces2 + "dev." + web[3])
+
+
         log(f"Generating /etc/hosts for {self.name} ...", console=True)
         spaces = 4 * ' '
         hosts = [
@@ -602,7 +631,6 @@ class Host(lmObj, HostServices):
                     fill_spaces3 = (len("astatin") - len(host[2]))*' ' + spaces
                     hosts.append(host[0] + fill_spaces1 + host[2] + '.' + utils.hosts.domain + fill_spaces3 + host[2])
 
-
             host_entries = "\n".join(hosts)
             hosts = []
 
@@ -611,26 +639,16 @@ class Host(lmObj, HostServices):
             db_webs = [list(h) for h in hal.db.execute(query, params)]
 
             for web in db_webs:
-                # Prod host
-                if web[0] == self.dbid:
-                    web[0] = "127.0.0.1"
-                    fill_spaces1 = (len("255.255.255.255") - len(web[0]))*' ' + spaces
+                append_web(web)
+        else:
+            host_entries = ""
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.dev_host and b.lmobj = f.prod_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj and c.name=%s;"
+            #params = utils.webs.assets_domain,
+            #web = list(hal.db.execute(query, params)[0])
 
-                fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+            #append_web(web)
 
-                hosts.append(web[0] + fill_spaces1 + web[2] + fill_spaces2 + web[3])
-
-                # Dev host
-                if web[1] == self.dbid:
-                    web[1] = "127.0.0.1"
-                    fill_spaces1 = (len("255.255.255.255") - len(web[1]))*' ' + spaces
-
-                web[2] = "dev." + web[2]
-                fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
-
-                hosts.append(web[1] + fill_spaces1 + web[2] + fill_spaces2 + "dev." + web[3])
-
-            web_entries = "\n".join(hosts)
+        web_entries = "\n".join(hosts)
 
         hosts_file = utils.format_tpl("hosts.tpl", {
             "host": host_entry,
@@ -652,7 +670,20 @@ class Host(lmObj, HostServices):
     def build_dir_tree(self):
         log(f"Creating Hal's directory tree on {self.name} ...", console=True)
 
-        dir_tree = [utils.logs_dir, utils.projects_dir, utils.projects_dir + "pids/", utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir]
+        dir_tree = [
+            utils.logs_dir,
+            utils.projects_dir,
+                utils.projects_dir + "pids/",
+            utils.res_dir,
+                utils.res_dir + "web/",
+                utils.res_dir + "web/css/",
+                utils.res_dir + "web/js/",
+                utils.res_dir + "web/fonts/",
+                utils.res_dir + "web/icons/",
+            utils.ssh_dir,
+            utils.ssl_dir,
+            utils.tmp_dir
+            ]
         if self.pm_id:
             dir_tree.append(utils.vms_dir)
 
@@ -678,7 +709,7 @@ class Host(lmObj, HostServices):
         log("Creating Virtual Env ...", console=True)
         cmd(f"python3 -m venv {utils.projects_dir}venv", host=self.lmid)
 
-        packages = "netifaces requests uwsgi libsass pyyaml psycopg2"
+        packages = "netifaces requests uwsgi libsass ruamel.yaml psycopg2 markdown markdown-katex"
 
         cmd(f"{utils.projects_dir}venv/bin/pip install wheel", host=self.lmid)
         cmd(f"{utils.projects_dir}venv/bin/pip install {packages}", host=self.lmid)
@@ -710,6 +741,7 @@ class Host(lmObj, HostServices):
         self.config_ssh_server()
         self.build_dir_tree()
         self.build_venv()
+        self.update_resources()
         self.generate_dh()
         self.config_nginx()
         self.config_postgres()

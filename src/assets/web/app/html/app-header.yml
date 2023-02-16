@@ -11,11 +11,11 @@ div:
         nav:
             children:
                 input:
-                    type: "checkbox",
-                    id: "nav-check",
+                    type: "checkbox"
+                    id: "nav-check"
 
                 a:
-                    href: "https://hello.lucamatei.net"
+                    href: "https://%DOMAIN%"
                     text:
                         en: "Hello World"
 
@@ -26,37 +26,21 @@ div:
                             class: "fa fa-bars"
 
                 span:
-                    class: "tmp"
 
                 div:
                     id: "nav-links"
                     children:
                         a:
-                            href: "/home"
+                            href: "home"
                             text:
                                 en: "Home"
                                 ro: "Acasă"
                         a:
-                            href: "/about"
+                            href: "about"
                             text:
-                                en: "About Me"
+                                en: "About"
                                 ro: "Despre mine"
                         a:
-                            href: "https://lucamatei.xyz"
-                            text:
-                                en: "Projects"
-                                ro: "Proiecte"
-                        a:
-                            href: "https://lucamatei.org"
-                            text:
-                                en: "Opportunities"
-                                ro: "Oportunități"
-                        a:
-                            href: "https://lucamatei.shop"
-                            text:
-                                en: "Services"
-                                ro: "Servicii"
-                        a:
-                            href: "/contact"
+                            href: "contact"
                             text:
                                 en: "Contact"

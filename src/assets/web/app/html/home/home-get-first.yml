@@ -11,6 +11,12 @@ module: static
 ----
 
 div:
+    class: "lma-h-center lmp-t-60"
     text:
-        en: "# Hello World!"
-        ro: "# Salutare lume!"
+        en: |
+            # Hello World! {: .lmf-xxl}
+            Welcome to my humble website.
+
+        ro: |
+            # Salutare lume! {: .lmf-xxl}
+            Bine ați venit pe umilul meu website.

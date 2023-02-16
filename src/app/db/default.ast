@@ -26,12 +26,11 @@
         ("lmid", "module", "alias"),
         ("", "id:name:modules", ""),
         ("lm1", "App", "hal"),
-        ("lm2", "Web", ""),
+        #("lm2", "Web", ""),
         ("lm3", "Net", ""),
         ("lm4", "Host", "astatin"),
         ("lm5", "Web", "hello"),
         ("lm6", "Host", ""),
-        ("lm7", "Web", "assets"),
         )),
 
     ("domains", (
@@ -40,7 +39,6 @@
         ("lucamatei.net",),
         ("home.lucamatei.net",),
         ("nebula.lucamatei.net",),
-        ("assets.lucamatei.net",),
         ("hello.lucamatei.net",),
         ("hal.lucamatei.net",),
         ("accounts.lucamatei.net",),
@@ -108,6 +106,7 @@
         ("has", ""),
         ("get", ""),
         ("default", ""),
+        ("test", ""),
         )),
 
     ("objs", (
@@ -150,7 +149,8 @@
         ("Host", "dir_tree", ("build",)),
         ("Host", "venv", ("build",)),
         ("Host", "name", ("get",)),
-        ("Host", "hosts_file", ("generate",)),
+        ("Host", "hosts_file", ("update",)),
+        ("Host", "resources", ("update",)),
 
         ("App", "", ("check", "start", "stop", "restart", "save")),
         ("App", "alias", ("set", "delete")),
@@ -164,6 +164,7 @@
         ("Web", "html", ("update", "default",)),
         ("Web", "css", ("update",)),
         ("Web", "py", ("update",)),
+        ("Web", "js", ("default",)),
 
         ("Soft", "", ("check", "save",)),
         ("Soft", "alias", ("set", "delete")),
@@ -175,9 +176,8 @@
         ("lmobj", "dev_host", "dev_version", "prod_host", "prod_version", "name", "description"),
         ("id:lmid:lmobjs", "id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", ""),
         ("lm1", "lm4", 0.1, "lm4", 0.1, "Hal", ""),
-        ("lm2", "lm4", 0.1, "lm4", 0.1, "Hal Portal", ""),
+        #("lm2", "lm4", 0.1, "lm4", 0.1, "Hal Portal", ""),
         ("lm5", "lm6", 0.1, "lm6", 0.1, "Hello World", ""),
-        ("lm7", "lm6", 0.1, "lm6", 0.1, "Assets", ""),
         )),
 
     ("langs", (
@@ -214,9 +214,8 @@
     ("webs", (
         ("lmobj", "domain", "port", "ssl_last_gen", "modules", "langs", "themes", "default_lang", "default_theme", "has_animations"),
         ("id:lmid:lmobjs", "id:name:domains", "", "", "id[]:name:web.modules", "id[]:code:project.langs", "id[]:code:project.themes", "id:code:project.langs", "id:code:project.themes", ""),
-        ("lm2", "hal.lucamatei.net", "", "", ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
-        ("lm5", "hello.lucamatei.net", "", "", ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
-        ("lm7", "assets.lucamatei.net", "", "", ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
+        #("lm2", "hal.lucamatei.net", "", "", ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
+        ("lm5", "hello.lucamatei.net", 19353, "", ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
         )),
     )),
 )

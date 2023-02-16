@@ -151,7 +151,7 @@ class Install:
 
         packages = "wheel", "netifaces", "requests",
         if self.opts['has_web']:
-            packages += "uwsgi", "libsass", "pyyaml",
+            packages += "uwsgi", "libsass", "ruamel.yaml", "markdown", "markdown-katex",
 
         if self.opts['has_web'] or self.opts['has_db']:
             packages += "psycopg2",

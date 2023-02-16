@@ -39,6 +39,10 @@ server {
         return 405;
     }
 
+    location /commons/ {
+        alias %RES_DIR%web/;
+    }
+
     location /assets/ {
         valid_referers none blocked %DOMAIN% *.%DOMAIN%;
         if ($invalid_referer) {

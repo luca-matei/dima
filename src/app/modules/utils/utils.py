@@ -59,7 +59,7 @@ class Utils:
         # https://miro.medium.com/max/2138/1*O7E2cZsFohFNj_oGEe-dYg.png
         return datetime.now().strftime("%d %b, %H:%M:%S")
 
-    def read(self, path, lines=False, host=None):
+    def read(self, path, lines=False, host=None, quiet=False):
         is_ast = path.endswith('.ast')
         is_json = path.endswith('.json')
 
@@ -69,10 +69,12 @@ class Utils:
         contents = no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host)
 
         if f"cat: {path}: No such file or directory" in contents:
-            try:
-                log(f"'{path}' doesn't exist!", level=4, console=True)
-            except:
-                print(f"Error: '{path}' doesn't exist!")
+            if not quiet:
+                try:
+                    log(f"'{path}' doesn't exist!", level=4, console=True)
+                except:
+                    print(f"Error: '{path}' doesn't exist!")
+
             if lines: return []
             else: return ""
 
@@ -260,6 +262,9 @@ class Utils:
     def join_modules(self, modules, module_path, file_path, module_host=None, file_host=None):
         mammoth = [self.read(module_path + m, host=module_host) for m in modules]
         self.write(file_path, "\n\n".join(mammoth), host=file_host)
+
+    def md2html(self, md):
+        return markdown.markdown(md, extensions=["extra"])
 
     def _cmd(self, call_info, command, catch=False, host=""):
         if call_info: call_info.append(host)

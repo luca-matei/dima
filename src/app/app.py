@@ -59,7 +59,7 @@ class Utils:
         # https://miro.medium.com/max/2138/1*O7E2cZsFohFNj_oGEe-dYg.png
         return datetime.now().strftime("%d %b, %H:%M:%S")
 
-    def read(self, path, lines=False, host=None):
+    def read(self, path, lines=False, host=None, quiet=False):
         is_ast = path.endswith('.ast')
         is_json = path.endswith('.json')
 
@@ -69,10 +69,12 @@ class Utils:
         contents = no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host)
 
         if f"cat: {path}: No such file or directory" in contents:
-            try:
-                log(f"'{path}' doesn't exist!", level=4, console=True)
-            except:
-                print(f"Error: '{path}' doesn't exist!")
+            if not quiet:
+                try:
+                    log(f"'{path}' doesn't exist!", level=4, console=True)
+                except:
+                    print(f"Error: '{path}' doesn't exist!")
+
             if lines: return []
             else: return ""
 
@@ -261,6 +263,9 @@ class Utils:
         mammoth = [self.read(module_path + m, host=module_host) for m in modules]
         self.write(file_path, "\n\n".join(mammoth), host=file_host)
 
+    def md2html(self, md):
+        return markdown.markdown(md, extensions=["extra"])
+
     def _cmd(self, call_info, command, catch=False, host=""):
         if call_info: call_info.append(host)
         # To do: display the functions that have called execute, isfile, send_file
@@ -334,12 +339,6 @@ class Hal:
         log("Phase 1: Checking integrity ...")
 
         log("Phase 2: Loading modules ...")
-        lib_path = utils.projects_dir + "venv/lib/"
-        packages_path = lib_path + os.listdir(lib_path)[0] + "/site-packages"
-        sys.path.append(packages_path)
-
-        for module in ('psycopg2', 'yaml', 'netifaces', 'requests', 'sass'):
-            globals()[module] = __import__(module)
 
         log("Phase 3: Loading settings ...")
         # Load core settings
@@ -1732,7 +1731,7 @@ class Host(lmObj, HostServices):
         cmd(f"git clone git@{self.domain}:{self.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
 
     # Web
-    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations=False):
+    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations:'bool'=False):
 
         # To do: validate parameters
 
@@ -1838,7 +1837,36 @@ class Host(lmObj, HostServices):
                 log(f"{self.name} is already unmounted!", console=True)
 
     # System
-    def generate_hosts_file(self):
+    def update_resources(self):
+        if self.dbid != hal.host_dbid:
+            cmd(f"rm -r {utils.res_dir}web/", host=self.lmid)
+            self.send_file(utils.res_dir + "web/", utils.res_dir + "web/")
+        else:
+            # Download resources
+            pass
+
+    def update_hosts_file(self):
+        def append_web(web):
+            # Prod host
+            if web[0] == self.ip:
+                web[0] = "127.0.0.1"
+
+            fill_spaces1 = (len("255.255.255.255") - len(web[0]))*' ' + spaces
+            fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+
+            hosts.append(web[0] + fill_spaces1 + web[2] + fill_spaces2 + web[3])
+
+            # Dev host
+            if web[1] == self.ip:
+                web[1] = "127.0.0.1"
+
+            fill_spaces1 = (len("255.255.255.255") - len(web[1]))*' ' + spaces
+            web[2] = "dev." + web[2]
+            fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+
+            hosts.append(web[1] + fill_spaces1 + web[2] + fill_spaces2 + "dev." + web[3])
+
+
         log(f"Generating /etc/hosts for {self.name} ...", console=True)
         spaces = 4 * ' '
         hosts = [
@@ -1868,7 +1896,6 @@ class Host(lmObj, HostServices):
                     fill_spaces3 = (len("astatin") - len(host[2]))*' ' + spaces
                     hosts.append(host[0] + fill_spaces1 + host[2] + '.' + utils.hosts.domain + fill_spaces3 + host[2])
 
-
             host_entries = "\n".join(hosts)
             hosts = []
 
@@ -1877,26 +1904,16 @@ class Host(lmObj, HostServices):
             db_webs = [list(h) for h in hal.db.execute(query, params)]
 
             for web in db_webs:
-                # Prod host
-                if web[0] == self.dbid:
-                    web[0] = "127.0.0.1"
-                    fill_spaces1 = (len("255.255.255.255") - len(web[0]))*' ' + spaces
+                append_web(web)
+        else:
+            host_entries = ""
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.dev_host and b.lmobj = f.prod_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj and c.name=%s;"
+            #params = utils.webs.assets_domain,
+            #web = list(hal.db.execute(query, params)[0])
 
-                fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
+            #append_web(web)
 
-                hosts.append(web[0] + fill_spaces1 + web[2] + fill_spaces2 + web[3])
-
-                # Dev host
-                if web[1] == self.dbid:
-                    web[1] = "127.0.0.1"
-                    fill_spaces1 = (len("255.255.255.255") - len(web[1]))*' ' + spaces
-
-                web[2] = "dev." + web[2]
-                fill_spaces2 = (len("test.testing.lucamatei.shop") - len(web[2]))*' ' + spaces
-
-                hosts.append(web[1] + fill_spaces1 + web[2] + fill_spaces2 + "dev." + web[3])
-
-            web_entries = "\n".join(hosts)
+        web_entries = "\n".join(hosts)
 
         hosts_file = utils.format_tpl("hosts.tpl", {
             "host": host_entry,
@@ -1918,7 +1935,20 @@ class Host(lmObj, HostServices):
     def build_dir_tree(self):
         log(f"Creating Hal's directory tree on {self.name} ...", console=True)
 
-        dir_tree = [utils.logs_dir, utils.projects_dir, utils.projects_dir + "pids/", utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir]
+        dir_tree = [
+            utils.logs_dir,
+            utils.projects_dir,
+                utils.projects_dir + "pids/",
+            utils.res_dir,
+                utils.res_dir + "web/",
+                utils.res_dir + "web/css/",
+                utils.res_dir + "web/js/",
+                utils.res_dir + "web/fonts/",
+                utils.res_dir + "web/icons/",
+            utils.ssh_dir,
+            utils.ssl_dir,
+            utils.tmp_dir
+            ]
         if self.pm_id:
             dir_tree.append(utils.vms_dir)
 
@@ -1944,7 +1974,7 @@ class Host(lmObj, HostServices):
         log("Creating Virtual Env ...", console=True)
         cmd(f"python3 -m venv {utils.projects_dir}venv", host=self.lmid)
 
-        packages = "netifaces requests uwsgi libsass pyyaml psycopg2"
+        packages = "netifaces requests uwsgi libsass ruamel.yaml psycopg2 markdown markdown-katex"
 
         cmd(f"{utils.projects_dir}venv/bin/pip install wheel", host=self.lmid)
         cmd(f"{utils.projects_dir}venv/bin/pip install {packages}", host=self.lmid)
@@ -1976,6 +2006,7 @@ class Host(lmObj, HostServices):
         self.config_ssh_server()
         self.build_dir_tree()
         self.build_venv()
+        self.update_resources()
         self.generate_dh()
         self.config_nginx()
         self.config_postgres()
@@ -2097,6 +2128,7 @@ class Web(Project):
             query = "update web.webs set port=%s where lmobj=%s;"
             params = self.port, self.dbid,
             hal.db.execute(query, params)
+            self.config()
 
         if not utils.isfile(self.log_file, host=self.dev_host):
             cmd(f"touch {self.log_file}", host=self.dev_host)
@@ -2117,6 +2149,7 @@ class Web(Project):
                     "src/app/html/",
                 "src/assets/",
                     "src/assets/icons/",
+                    "src/assets/fonts/",
                     "src/assets/img/",
                     "src/assets/css/",
                     "src/assets/js/",
@@ -2151,7 +2184,7 @@ class Web(Project):
 
         self.generate_ssl()
         self.default()
-        hal.pools.get(hal.host_dbid).generate_hosts_file()
+        hal.pools.get(hal.host_dbid).update_hosts_file()
 
     def default(self, yes:'bool'=False):
         if not yes:
@@ -2162,23 +2195,50 @@ class Web(Project):
 
         log(f"Setting {self.dev_domain} to 'Hello World' ...", console=True)
 
+        settings = {
+            "lmid": self.lmid,
+            "domain": self.domain,
+            "log_level": 2,
+            }
+
+        utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
+
         self.update_py()
         self.default_html(True)
         self.config()
+        self.update_css()
 
-    def default_html(self, yes:'bool'=False):
+    def default_html(self, yes:'bool'=False, hello:'bool'=False):
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format {self.name}?")
+            yes = utils.yes_no(f"Are you sure you want to format {self.name} HTML?")
             if not yes:
                 log("Aborted.", console=True)
                 return
 
-        log(f"Setting {self.dev_domain} html to 'Hello World' ...", console=True)
-
-        cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
-        hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
+        if hello:
+            log(f"Setting {self.dev_domain} html to 'Hello World' ...", console=True)
+            cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
+            hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
+        else:
+            log(f"Updating structure html for {self.dev_domain} ...", console=True)
+            cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
+            hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/*.yml", self.app_dir + "html/")
 
         self.update_html()
+        self.restart()
+
+    def default_js(self, yes:'bool'=False):
+        if not yes:
+            yes = utils.yes_no(f"Are you sure you want to format {self.name} JS?")
+            if not yes:
+                log("Aborted.", console=True)
+                return
+
+        log(f"Setting {self.dev_domain} JS to 'Hello World' ...", console=True)
+
+        cmd(f"rm -r {self.repo_dir}src/assets/js/", host=self.dev_host)
+        # RENAME CLASSES
+        hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/assets/js/", self.repo_dir + "src/assets/js/")
 
     def update_html(self):
         log(f"Updating html for {self.dev_domain} ...", console=True)
@@ -2201,7 +2261,7 @@ class Web(Project):
         modules = dict(self.db.execute(query, params))
         modules.update(utils.reverse_dict(modules))
 
-        app_wrapper = utils.read(self.html_dir + "wrapper.html", host=self.dev_host)
+        app_wrapper = "<!doctype html>" + YML2HTML(utils.read(self.html_dir + "wrapper.yml", host=self.dev_host), self.default_lang, self.default_lang).html
         top_button = YML2HTML(utils.read(self.html_dir + "top-button.yml", host=self.dev_host), self.default_lang, self.default_lang).html
 
         def solve_section(section_dir, section_name, parent_id):
@@ -2218,13 +2278,21 @@ class Web(Project):
                 if name == "lm_wrapper":
                     continue
 
-                meta, yml = utils.read(section_dir + page, host=self.dev_host).split("----")
-                meta = yaml.safe_load(meta)
+                yml_meta, yml = utils.read(section_dir + page, host=self.dev_host).split("----")
+                meta = []
+
+                for field in yaml.safe_load(yml_meta):
+                    field = list(field)
+                    if type(field[1]) == list:
+                        meta.append((field[0], dict(field[1])))
+                    else:
+                        meta.append(field)
+
+                meta = dict(meta)
                 for lang in self.langs:
                     body = YML2HTML(yml, self.default_lang, lang).html
                     app_header = YML2HTML(utils.read(f"{self.html_dir}app-header.yml", host=self.dev_host), self.default_lang, lang).html
                     app_footer = YML2HTML(utils.read(f"{self.html_dir}app-footer.yml", host=self.dev_host), self.default_lang, lang).html
-                    copyright = YML2HTML(utils.read(f"{self.html_dir}copyright.yml", host=self.dev_host), self.default_lang, lang).html
                     cookies_notice = YML2HTML(utils.read(f"{self.html_dir}cookies-notice.yml", host=self.dev_host), self.default_lang, lang).html
 
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
@@ -2248,10 +2316,12 @@ class Web(Project):
                         "og_url": og_url,
                         "og_image": og_image,
                         "app_header": app_header,
+                        "domain": self.domain,
                         "aside": "",
                         "body": body,
                         "app_footer": app_footer,
-                        "copyright": copyright,
+                        "copyright_year": datetime.now().year,
+                        "copyright_name": '.'.join(self.domain.split(".")[-2:]),
                         "top_button": top_button,
                         "cookies_notice": cookies_notice,
                         "permalink": permalink,
@@ -2268,6 +2338,7 @@ class Web(Project):
             solve_section(self.html_dir + section + '/', section, 0)
 
     def update_py(self):
+        # Joins .py files from main host and sends the result on the remote host
         log(f"Updating source code for {self.name} ...", console=True)
         utils.join_modules((
             "utils/utils.py",
@@ -2286,16 +2357,10 @@ class Web(Project):
             file_path = self.app_dir + "app.py",
             file_host = self.dev_host)
 
-        settings = {
-            "lmid": self.lmid,
-            "domain": self.domain,
-            "log_level": 2,
-            }
-
-        utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
         self.restart()
 
     def update_css(self):
+        # Joins CSS files from main host and sends the result on the remote host
         log(f"Updating CSS for {self.name} ...", console=True)
 
         scss_file = utils.tmp_dir + "css.scss"
@@ -2314,7 +2379,7 @@ class Web(Project):
             file_path = scss_file)
 
         css = sass.compile(string=utils.read(scss_file), output_style='compressed')
-        # TAKE CLASSES
+        # RENAME CLASSES
         utils.write(self.repo_dir + "src/assets/css/app.css", css, host=self.dev_host)
 
     def generate_ssl(self):
@@ -2355,17 +2420,24 @@ class Web(Project):
 
     def config_nginx(self):
         log(f"Configuring Nginx for {self.dev_domain} ...", console=True)
-        nginx_config = utils.format_tpl("web/app/nginx.tpl", {
+        manual = self.app_dir + "manual/nginx.tpl"
+        if utils.isfile(manual, host=self.dev_host):
+            tpl = utils.read(manual, host=self.dev_host)
+        else:
+            tpl = "web/app/nginx.tpl"
+
+        nginx_config = utils.format_tpl(tpl, {
             "domain": self.dev_domain,
             "ssl_dir": self.dev_ssl_dir,
             "hal_ssl_dir": utils.ssl_dir,
             "ocsp": "off", # Check environment, 'on' for production
+            "res_dir": utils.res_dir,
             "repo_dir": self.repo_dir,
             "port": self.port,
             "lmid": self.lmid
             })
         utils.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, host=self.dev_host)
-        hal.pools.get(self.dev_host_id).reload_nginx()
+        hal.pools.get(self.dev_host_id).restart_nginx()
 
     def config(self):
         self.config_uwsgi()
@@ -2656,122 +2728,75 @@ class CLI:
 
 cli = CLI()
 
+def construct_yaml_map(self, node):
+    data = []
+    yield data
+    for key_node, value_node in node.value:
+        key = self.construct_object(key_node, deep=True)
+        val = self.construct_object(value_node, deep=True)
+        data.append((key, val))
+
 class YML2HTML:
-    start_html = ""
-    end_html = ""
-    indent_width = 4
-    box_indent = 0
     html = ""
-    tags = "div", "a", "i", "span", "button", "noscript", "nav", "label", "input",
-    attributes = "id", "class", "href", "for", "type",
 
     def __init__(self, yml, default_lang, lang):
-        self.yml = yml.split('\n')
         self.default_lang = default_lang
         self.lang = lang
 
-        self.lines = self.yml_lines()
-        self.html = self.solve_box()
-        #log(self.html)
+        yaml.constructor.SafeConstructor.add_constructor(u'tag:yaml.org,2002:map', construct_yaml_map)
+        data = yaml.YAML(typ="safe").load(yml)
+        self.html = self.solve_children(data)
 
-    def yml_lines(self):
-        line_index = 0
-        while line_index < len(self.yml):
-            line = self.yml[line_index]
-            line_index += 1
-
-            if not line or line.startswith("#"):
-                continue
-            else:
-                yield line
-
-    def solve_line(self, line):
-        stripped_line = line.lstrip(' ')
-        split_line = re.findall(r'(?:[^\s:"]|"(?:\\.|[^"])*")+', stripped_line)
-
-        key = split_line[0]
-
-        if len(split_line) == 2:
-            value = split_line[1].strip()    # To do: Remove comments
-        else:
-            value = ""
-
-        return int((len(line) - len(stripped_line)) / self.indent_width), key, value
-
-    def create_tag(self, box):
-        open_tag = "<"
-        open_tag += box["tag"]
-
-        for attr in self.attributes:
-            if box.get(attr):
-                open_tag += f' {attr}=' + box[attr]
-
-        open_tag += ">"
-
-        if box.get("text"):
-            open_tag += box["text"]
-
-        close_tag = f'</{box["tag"]}>'
-        return open_tag, close_tag
-
-    def solve_box(self, current_indent=None, key=None, value=None):
-        box = {}
+    def solve_children(self, data):
+        # Data is a list of HTML boxes
         html = ""
-        stop = False
-        children = False
 
-        if not key:
-            current_indent, key, value = self.solve_line(next(self.lines))
+        for box in data:
+            tag = box[0]
+            properties = box[1]
 
-        self.box_indent = current_indent
-        box["tag"] = key
+            attrs = []
+            box_html = ""
+            text = ""
 
-        current_indent, key, value = self.solve_line(next(self.lines))
-        while key not in self.tags and not stop:
-            if key == "text":
-                texts = {}
-                while key not in self.attributes + self.tags:
-                    try:
-                        current_indent, key, value = self.solve_line(next(self.lines))
-                    except StopIteration:
-                        stop = True
-                        break
+            if properties != None:
+                for prop in properties:
+                    if prop[0] == "children":
+                        box_html = self.solve_children(prop[1])
 
-                    texts[key] = value.strip('"')
+                    # Placeholders
+                    elif prop[0] == "global-text":
+                        text = prop[1]
 
-                text = texts.get(self.lang, texts.get(self.default_lang))
-                if box["tag"] in ("a", "button",):
-                    box["text"] = text
+                    elif prop[0] == "text":
+                        texts = dict(prop[1])
+                        text = texts.get(self.lang, texts.get(self.default_lang))
+
+                        if tag not in ("a", "i", "button", "span"):
+                            text = utils.md2html(text)
+
+                    else:
+                        attrs.append(list(prop))
+
+            tag_attrs = ' '.join([f"{a[0]}='{a[1]}'" for a in attrs])
+
+            if tag == "placeholder":
+                open_tag = ""
+                close_tag = ""
+            else:
+                open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}>"
+
+                if tag in ("meta", "link"):
+                    open_tag = open_tag[:-1]
+                    close_tag = " />"
+                elif tag in ("base", "br", "hr"):
+                    close_tag = ""
                 else:
-                    box["text"] = MD2HTML(text).html
+                    close_tag = f"</{tag}>"
 
-            elif key in self.attributes:
-                box[key] = value
-
-            elif key == "children":
-                open_tag, close_tag = self.create_tag(box)
-                html += open_tag + self.solve_box() + close_tag
-                children = True
-
-            if key not in self.tags and not stop:
-                try:
-                    current_indent, key, value = self.solve_line(next(self.lines))
-                except StopIteration:
-                    stop = True
-                    break
-
-        if not children:
-            open_tag, close_tag = self.create_tag(box)
-            html = open_tag + html + close_tag
-
-        if current_indent == self.box_indent and not stop:
-            html += self.solve_box(current_indent, key, value)
+            html += open_tag + text + box_html + close_tag
 
         return html
-
-class MD2HTML:
-    def __init__(self, md):
-        self.html = md
 
 def main():
     cl = sys.argv[1:]
@@ -2781,4 +2806,11 @@ def main():
     else: cli.start()
 
 if __name__ == "__main__":
+    lib_path = utils.projects_dir + "venv/lib/"
+    packages_path = lib_path + os.listdir(lib_path)[0] + "/site-packages"
+    sys.path.append(packages_path)
+
+    import psycopg2, netifaces, requests, sass, markdown
+    from ruamel import yaml
+
     main()

@@ -24,6 +24,7 @@ class Web(Project):
             query = "update web.webs set port=%s where lmobj=%s;"
             params = self.port, self.dbid,
             hal.db.execute(query, params)
+            self.config()
 
         if not utils.isfile(self.log_file, host=self.dev_host):
             cmd(f"touch {self.log_file}", host=self.dev_host)
@@ -44,6 +45,7 @@ class Web(Project):
                     "src/app/html/",
                 "src/assets/",
                     "src/assets/icons/",
+                    "src/assets/fonts/",
                     "src/assets/img/",
                     "src/assets/css/",
                     "src/assets/js/",
@@ -78,7 +80,7 @@ class Web(Project):
 
         self.generate_ssl()
         self.default()
-        hal.pools.get(hal.host_dbid).generate_hosts_file()
+        hal.pools.get(hal.host_dbid).update_hosts_file()
 
     def default(self, yes:'bool'=False):
         if not yes:
@@ -89,24 +91,50 @@ class Web(Project):
 
         log(f"Setting {self.dev_domain} to 'Hello World' ...", console=True)
 
+        settings = {
+            "lmid": self.lmid,
+            "domain": self.domain,
+            "log_level": 2,
+            }
+
+        utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
+
         self.update_py()
         self.default_html(True)
         self.config()
         self.update_css()
 
-    def default_html(self, yes:'bool'=False):
+    def default_html(self, yes:'bool'=False, hello:'bool'=False):
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format {self.name}?")
+            yes = utils.yes_no(f"Are you sure you want to format {self.name} HTML?")
             if not yes:
                 log("Aborted.", console=True)
                 return
 
-        log(f"Setting {self.dev_domain} html to 'Hello World' ...", console=True)
-
-        cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
-        hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
+        if hello:
+            log(f"Setting {self.dev_domain} html to 'Hello World' ...", console=True)
+            cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
+            hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
+        else:
+            log(f"Updating structure html for {self.dev_domain} ...", console=True)
+            cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
+            hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/*.yml", self.app_dir + "html/")
 
         self.update_html()
+        self.restart()
+
+    def default_js(self, yes:'bool'=False):
+        if not yes:
+            yes = utils.yes_no(f"Are you sure you want to format {self.name} JS?")
+            if not yes:
+                log("Aborted.", console=True)
+                return
+
+        log(f"Setting {self.dev_domain} JS to 'Hello World' ...", console=True)
+
+        cmd(f"rm -r {self.repo_dir}src/assets/js/", host=self.dev_host)
+        # RENAME CLASSES
+        hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/assets/js/", self.repo_dir + "src/assets/js/")
 
     def update_html(self):
         log(f"Updating html for {self.dev_domain} ...", console=True)
@@ -129,7 +157,7 @@ class Web(Project):
         modules = dict(self.db.execute(query, params))
         modules.update(utils.reverse_dict(modules))
 
-        app_wrapper = utils.read(self.html_dir + "wrapper.html", host=self.dev_host)
+        app_wrapper = "<!doctype html>" + YML2HTML(utils.read(self.html_dir + "wrapper.yml", host=self.dev_host), self.default_lang, self.default_lang).html
         top_button = YML2HTML(utils.read(self.html_dir + "top-button.yml", host=self.dev_host), self.default_lang, self.default_lang).html
 
         def solve_section(section_dir, section_name, parent_id):
@@ -146,13 +174,21 @@ class Web(Project):
                 if name == "lm_wrapper":
                     continue
 
-                meta, yml = utils.read(section_dir + page, host=self.dev_host).split("----")
-                meta = yaml.safe_load(meta)
+                yml_meta, yml = utils.read(section_dir + page, host=self.dev_host).split("----")
+                meta = []
+
+                for field in yaml.safe_load(yml_meta):
+                    field = list(field)
+                    if type(field[1]) == list:
+                        meta.append((field[0], dict(field[1])))
+                    else:
+                        meta.append(field)
+
+                meta = dict(meta)
                 for lang in self.langs:
                     body = YML2HTML(yml, self.default_lang, lang).html
                     app_header = YML2HTML(utils.read(f"{self.html_dir}app-header.yml", host=self.dev_host), self.default_lang, lang).html
                     app_footer = YML2HTML(utils.read(f"{self.html_dir}app-footer.yml", host=self.dev_host), self.default_lang, lang).html
-                    copyright = YML2HTML(utils.read(f"{self.html_dir}copyright.yml", host=self.dev_host), self.default_lang, lang).html
                     cookies_notice = YML2HTML(utils.read(f"{self.html_dir}cookies-notice.yml", host=self.dev_host), self.default_lang, lang).html
 
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
@@ -176,10 +212,12 @@ class Web(Project):
                         "og_url": og_url,
                         "og_image": og_image,
                         "app_header": app_header,
+                        "domain": self.domain,
                         "aside": "",
                         "body": body,
                         "app_footer": app_footer,
-                        "copyright": copyright,
+                        "copyright_year": datetime.now().year,
+                        "copyright_name": '.'.join(self.domain.split(".")[-2:]),
                         "top_button": top_button,
                         "cookies_notice": cookies_notice,
                         "permalink": permalink,
@@ -196,6 +234,7 @@ class Web(Project):
             solve_section(self.html_dir + section + '/', section, 0)
 
     def update_py(self):
+        # Joins .py files from main host and sends the result on the remote host
         log(f"Updating source code for {self.name} ...", console=True)
         utils.join_modules((
             "utils/utils.py",
@@ -214,16 +253,10 @@ class Web(Project):
             file_path = self.app_dir + "app.py",
             file_host = self.dev_host)
 
-        settings = {
-            "lmid": self.lmid,
-            "domain": self.domain,
-            "log_level": 2,
-            }
-
-        utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
         self.restart()
 
     def update_css(self):
+        # Joins CSS files from main host and sends the result on the remote host
         log(f"Updating CSS for {self.name} ...", console=True)
 
         scss_file = utils.tmp_dir + "css.scss"
@@ -242,7 +275,7 @@ class Web(Project):
             file_path = scss_file)
 
         css = sass.compile(string=utils.read(scss_file), output_style='compressed')
-        # TAKE CLASSES
+        # RENAME CLASSES
         utils.write(self.repo_dir + "src/assets/css/app.css", css, host=self.dev_host)
 
     def generate_ssl(self):
@@ -283,17 +316,24 @@ class Web(Project):
 
     def config_nginx(self):
         log(f"Configuring Nginx for {self.dev_domain} ...", console=True)
-        nginx_config = utils.format_tpl("web/app/nginx.tpl", {
+        manual = self.app_dir + "manual/nginx.tpl"
+        if utils.isfile(manual, host=self.dev_host):
+            tpl = utils.read(manual, host=self.dev_host)
+        else:
+            tpl = "web/app/nginx.tpl"
+
+        nginx_config = utils.format_tpl(tpl, {
             "domain": self.dev_domain,
             "ssl_dir": self.dev_ssl_dir,
             "hal_ssl_dir": utils.ssl_dir,
             "ocsp": "off", # Check environment, 'on' for production
+            "res_dir": utils.res_dir,
             "repo_dir": self.repo_dir,
             "port": self.port,
             "lmid": self.lmid
             })
         utils.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, host=self.dev_host)
-        hal.pools.get(self.dev_host_id).reload_nginx()
+        hal.pools.get(self.dev_host_id).restart_nginx()
 
     def config(self):
         self.config_uwsgi()

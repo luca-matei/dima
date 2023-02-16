@@ -3,16 +3,37 @@ div:
     children:
         div:
             children:
+                span:
+                    text:
+                        en: "© %COPYRIGHT_YEAR% %COPYRIGHT_NAME%"
+                i:
+                    class: "fa fa-circle"
+                span:
+                    text:
+                        en: "All rights reserved"
+                        ro: "Toate drepturile rezervate"
+                i:
+                    class: "fa fa-circle"
+                span:
+                    text:
+                        en: "Made in Romania"
+                        ro: "Creat în România"
+                i:
+                    class: "fa fa-circle"
                 a:
                     href: "docs/privacy"
                     text:
                         en: "Privacy"
                         ro: "Confidențialitate"
+                i:
+                    class: "fa fa-circle"
                 a:
                     href: "docs/terms"
                     text:
                         en: "Terms"
                         ro: "Termeni"
+                i:
+                    class: "fa fa-circle"
                 a:
                     href: "docs/cookies"
                     text:
