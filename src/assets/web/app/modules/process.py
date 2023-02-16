@@ -36,6 +36,9 @@ class lmProcess:
             lang_id = 1
             lang = lm.langs[1]
 
+        lm.request.lang = str(lang)
+        lm.request.lang_id = int(lang_id)
+
         def find_end_section(parent_id):
             tmp_id = lm.sections[parent_id].get(endpoint[0], 0)
             if tmp_id:

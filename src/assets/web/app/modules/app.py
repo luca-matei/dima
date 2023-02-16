@@ -1,12 +1,17 @@
 class lmApp:
     lmid = None
     domain = None
+
     themes = None
     langs = {}
+    default_theme = None
+    default_lang = None
+
     modules = {}
     sections = {}
     pages = {}
     first_pages = {}
+
     app_dir = utils.src_dir + "app/"
 
     db = None
@@ -19,7 +24,7 @@ class lmApp:
         logs.reset()
 
         log("Loading settings ...")
-        for s in ("lmid", "domain"):
+        for s in ("lmid", "domain", "default_lang", "default_theme"):
             setattr(self, s, settings.get(s))
 
         self.db.connect()
@@ -66,8 +71,11 @@ class lmApp:
             if p[6]:
                 self.first_pages[section_id][lang_id][method_id] = page_id
 
-        for f in self.db.execute("select id, name from fractions;"):
-            lm.static.fractions[f[0]] = f[1]
-            lm.static.fractions[f[1]] = f[0]
+        for l in [l_id for l_id in utils.get_keys(self.langs) if isinstance(l_id, int)]:
+            lm.static.fractions[l] = {}
+
+        for f in self.db.execute("select lang, id, name from fractions;"):
+            lm.static.fractions[f[0]][f[1]] = f[2]
+            lm.static.fractions[f[0]][f[2]] = f[1]
 
 lm = lmApp()

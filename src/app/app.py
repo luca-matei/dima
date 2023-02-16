@@ -2187,6 +2187,8 @@ class Web(Project):
             "lmid": self.lmid,
             "domain": self.domain,
             "log_level": 2,
+            "default_lang": self.default_lang,
+            "default_theme": self.default_theme,
             }
 
         utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)

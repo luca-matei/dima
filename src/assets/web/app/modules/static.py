@@ -3,11 +3,7 @@ class lmStatic:
 
     def fetch_fraction(self, fraction):
         query = "select html from fractions where id=%s;"
-
-        if type(fraction) == int:
-            params = fraction,
-        else:
-            params = self.fractions[fraction],
+        params = self.fractions[lm.request.lang_id][fraction],
 
         return lm.db.execute(query, params)[0][0]
 
