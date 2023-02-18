@@ -124,12 +124,13 @@ class Utils:
             hal.pools.get(hal.lmobjs[host]).send_file(self.tmp_dir + filename, path, owner=owner)
 
     def copy(self, src, dest, owner="root", host=None):
+        r = " -R" if src.endswith('/') else ""
         if dest.startswith("/etc/"):
-            cmd(f"sudo cp {src} {dest}", host=host)
-            cmd(f"sudo chown {owner}:{owner} {dest}", host=host)
+            cmd(f"sudo cp{r} {src} {dest}", host=host)
+            cmd(f"sudo chown{r} {owner}:{owner} {dest}", host=host)
 
         else:
-            cmd(f"cp {src} {dest}", host=host)
+            cmd(f"cp{r} {src} {dest}", host=host)
 
     def color(self, txt, name):
         colors = {

@@ -102,10 +102,10 @@ class Web(Project):
             hal.pools.get(self.dev_host_id).send_file(host_default_file, remote_default_file)
 
         self.update_py()
-        self.default_html(True)
+        self.default_html(True, True)
         self.config()
         self.update_css()
-        self.default_js()
+        self.default_js(True)
 
     def default_html(self, yes:'bool'=False, hello:'bool'=False):
         if not yes:
@@ -114,14 +114,23 @@ class Web(Project):
                 log("Aborted.", console=True)
                 return
 
+        src_html = utils.src_dir + "assets/web/app/html/"
+        dest_html = self.app_dir + "html/"
+
         if hello:
             log(f"Setting {self.dev_domain} html to 'Hello World' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
-            hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
+            if self.dev_host_id == hal.host_dbid:
+                utils.copy(src_html, dest_html)
+            else:
+                hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
         else:
             log(f"Updating structure html for {self.dev_domain} ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
-            hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/*.yml", self.app_dir + "html/")
+            if self.dev_host_id == hal.host_dbid:
+                utils.copy(src_html + "*.yml", dest_html)
+            else:
+                hal.pools.get(self.dev_host_id).send_file(dest_html + "*.yml", dest_html)
 
         self.update_html()
         self.restart()
@@ -365,7 +374,7 @@ class Web(Project):
     def config_nginx(self):
         log(f"Configuring Nginx for {self.dev_domain} ...", console=True)
         manual = self.app_dir + "manual/nginx.tpl"
-        if utils.isfile(manual, host=self.dev_host):
+        if utils.isfile(manual, host=self.dev_host, quiet=True):
             tpl = utils.read(manual, host=self.dev_host)
         else:
             tpl = "web/app/nginx.tpl"

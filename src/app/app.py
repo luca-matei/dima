@@ -124,12 +124,13 @@ class Utils:
             hal.pools.get(hal.lmobjs[host]).send_file(self.tmp_dir + filename, path, owner=owner)
 
     def copy(self, src, dest, owner="root", host=None):
+        r = " -R" if src.endswith('/') else ""
         if dest.startswith("/etc/"):
-            cmd(f"sudo cp {src} {dest}", host=host)
-            cmd(f"sudo chown {owner}:{owner} {dest}", host=host)
+            cmd(f"sudo cp{r} {src} {dest}", host=host)
+            cmd(f"sudo chown{r} {owner}:{owner} {dest}", host=host)
 
         else:
-            cmd(f"cp {src} {dest}", host=host)
+            cmd(f"cp{r} {src} {dest}", host=host)
 
     def color(self, txt, name):
         colors = {
@@ -1728,10 +1729,10 @@ class Host(lmObj, HostServices):
 
     def clone_repo(self, path):
         log(f"Cloning {path} Gitlab repository ...", console=True)
-        cmd(f"git clone git@{self.domain}:{self.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
+        cmd(f"git clone git@{gitlab.domain}:{gitlab.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
 
     # Web
-    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations:'bool'=False):
+    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=("static",), langs:'list'=("en",), themes:'list'=("light",), default_lang:'str'="en", default_theme:'str'="light", has_animations:'bool'=False):
 
         # To do: validate parameters
 
@@ -2206,10 +2207,10 @@ class Web(Project):
             hal.pools.get(self.dev_host_id).send_file(host_default_file, remote_default_file)
 
         self.update_py()
-        self.default_html(True)
+        self.default_html(True, True)
         self.config()
         self.update_css()
-        self.default_js()
+        self.default_js(True)
 
     def default_html(self, yes:'bool'=False, hello:'bool'=False):
         if not yes:
@@ -2218,14 +2219,23 @@ class Web(Project):
                 log("Aborted.", console=True)
                 return
 
+        src_html = utils.src_dir + "assets/web/app/html/"
+        dest_html = self.app_dir + "html/"
+
         if hello:
             log(f"Setting {self.dev_domain} html to 'Hello World' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
-            hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/", self.app_dir + "html/")
+            if self.dev_host_id == hal.host_dbid:
+                utils.copy(src_html, dest_html)
+            else:
+                hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
         else:
             log(f"Updating structure html for {self.dev_domain} ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
-            hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/app/html/*.yml", self.app_dir + "html/")
+            if self.dev_host_id == hal.host_dbid:
+                utils.copy(src_html + "*.yml", dest_html)
+            else:
+                hal.pools.get(self.dev_host_id).send_file(dest_html + "*.yml", dest_html)
 
         self.update_html()
         self.restart()
@@ -2469,7 +2479,7 @@ class Web(Project):
     def config_nginx(self):
         log(f"Configuring Nginx for {self.dev_domain} ...", console=True)
         manual = self.app_dir + "manual/nginx.tpl"
-        if utils.isfile(manual, host=self.dev_host):
+        if utils.isfile(manual, host=self.dev_host, quiet=True):
             tpl = utils.read(manual, host=self.dev_host)
         else:
             tpl = "web/app/nginx.tpl"

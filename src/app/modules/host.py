@@ -463,10 +463,10 @@ class Host(lmObj, HostServices):
 
     def clone_repo(self, path):
         log(f"Cloning {path} Gitlab repository ...", console=True)
-        cmd(f"git clone git@{self.domain}:{self.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
+        cmd(f"git clone git@{gitlab.domain}:{gitlab.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
 
     # Web
-    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations:'bool'=False):
+    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=("static",), langs:'list'=("en",), themes:'list'=("light",), default_lang:'str'="en", default_theme:'str'="light", has_animations:'bool'=False):
 
         # To do: validate parameters
 
