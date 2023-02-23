@@ -692,14 +692,14 @@ class Host(lmObj, HostServices):
             hosts = []
 
             # Web apps
-            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.dev_host and b.lmobj = f.prod_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj;"
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj;"
             db_webs = [list(h) for h in hal.db.execute(query, params)]
 
             for web in db_webs:
                 append_web(web)
         else:
             host_entries = ""
-            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.dev_host and b.lmobj = f.prod_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj and c.name=%s;"
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj and c.name=%s;"
             #params = utils.webs.assets_domain,
             #web = list(hal.db.execute(query, params)[0])
 

@@ -19,7 +19,7 @@ class lmProcess:
 
         browser = env.get("HTTP_USER_AGENT")
         endpoint = utils.normalize_url(env.get("PATH_INFO")).strip('/').split('/')
-        lm.request.endpoint = list(endpoint)
+        lm.request.endpoint = list(endpoint)    # list is needed to create a new variable and drop the reference
         pack = env.get("HTTP_ACCEPT")
 
         log(pprint.pformat(env, indent=4))
@@ -57,18 +57,22 @@ class lmProcess:
             section = "home"
 
         page = endpoint[0]
-        page_id = lm.pages[section_id][lang_id][method_id].get(page, 0)
-        if page_id:
+        page_data = lm.pages[section_id].get(page, 0)
+        # Check for illegal page
+        if page_data:
             endpoint.pop(0)
         else:
-            page_id = lm.first_pages[section_id][lang_id][method_id]
-            page = lm.pages[section_id][lang_id][method_id][page_id][0]
+            page = lm.first_pages[section_id]
+            page_data = lm.pages[section_id][page]
 
-        module_id = lm.pages[section_id][lang_id][method_id][page_id][1]
+        # Check for illegal method
+        page_id = page_data[lang_id][method_id][0]
+        module_id = lm.pages[section_id][page][lang_id][method_id][1]
         module = lm.modules[module_id]
 
         if module == "static":
             body = lm.dynamic.solve_placeholders(getattr(lm, module).fetch_page(page_id))
+
         return Response(body)
 
 lm.process = lmProcess()

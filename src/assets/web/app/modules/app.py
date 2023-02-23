@@ -1,20 +1,20 @@
 class lmApp:
     lmid = None
     domain = None
+    db = None
 
-    themes = None
     langs = {}
-    default_theme = None
-    default_lang = None
-
     modules = {}
+
     sections = {}
     pages = {}
     first_pages = {}
 
-    app_dir = utils.src_dir + "app/"
+    themes = None
+    default_theme = None
+    default_lang = None
 
-    db = None
+    app_dir = utils.src_dir + "app/"
 
     def start(self):
         settings = utils.read(self.app_dir + "settings.ast")
@@ -29,47 +29,52 @@ class lmApp:
 
         self.db.connect()
 
-        for m in self.db.execute("select id, name from modules;"):
-            self.modules[m[0]] = m[1]    # 1 = static
-            self.modules[m[1]] = m[0]    # static = 1
-
-        for s in self.db.execute("select id, name, parent from sections;"):
-            for i in (0, 2):
-                if s[i] not in utils.get_keys(self.sections):
-                    self.sections[s[i]] = {}
-                    self.pages[s[i]] = {}
-                    self.first_pages[s[i]] = {}
-
-            self.sections[s[2]].update({s[1]: s[0]})
+        for m in self.db.execute("select id, name from methods;"):
+            lm.http.methods[m[0]] = m[1]    # 1 = get
+            lm.http.methods[m[1]] = m[0]    # get = 1
 
         for l in self.db.execute("select id, code from langs;"):
             self.langs[l[0]] = l[1]    # 1 = en
             self.langs[l[1]] = l[0]    # en = 1
 
-            for s in utils.get_keys(self.sections):
-                self.pages[s][l[0]] = {}
-                self.first_pages[s][l[0]] = {}
+        for m in self.db.execute("select id, name from modules;"):
+            self.modules[m[0]] = m[1]    # 1 = static
+            self.modules[m[1]] = m[0]    # static = 1
 
-        for m in self.db.execute("select id, name from methods;"):
-            lm.http.methods[m[0]] = m[1]    # 1 = get
-            lm.http.methods[m[1]] = m[0]    # get = 1
 
-            for s in utils.get_keys(self.sections):
-                for l in [l_id for l_id in utils.get_keys(self.langs) if isinstance(l_id, int)]:
-                    self.pages[s][l][m[0]] = {}
-                    self.first_pages[s][l][m[0]] = {}
+        for s in self.db.execute("select id, name, parent from sections;"):
+            parent = s[2]
+            if not self.sections.get(parent):
+                self.sections[parent] = {}
 
-        for p in self.db.execute("select id, name, module, section, method, lang, first from pages;"):
-            page_id = p[0]
-            section_id = p[3]
-            method_id = p[4]
-            lang_id = p[5]
+            self.sections[parent][s[0]] = s[1]    # id = name
+            self.sections[parent][s[1]] = s[0]    # name = id
 
-            self.pages[section_id][lang_id][method_id][page_id] = p[1], p[2],
-            self.pages[section_id][lang_id][method_id][p[1]] = page_id
+        for p in self.db.execute("select section, name, lang, method, id, module, first from pages;"):
+            parent = p[0]
+            name = p[1]
+            lang = p[2]
+            method = p[3]
+
+            if not self.pages.get(parent):
+                self.pages[parent] = {}
+
+            if not self.pages[parent].get(name):
+                self.pages[parent][name] = {}
+
+            if not self.pages[parent][name].get(lang):
+                self.pages[parent][name][lang] = {}
+
+            if not self.pages[parent][name][lang].get(method):
+                self.pages[parent][name][lang][method] = p[4:-1]
 
             if p[6]:
-                self.first_pages[section_id][lang_id][method_id] = page_id
+                self.first_pages[parent] = name    # about -> myself
+
+        log(self.sections)
+        log(self.pages)
+        log(self.first_pages)
+
 
         for l in [l_id for l_id in utils.get_keys(self.langs) if isinstance(l_id, int)]:
             lm.static.fractions[l] = {}
