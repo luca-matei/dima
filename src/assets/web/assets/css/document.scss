@@ -91,6 +91,7 @@ body {
     display: flex;
     flex-flow: column nowrap;
     flex-grow: 1;
+    height: inherit;
 }
 
 #app-header {

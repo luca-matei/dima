@@ -24,12 +24,12 @@ class Db:
 
         except Exception as e:
             log(e, level=4)
-            log(f"Cannot connect to {self.lmid} database!", level=5, console=True)
+            log(f"Cannot connect to '{self.lmid}' database!", level=5, console=True)
 
         log(self.lmid + " database connected.")
 
     def erase(self):
-        log(f"Erasing {self.lmid} database ...", level=3, console=True)
+        log(f"Erasing '{self.lmid}' database ...", level=3, console=True)
 
         # Drop all user created schemas
         schemas = [x[0] for x in self.execute("select s.nspname as table_schema, s.oid as schema_id, u.usename as owner from pg_catalog.pg_namespace s join pg_catalog.pg_user u on u.usesysid = s.nspowner where nspname not in ('information_schema', 'pg_catalog', 'public') and nspname not like 'pg_toast%%' and nspname not like 'pg_temp_%%' order by table_schema;")]
@@ -42,7 +42,7 @@ class Db:
             self.execute(f"drop table if exists {table} cascade;")
 
     def build(self):
-        log(f"Building {self.lmid} database ...", console=True)
+        log(f"Building '{self.lmid}' database ...", console=True)
         struct = utils.read(self.db_dir + "struct.ast", host=self.host)
         default_file = self.db_dir + "default.ast"
 

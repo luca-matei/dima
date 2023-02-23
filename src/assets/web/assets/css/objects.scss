@@ -5,7 +5,7 @@
 
     @if $var == r {position: relative;}
 
-    a:hover {background-color: var(--s-1);}
+    a:hover {background-color: var(--bg-3);}
 
     &>a {
         flex-grow: 1;
@@ -26,10 +26,10 @@
     &>div {
         flex: 100%;
         display: none;
-        background-color: var(--p-1);
+        background-color: var(--bg-1);
         margin: 0 6px 4px;
         min-width: 160px;
-        border: 2px solid var(--s-2);
+        border: 2px solid var(--bg-4);
         border-radius: $bd-r;
 
         @if $var == r {right: 27px;} // Width of drop arrow
@@ -45,7 +45,7 @@
     }
 
     &:hover>div, input:checked ~ div {display: block;}
-    &:hover>label, input:checked + label {transform: rotate(180deg);}
+    &:hover>label, input:checked + label {transform: scaleY(-1);}
 
 }
 
@@ -55,6 +55,13 @@
 .lmtpl-ilust {
     display: flex;
     order: -1;
+
+    &-round {
+        @extend .lmtpl-ilust;
+        img {
+            border-radius: 50%;
+        }
+    }
 
     img {
         width: 100%;
@@ -176,7 +183,7 @@
     &1>:last-child, &2>:first-child {
         flex: 40%;
         padding: 15px;
-        background-color: var(--p-2);
+        background-color: var(--bg-2);
         border-radius: 0 $bd-r $bd-r 0;
     }
 
@@ -191,7 +198,7 @@
 
         &>div:last-of-type {
             padding: 12px 24px 36px;
-            background-color: var(--p-2);
+            background-color: var(--bg-2);
             font-size: 1.1rem;
             border-radius: 0 0 20px 20px;
         }

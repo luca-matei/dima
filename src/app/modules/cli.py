@@ -108,23 +108,37 @@ class CLI:
         for a in utils.get_keys(args):
             # Check data types
             if params.get(a, False):
-                if params[a][0] == 'int':
-                    try: args[a] = int(args[a])
+                arg_type = params[a][0]
+                arg = args[a]
+                if arg_type == 'int':
+                    try: args[a] = int(arg)
                     except ValueError: return self.invalid(p=a, pt='int')
 
-                elif params[a][0] == 'float':
-                    try: args[a] = float(args[a])
+                elif arg_type == 'float':
+                    try: args[a] = float(arg)
                     except ValueError: return self.invalid(p=a, pt='float')
 
-                elif params[a][0] == 'bool':
-                    try: args[a] = bool(args[a])
+                elif arg_type == 'bool':
+                    try: args[a] = bool(arg)
                     except ValueError: return self.invalid(p=a, pt='boolean')
 
-                elif params[a][0] == "list":
-                    if args[a].startswith(("(", "[")) and args[a].endswith((")", "]")):
-                        args[a] = args[a][1:-1].split(',')
+                elif arg_type == "list":
+                    if arg.startswith(("(", "[")) and arg.endswith((")", "]")):
+                        args[a] = arg[1:-1].split(',')
                     else:
                         return self.invalid(p=a, pt='list')
+                elif arg_type == "env":
+                    envs = utils.get_keys(utils.hosts.envs)
+                    # dev, test, prod
+                    if arg in envs:
+                        args[a] = arg
+
+                    # 1, 2, 3
+                    elif arg.isdigit() and int(arg) in envs:
+                        args[a] = utils.hosts.envs[int(arg)]
+
+                    else:
+                        return self.invalid(p=a, pt='env')
 
                 # Remove extra quotes
                 elif args[a].startswith("'"):

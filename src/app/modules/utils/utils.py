@@ -4,6 +4,7 @@ from datetime import datetime
 class Utils:
     localhost = "127.0.0.1"
     abc = string.ascii_lowercase
+    tpl_header = ""
 
     debian_version = None
     hostname = os.uname()[1]
@@ -91,7 +92,13 @@ class Utils:
         else:
             return contents
 
-    def write(self, path, content, lines=False, mode='w', owner="root", host=None):
+    def write(self, path, content, lines=False, mode='w', owner="root", tpl=False, host=None):
+        if tpl:
+            if lines:
+                content = self.tpl_header.split('\n') + ['\n\n'] + content
+            else:
+                content = self.tpl_header + '\n\n' + content
+
         is_ast = path.endswith('.ast')
         def write_contents(path, content, lines, mode):
             with open(path, mode=mode, encoding='utf-8') as f:
@@ -250,7 +257,7 @@ class Utils:
     def get_dirs(self, path, host=None):
         dirs = cmd(f"ls -d {path}*/", catch=True, host=host)
         if "No such file or directory" in dirs: dirs = []
-        else: dirs = dirs.split(" ")
+        else: dirs = dirs.split("\n")
 
         return [d.split('/')[-2] for d in dirs]
 

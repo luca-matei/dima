@@ -34,6 +34,7 @@ class Hal:
         log("Phase 1: Checking integrity ...")
 
         log("Phase 2: Loading modules ...")
+        utils.tpl_header = utils.read(self.tpls_dir + "header.tpl")
 
         log("Phase 3: Loading settings ...")
         # Load core settings

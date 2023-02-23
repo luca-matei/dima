@@ -5,8 +5,9 @@ const $ = query => document.querySelector(query);
 
 // TODO: lmCrsl, lmSlides
 
-class lmUtils {
+// UTILS
 
+class lmUtils {
   constructor() {
     this.messageDelay = null;
     this.setActive();
@@ -48,10 +49,13 @@ class lmUtils {
   }
 
 }
+
 let utils = new lmUtils();
 
-class lmTopBtn {
 
+// TOP BUTTON
+
+class lmTopBtn {
   constructor() {
     this.scroll = $('#page-scroll');
     this.btn = $('#top-btn');
@@ -63,10 +67,13 @@ class lmTopBtn {
   }
 
 }
+
 let topBtn = new lmTopBtn();
 
-class lmCookies {
 
+// COOKIES
+
+class lmCookies {
   constructor() {
     if (!this.getCookie('__Host-Consent')) {
       this.showNotice();
@@ -106,11 +113,13 @@ class lmCookies {
   }
 
 }
+
 let cookies = new lmCookies();
 
 
-class lmSettings {
+// SETTINGS
 
+class lmSettings {
   toggleTheme() {
     let theme = $('html').getAttribute('data-theme') || 1;
     let newTheme = theme == 2 ? 1 : 2;
@@ -123,34 +132,48 @@ class lmSettings {
   }
 
 }
+
 let settings = new lmSettings();
+
+
+// ANIMATIONS
 
 class lmAnim {
     constructor() {
-        this.sensor = $('#sensor-cpt');
-        this.scroll = $('#page-scroll');
+        this.sensorObj = $('#sensor-cpt');
+        this.scrollObj = $('#page-scroll');
         this.buffer = 0.25 * window.innerHeight;
 
-        this.cpts = document.querySelectorAll('.cpt');
+        console.log(this.sensorObj);
+        console.log(this.scrollObj);
+        console.log(this.buffer);
+
+        this.cptObjs = document.querySelectorAll('.cpt');
         window.addEventListener('load', this.check, true);
-        this.scroll.addEventListener('scroll', this.check);
+        this.scrollObj.addEventListener('scroll', this.check);
+
+        console.log(this.cptObjs);
     }
 
     check() {
-    if (!this.cpts) {
-        this.scroll.removeEventListener('scroll', this.check);
-    } else {
-        cpt = this.cpts[0];
+        if (!this.cptObjs) {
+            this.scrollObj.removeEventListener('scroll', check, true);
+        } else {
+            cptObj = this.cptObjs[0];
 
-        if (cpt.getBoundingClientRect().top < this.sensor.getBoundingClientRect().top - buffer) {
-            cpt.classList.add('anim'), cpt.classList.remove('cpt');
-            this.cpts = document.querySelectorAll('.cpt');
-            this.check();
+            if (cptObj.getBoundingClientRect().top < this.sensorObj.getBoundingClientRect().top - buffer) {
+                cptObj.classList.add('anim'), cptObj.classList.remove('cpt');
+                this.cptObjs = document.querySelectorAll('.cpt');
+                this.check();
+                }
             }
-        }
     }
 }
+
 let anim = new lmAnim();
+
+
+// FORMS
 
 class lmForms {
   togglePassword() {
@@ -166,7 +189,9 @@ class lmForms {
     }
   }
 }
+
 let forms = new lmForms();
+
 
 document.getElementById("lmid-message-box").addEventListener("click", utils.hideMessage);
 document.getElementById("lmid-policy-accept").addEventListener(

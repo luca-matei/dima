@@ -7,6 +7,8 @@ class HostServices:
             "stop": "Stopping",
             "restart": "Restarting",
             "reload": "Reloading",
+            "enable": "Enabling",
+            "disable": "Disabling",
             }
 
         if service == "postgresql":
@@ -26,7 +28,7 @@ class HostServices:
                     return 0
             else:
                 msg = messages.get(action)
-                log(f"{msg} {service} for {self.name} ...", console=True)
+                log(f"{msg} {service} for '{self.name}' ...", console=True)
                 cmd(f"sudo systemctl {action} {service} ", host=self.lmid)
 
     # Nets
@@ -116,9 +118,45 @@ class HostServices:
     def status_dhcp(self):
         self.manage_service("status", "isc-dhcp-server")
 
+    def get_iface(self):
+        return "ens3"
+
+    # Firewall
+    def config_firewall(self):
+        log(f"Configuring Firewall for '{self.name}' ...", console=True)
+        self.manage_service("enable", "nftables")
+
+        if not utils.isfile("/etc/nft/", host=self.lmid):
+            cmd("sudo mkdir /etc/nft/", host=self.lmid)
+
+        nftables = utils.format_tpl("nftables/nftables.tpl", {
+            "iface": self.get_iface(),
+            "ssh_port": self.ssh_port,
+            })
+
+        utils.write("/etc/nftables.conf", nftables, host=self.lmid)
+        self.send_file(hal.tpls_dir + "nftables/bogons-ipv4.tpl", "/etc/nft/bogons-ipv4.nft")
+        self.send_file(hal.tpls_dir + "nftables/black-ipv4.tpl", "/etc/nft/black-ipv4.nft")
+        self.manage_service("restart", "nftables")
+
+    def enable_firewall(self):
+        self.manage_service("enable", "nftables")
+
+    def disable_firewall(self):
+        self.manage_service("disable", "nftables")
+
+    def start_firewall(self):
+        self.manage_service("start", "nftables")
+
+    def stop_firewall(self):
+        self.manage_service("stop", "nftables")
+
+    def restart_firewall(self):
+        self.manage_service("restart", "nftables")
+
     # Nginx
     def config_nginx(self):
-        log(f"Configuring Nginx for {self.name} ...")
+        log(f"Configuring Nginx for '{self.name}' ...")
         self.send_file(hal.tpls_dir + "web/nginx.tpl", "/etc/nginx/nginx.conf")
         self.manage_service("restart", "nginx")
 
@@ -138,15 +176,16 @@ class HostServices:
         self.manage_service("status", "nginx")
 
     # Postgres
-    def create_pg_role(self, role:'str'):
+    def create_pg_role(self, role:'str', password:'str'=None):
         # https://www.postgresql.org/docs/current/sql-createrole.html
-        log(f"Creating '{role}' role ...", console=True)
-        password = utils.new_pass(64)
+        log(f"Creating '{role}' role on '{self.name}' ...", console=True)
+        if not password:
+            password = utils.new_pass(64)
 
         role_query = utils.dbs.query.format(f"create role {role} with login password '{password}';")
         output = cmd(role_query, catch=True, host=self.lmid)
         if "already exists" in output:
-            log(f"'{role}' role already exists!", console=True)
+            log(f"'{role}' role already exists on '{self.name}'!", console=True)
             yes = utils.yes_no("Purge it?")
 
             if yes: cmd(utils.dbs.query.format(f"drop database if exists {role}; drop role if exists {role};"), host=self.lmid)
@@ -165,11 +204,11 @@ class HostServices:
             log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
 
     def create_pg_db(self, db:'str'):
-        log(f"Creating {db} database ...", console=True)
+        log(f"Creating '{db}' database on '{self.name}' ...", console=True)
         db_query = utils.dbs.query.format(f"create database {db} owner {db} encoding 'utf-8';")
         output = cmd(db_query, catch=True, host=self.lmid)
         if "already exists" in output:
-            log(f"'{db}' database already exists!", console=True)
+            log(f"'{db}' database already exists on '{self.name}'!", console=True)
             yes = utils.yes_no("Purge it?")
 
             if yes: cmd(utils.dbs.query.format(f"drop database {db};"), host=self.lmid)
@@ -184,7 +223,7 @@ class HostServices:
         Assigns a new port to the PostgreSQL server.
         """
 
-        log(f"Configuring PostgreSQL for {self.name} ...", console=True)
+        log(f"Configuring PostgreSQL for '{self.name}' ...", console=True)
         port = self.next_port()
 
         pg_dir = f"/etc/postgresql/{self.pg_version}/main/"
@@ -208,11 +247,11 @@ class HostServices:
             })
 
         # Write new config file and restart service
-        utils.write(config_file, config, owner="postgres", host=self.lmid)
-        utils.write(hba_file, hba, owner="postgres", host=self.lmid)
+        utils.write(config_file, config, owner="postgres", tpl=True, host=self.lmid)
+        utils.write(hba_file, hba, owner="postgres", tpl=True, host=self.lmid)
 
         # Update ports in Hal projects and in db
-        utils.write(utils.dbs.port_file, str(port), host=self.lmid)
+        utils.write(utils.dbs.port_file, str(port), tpl=True, host=self.lmid)
         hal.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
 
         self.pg_port = port
@@ -260,7 +299,7 @@ class HostServices:
         if not utils.isfile("/home/hal/.ssh/", host=self.lmid):
             cmd("mkdir /home/hal/.ssh/", host=self.lmid)
 
-        log(f"Configuring SSH client for {self.name} ...", console=True)
+        log(f"Configuring SSH client for '{self.name}' ...", console=True)
         hosts = []
 
         if self.dbid == hal.host_dbid:
@@ -295,16 +334,16 @@ class HostServices:
 
         hosts = '\n\n'.join(hosts)
 
-        utils.write("/home/hal/.ssh/config", utils.format_tpl("ssh/client_config.tpl", {
-            "hosts": hosts,
-        }), host=self.lmid)
+        utils.write("/home/hal/.ssh/config", hosts, tpl=True, host=self.lmid)
+        self.update_hosts_file()
 
     def config_ssh_server(self):
         if self.ssh_port == -1:
-            log(f"{self.name} is not a SSH server!", level=4, console=True)
+            log(f"'{self.name}' is not a SSH server!", level=4, console=True)
         else:
-            log(f"Configuring SSH server for {self.name} ...", console=True)
-            port = self.next_port()
+            log(f"Configuring SSH server for '{self.name}' ...", console=True)
+            port = self.next_port(service=True)
+            self.port = port
 
             hal.db.execute("update host.hosts set ssh_port=%s where lmobj=%s;", (port, self.dbid))
 
@@ -312,7 +351,8 @@ class HostServices:
                 "port": port,
                 })
 
-            utils.write("/etc/ssh/sshd_config", config, host=self.lmid)
+            utils.write("/etc/ssh/sshd_config", config, tpl=True, host=self.lmid)
+            self.config_firewall()
             self.restart_ssh()
             hal.pools.get(hal.host_dbid).config_ssh_client()
 
@@ -413,8 +453,9 @@ class Host(lmObj, HostServices):
         query = "select mac, net, ip, client, env, ssh_port, pg_port, pm from host.hosts where lmobj=%s;"
         params = dbid,
 
-        self.mac, self.net_id, self.ip, self.client_id, self.env, self.ssh_port, self.pg_port, self.pm_id = hal.db.execute(query, params)[0]
+        self.mac, self.net_id, self.ip, self.client_id, self.env_id, self.ssh_port, self.pg_port, self.pm_id = hal.db.execute(query, params)[0]
 
+        self.env = utils.hosts.envs.get(self.env_id)
         self.mnt_dir = utils.mnt_dir + self.name + "/"
         self.email = self.lmid + "@" + utils.hosts.domain
         self.check()
@@ -572,6 +613,22 @@ class Host(lmObj, HostServices):
                 log(f"{self.name} is already unmounted!", console=True)
 
     # System
+    def config_sysctl(self):
+        log(f"Configuring sysctl for '{self.name}' ...", console=True)
+        sysctl = utils.format_tpl("sysctl.tpl", {
+            "iface": self.get_iface()
+            })
+        utils.write("/etc/sysctl.conf", sysctl, tpl=True, host=self.lmid)
+        cmd("sudo sysctl -p", host=self.lmid)
+
+    def config_grub(self):
+        log(f"Configuring GRUB for '{self.name}' ...", console=True)
+        self.send_file(hal.tpls_dir + "grub.tpl", "/etc/default/grub")
+        cmd("sudo update-grub", host=self.lmid)
+
+    def config_motd(self):
+        self.send_file(hal.tpls_dir + "motd.tpl", "/etc/motd")
+
     def update_resources(self):
         if self.dbid != hal.host_dbid:
             cmd(f"rm -r {utils.res_dir}web/", host=self.lmid)
@@ -668,7 +725,7 @@ class Host(lmObj, HostServices):
                 log(f"Couldn't reach host '{self.name}'!", level=3, console=True)
 
     def build_dir_tree(self):
-        log(f"Creating Hal's directory tree on {self.name} ...", console=True)
+        log(f"Creating Hal's directory tree on '{self.name}' ...", console=True)
 
         dir_tree = [
             utils.logs_dir,
@@ -680,12 +737,15 @@ class Host(lmObj, HostServices):
                 utils.res_dir + "web/js/",
                 utils.res_dir + "web/fonts/",
                 utils.res_dir + "web/icons/",
-            utils.ssh_dir,
             utils.ssl_dir,
             utils.tmp_dir
             ]
-        if self.pm_id:
-            dir_tree.append(utils.vms_dir)
+
+        if not self.pm_id:
+            dir_tree.extend([utils.vms_dir])
+
+        if self.env == "dev":
+            dir_tree.extend([utils.ssh_dir])
 
         for node in dir_tree:
             # It's a directory
@@ -700,13 +760,13 @@ class Host(lmObj, HostServices):
 
     def build_venv(self):
         if utils.isfile(f"{utils.projects_dir}venv/", host=self.lmid):
-            log("There's already a Virtual Env!", level=3, console=True)
+            log(f"There's already a virtual environment on '{self.name}'!", level=3, console=True)
             yes = utils.yes_no("Purge it?")
 
             if yes: cmd(f"rm -r {utils.projects_dir}venv/", host=self.lmid)
             else: return
 
-        log("Creating Virtual Env ...", console=True)
+        log(f"Creating virtual environment for '{self.name}' ...", console=True)
         cmd(f"python3 -m venv {utils.projects_dir}venv", host=self.lmid)
 
         packages = "netifaces requests uwsgi libsass ruamel.yaml psycopg2 markdown markdown-katex"
@@ -723,7 +783,7 @@ class Host(lmObj, HostServices):
             "gpg_key_id": self.get_gpg_key_id(self.email),
             })
 
-        utils.write(f"/home/hal/.gitconfig", config, host=self.lmid)
+        utils.write(f"/home/hal/.gitconfig", config, tpl=True, host=self.lmid)
 
         exists = False
         gpg_pubkey = self.get_gpg_pubkey(self.email)
@@ -739,14 +799,21 @@ class Host(lmObj, HostServices):
 
     def setup(self):
         self.config_ssh_server()
+        self.config_grub()
+        self.config_motd()
+        self.config_sysctl()
+
         self.build_dir_tree()
         self.build_venv()
         self.update_resources()
+
         self.generate_dh()
         self.config_nginx()
         self.config_postgres()
-        self.config_git()
-        self.create_ssh_key(for_gitlab=True)
+
+        if self.env == "dev":
+            self.config_git()
+            self.create_ssh_key(for_gitlab=True)
 
     def has_file(self, path:'str'):
         if utils.isfile(path, host=self.lmid):
@@ -774,11 +841,11 @@ class Host(lmObj, HostServices):
         print("OK")
 
     def update(self):
-        log(f"Updating {self.lmid} ...", console=True)
+        log(f"Updating '{self.name}' ...", console=True)
         cmd("apt update && apt upgrade -y", host=self.lmid)
 
     def reboot(self):
-        log(f"Rebooting {self.lmid} ...", console=True)
+        log(f"Rebooting '{self.name}' ...", console=True)
         cmd("sudo systemctl reboot now", host=self.lmid)
 
     def get_name(self):
