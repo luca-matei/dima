@@ -89,15 +89,15 @@ textarea {width: 100%;}
             font-weight: bold;
         }
         @else {
-            background-color: var(--p-1-i);
-            color: var(--tp-1-i);
+            background-color: var(--rbg-1);
+            color: var(--rtxt-1);
         }
 
         &:hover {
             @if $color == red {background-color: $red-2;}
             @else {
-                background-color: var(--p-2-i);
-                color: var(--tp-2-i);
+                background-color: var(--rbg-2);
+                color: var(--rtxt-2);
             }
         }
     }
@@ -110,7 +110,7 @@ textarea {width: 100%;}
                 color: #fff;
             }
         }
-        border: 1px solid var(--p-1-i);
+        border: 1px solid var(--rbg-1);
     }
 
     @if $var == 3 or $var == 4 {

@@ -40,7 +40,7 @@ class lmProcess:
         lm.request.lang_id = int(lang_id)
 
         def find_end_section(parent_id):
-            tmp_id = lm.sections[parent_id].get(endpoint[0], 0)
+            tmp_id = lm.sections.get(parent_id, {}).get(endpoint[0], 0)
             if tmp_id:
                 section = endpoint[0]
                 endpoint.pop(0)
