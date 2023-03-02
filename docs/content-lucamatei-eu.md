@@ -9,15 +9,15 @@
 
 # Home
 ## Luca Matei
-- Web Developer having 4+ years of experience in Full-Stack Web Development, Linux-based Systems Administration, Networking and other IT topics.
-- Dezvoltator web având +4 ani de experiență în dezvoltare web Full-Stack, administrare de sisteme bazate pe Linux, rețelistică și alte subiecte IT.
+- Full-Stack Developer with over 4 years of experience in web engineering, Linux-based Systems Administration, Networking and other IT topics.
+- Dezvoltator Full-Stack cu peste 4 ani de experiență în inginerie web, administrare de sisteme bazate pe Linux, rețelistică și alte subiecte IT.
 - pic of me
 - [Design](https://www.jeyausten.com/)
-- Află despre mine, Lucrează cu mine; Learn about me, Work with me
 
-## Hey there,
-- I'm Luca - web developer. Why I love making things on the web. Why should you take my services.
-- building complex web applications, developing automation systems
+## Hey there, | Salutare,
+- I'm Luca and I specialize in automations and in developing complex web applications. Through the tools and systems I've built, I combine some of the fastest and most reliable technologies in the web development field to create showcase websites, blogs and galleries, forums, online shops and more. I am currently looking for new opportunities to test my design and engineering skills. So, if you need a helping hand creating your own digital fingerprint, write me an email and let's work together!
+- Eu sunt Luca și mă specializez în automatizări și în construcția de aplicații web complexe. Prin uneltele și sistemele create de mine, îmbin câteva dintre cele mai rapide și de nădejde tehnologii din domeniul dezvoltării web pentru a construi website-uri de prezentare, bloguri și galerii, forumuri, magazine online și altele. Mă aflu în căutare de noi oportunități prin care să îmi pun la încercare spiritul creativ și ingineresc. Astfel, dacă ai nevoie de o mână de ajutor în crearea propriei amprente digitale, scrie-mi și hai să lucrăm împreună!
+- Learn more about me, Let's be partners!; Află mai multe despre mine, Hai să fim parteneri!
 - [Content](https://www.ojieame.design/#GRAPHIC)
 
 ## Selected work
@@ -33,25 +33,31 @@
 # About
 
 ## Hey there,
-- I'm Luca. Clarity, empathy, and integrity are the cornerstones of my practice.
-- I've been in web dev and system management for over 4 years.
-- I appeared 20 years ago, in the lands of Eastern Europe, in Romania. I love trains and I have a cat named Iorgu.
-- I spend my time biking, building. Other times, I'm working on becoming certified.
+I'm Luca and I appeared 20 years ago, in the lands of Eastern Europe, in Romania. Loyalty, versatility, persistence and responsibility are the cornerstones of my practice. I commit with enthusiasm to my goals and to the causes I support.  
+
+I'm able to handle stressful situations such as getting past the most difficult obstacles in my career or even when I used to make ends meet back in the time I worked in retail. Versatility proved to be a key skill since I had to switch between working on my projects, studying and keeping a part-time job.
+
+Although I've been seriously learning web development and system management for just over 4 years, my passion for IT started 13 years ago, with Python. I used to create scripts to solve math problems from various coding websites such as [Project Euler](https://projecteuler.net/). Now I'm automating daily and work-related tasks, I'm managing my projects in a centralized environment and I've built tools and frameworks to serve my web applications. Apart from this, I've wandered around 3D modelling, game development, writing fiction and photography.  
+
+As a personal note, I love trains, as I spend my free time documenting railway networks and their rolling stock from Romania. Other times, I enjoy biking and building contraptions.
 - pic of me
-- Reading - The Two Dianas, Spirit Animal - Marmot, Favorite TV Show - HIMYM
 
 ## Technical Expertise
 Download resume .pdf, .docx
 ### Backend
 ### Frontend
+### Frameworks
 ### SysAdmin
 ### Networking
+### Office
 
 ## Core Expertise
+### Growth mindset
+### Time management
+### Integrity
+### Critical thinking
 ### Receptive
-### Structured
-### Keen on learning
-### Teamworking
+### Communication
 
 ## Selected Work
 - see more

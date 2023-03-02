@@ -16,59 +16,79 @@ $text-sizes: (
     m: 1.8rem,
     l: 2.2rem,
     xl: 2.8rem,
-    xxl: 3.2rem
+    xxl: 3.2rem,
+    extra-xxl: 8rem
 );
 
 @each $size, $value in $text-sizes {
     .lmf-#{$size} {font-size: $value;}
 }
 
-.lmf-xxl {}
+.lmf-extra-xxl {
+    line-height: 1;
+}
 
 
 /* Links */
 
 p a {
     padding-bottom: 2px;
-    border-bottom: 1px solid var(--ts-2);
+    border-bottom: 1px solid var(--txt-4);
     transition: border-bottom $tr-t;
-    &:hover {border-bottom-color: var(--tp-1);}
+    &:hover {border-bottom-color: var(--txt-1);}
 }
 
 a  {
-    color: var(--ts-2);
+    color: var(--txt-1);
     text-decoration: none;
     transition: background-color $tr-t, color $tr-t;
 
     &.active {
-        background-color: var(--p-2);
-        color: var(--tp-1);
+        background-color: var(--bg-2);
+        color: var(--txt-2);
 
         &:hover {
-            background-color: var(--s-1);
+            background-color: var(--bg-3);
         }
     }
 
     .fa-angle-right, .fa-chevron-right {@include arrow-right;}
 
     &:hover {
-        color: var(--tp-1);
+        color: var(--txt-2);
         .fa-angle-right, .fa-chevron-right {@include arrow-right-hvr;}
     }
 }
 
 /* Headings */
 
+$heading-sizes: (
+    h1: 2rem,
+    h2: 1.8rem,
+    h3: 1.6rem,
+    h4: 1.4rem,
+    h5: 1.2rem,
+    h6: 1rem
+);
+
+@each $heading, $size in $heading-sizes {
+    #{$heading} {font-size: $size;}
+}
+
 h1, h2, h3, h4, h5, h6 {
     margin: 0;
     padding: 0.67em 0 0 0;
-    color: var(--tp-2);
+    color: var(--txt-2);
+
+    &>.fa {
+        margin-right: 8px;
+    }
 }
 
 
 
-h1 ~ p, h2 ~ p {font-size: 1.18rem;}
-h3 ~ p, ul {font-size: 1.12rem;}
+h1 ~ p, h2 ~ p {font-size: 1.14rem;}
+h3 ~ p, ul {font-size: 1.1rem;}
 
 /* Paragraphs */
 

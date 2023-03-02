@@ -36,19 +36,19 @@ html {
 
     // Dark theme
     // Background: from darkest to brightest
-    --bg-1-2: #27343C;
-    --bg-2-2: #32424C;
-    --bg-3-2: #3E525E;
-    --bg-4-2: #496170;
+    --bg-1-2: #000000;
+    --bg-2-2: #070808;
+    --bg-3-2: #121416;
+    --bg-4-2: #1e2124;
     // Contrast background: From darkest to brightest
     --rbg-1-2: #dfd9d9;
     --rbg-2-2: #e8e4e4;
     --rbg-3-2: #f1eeee;
     --rbg-4-2: #faf9f9;
     // Text: from brightest to darkest
-    --txt-1-2: #fcfdfd;
-    --txt-2-2: #ced9df;
-    --txt-3-2: #A6B9C5;
+    --txt-1-2: #b3b3b3;
+    --txt-2-2: #ffffff;
+    --txt-3-2: #d9d9d9;
     --txt-4-2: #B8C7D0;
     // Contrast text: From darkest to brightest
     --rtxt-1-2: #36454f;
@@ -133,4 +133,4 @@ a.red:hover {
 .lmbg-orange {background-color: $orange-1; color: var(--tp-1-1);}
 .lmbg-red {background-color: $red-1;}
 
-.lmbg-p-2 {background-color: var(--p-2);}
+.lmbg-2 {background-color: var(--bg-2);}
