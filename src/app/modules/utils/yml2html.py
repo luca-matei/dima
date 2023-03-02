@@ -42,7 +42,7 @@ class YML2HTML:
                         texts = dict(prop[1])
                         text = texts.get(self.lang, texts.get(self.default_lang))
 
-                        if tag not in ("a", "i", "button", "span"):
+                        if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
                             text = utils.md2html(text)
 
                     else:

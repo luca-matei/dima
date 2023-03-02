@@ -26,19 +26,38 @@ $text-sizes: (
 
 .lmf-extra-xxl {
     line-height: 1;
+    &::after {
+        display: none;
+    }
 }
 
 
 /* Links */
 
 p a {
-    padding-bottom: 2px;
-    border-bottom: 1px solid var(--txt-4);
-    transition: border-bottom $tr-t;
-    &:hover {border-bottom-color: var(--txt-1);}
+    padding-bottom: 6px;
+    &::after {
+        content: '';
+        display: block;
+        height: 2px;
+        width: calc(100% - 16px);
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        background-color: var(--txt-1);
+        transition: width $tr-t, left $tr-t;
+    }
+
+    &:hover::after {
+        left: 0;
+        width: 100%;
+        background-color: var(--txt-2);
+    }
+
 }
 
 a  {
+    position: relative;
     color: var(--txt-1);
     text-decoration: none;
     transition: background-color $tr-t, color $tr-t;
@@ -79,16 +98,26 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0;
     padding: 0.67em 0 0 0;
     color: var(--txt-2);
+    width: fit-content;
+
+    & ~ p {font-size: 1.14rem;}
 
     &>.fa {
         margin-right: 8px;
     }
 }
 
+h1::after {
+    content: '';
+    display: block;
+    width: 33.33%;
+    border-radius: 4px;
+    height: 3px;
+    background-color: var(--txt-2);
+    opacity: 0.2;
+}
 
-
-h1 ~ p, h2 ~ p {font-size: 1.14rem;}
-h3 ~ p, ul {font-size: 1.1rem;}
+ul {font-size: 1.1rem;}
 
 /* Paragraphs */
 

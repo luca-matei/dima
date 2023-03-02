@@ -4,6 +4,7 @@
 - [Content Idea](https://www.ojieame.design/#GRAPHIC)
 - [Content Idea](https://www.cminniear.com/)
 - blur navigation background
+- [CSS Grid](https://grid.layoutit.com/)
 
 ----
 
