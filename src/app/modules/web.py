@@ -6,6 +6,7 @@ class Web(Project):
         params = dbid,
         self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = hal.db.execute(query, params)[0]
 
+        self.html_vars = {}
         self.dev_domain = "dev." + self.domain
         self.modules = [utils.webs.modules[m] for m in self.module_ids]
         self.langs = [utils.projects.langs[l] for l in self.lang_ids]
@@ -162,6 +163,10 @@ class Web(Project):
         # RENAME CLASSES
         hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/assets/js/", self.repo_dir + "src/assets/js/")
 
+    def yml2html(self, yml, lang):
+        if yml.endswith(".yml"): yml = self.html_dir + yml
+        return utils.yml2html(yml, lang, self.default_lang, self.html_vars, self.dev_host)
+
     def update_html(self):
         """
             Command only for dev environment.
@@ -186,12 +191,22 @@ class Web(Project):
         modules = dict(self.db.execute(query, params))
         modules.update(utils.reverse_dict(modules))
 
-        app_wrapper = "<!doctype html>" + YML2HTML(utils.read(self.html_dir + "wrapper.yml", host=self.dev_host), self.default_lang, self.default_lang).html
-        top_button = YML2HTML(utils.read(self.html_dir + "top-button.yml", host=self.dev_host), self.default_lang, self.default_lang).html
+        app_wrapper = "<!doctype html>" + self.yml2html("wrapper.yml", self.default_lang)
+        top_button = self.yml2html("top-button.yml", self.default_lang)
+
+        self.html_vars = {}
+        var_files = utils.get_files(self.html_dir + "_vars/", host=self.dev_host)
 
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
         for lang in self.langs:
-            user_drop_html = YML2HTML(utils.read(self.html_dir + "user-drop.yml", host=self.dev_host), self.default_lang, lang).html
+            # Save html placeholders
+            if not self.html_vars.get(lang):
+                self.html_vars[lang] = {}
+
+            for var_file in var_files:
+                self.html_vars[lang][var_file[:-4]] = self.yml2html("_vars/" + var_file, lang)
+
+            user_drop_html = self.yml2html("user-drop.yml", lang)
             params = "user-drop", langs[lang], user_drop_html
             self.db.execute(query, params)
 
@@ -205,7 +220,7 @@ class Web(Project):
                 if lang == self.langs[0]: to_lang = self.langs[1]
                 else: to_lang = self.langs[0]
 
-                lang_selector = YML2HTML(utils.read(self.html_dir + "lang-switch.yml", host=self.dev_host), self.default_lang, lang).html
+                lang_selector = self.yml2html("lang-switch.yml", lang)
                 lang_selector = utils.format_tpl(lang_selector, {
                     "default_lang": self.default_lang.upper(),
                     "to_lang": to_lang,
@@ -213,18 +228,18 @@ class Web(Project):
                     })
 
             else:
-                lang_selector = YML2HTML(utils.read(self.html_dir + "lang-drop.yml", host=self.dev_host), self.default_lang, lang).html
+                lang_selector = self.yml2html("lang-drop.yml", lang)
 
             if len(self.themes) == 1:
                 theme_selector = ""
 
             elif len(self.themes) == 2:
-                theme_selector = YML2HTML(utils.read(self.html_dir + "theme-switch.yml", host=self.dev_host), self.default_lang, lang).html
+                theme_selector = self.yml2html("theme-switch.yml", lang)
 
             else:
-                theme_selector = YML2HTML(utils.read(self.html_dir + "theme-drop.yml", host=self.dev_host), self.default_lang, lang).html
+                theme_selector = self.yml2html("theme-drop.yml", lang)
 
-            guest_drop_html = YML2HTML(utils.read(self.html_dir + "guest-drop.yml", host=self.dev_host), self.default_lang, lang).html
+            guest_drop_html = self.yml2html("guest-drop.yml", lang)
             params = "guest-drop", langs[lang], utils.format_tpl(guest_drop_html, {
                 "lang_selector": lang_selector,
                 "theme_selector": theme_selector,
@@ -257,10 +272,10 @@ class Web(Project):
 
                 meta = dict(meta)
                 for lang in self.langs:
-                    body = YML2HTML(yml, self.default_lang, lang).html
-                    app_header = YML2HTML(utils.read(f"{self.html_dir}app-header.yml", host=self.dev_host), self.default_lang, lang).html
-                    app_footer = YML2HTML(utils.read(f"{self.html_dir}app-footer.yml", host=self.dev_host), self.default_lang, lang).html
-                    cookies_notice = YML2HTML(utils.read(f"{self.html_dir}cookies-notice.yml", host=self.dev_host), self.default_lang, lang).html
+                    body = self.yml2html(yml, lang)
+                    app_header = self.yml2html("app-header.yml", lang)
+                    app_footer = self.yml2html("app-footer.yml", lang)
+                    cookies_notice = self.yml2html("cookies-notice.yml", lang)
 
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
                     # FORMAT TITLE
@@ -301,7 +316,10 @@ class Web(Project):
             for section in utils.get_dirs(section_dir, self.dev_host):
                 solve_section(section_dir + section + '/', section, section_id)
 
-        for section in utils.get_dirs(self.html_dir, self.dev_host):
+        section_dirs = utils.get_dirs(self.html_dir, self.dev_host)
+        section_dirs.remove("_vars")
+
+        for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
 
     def update_py(self):

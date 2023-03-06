@@ -13,4 +13,6 @@ if __name__ == "__main__":
     import psycopg2, netifaces, requests, sass, markdown
     from ruamel import yaml
 
+    yaml.constructor.SafeConstructor.add_constructor(u'tag:yaml.org,2002:map', utils.webs.construct_yaml_map)
+
     main()

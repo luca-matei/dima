@@ -46,23 +46,39 @@ As a personal note, I love trains, as I spend my free time documenting railway n
 ## Technical Expertise
 Download resume .pdf, .docx
 ### Backend
+- Can create Python Virtual Environments for projects and use PIP to install Python packages. Can work with Python frameworks (e.g. bottle.py, Flask). Can serve Python web applications using uWSGI in conjuction with Nginx. Can use process managers (Supervisor, SystemD). I've created my own Back-End framework, it's part of the [DIMA Project](projects/dima).
+- Can learn Apache if needed.
+
 ### Frontend
-### Frameworks
+- Can implement HTML5 and CSS3 from UI/UX design mockups. Can troubleshoot and improve designs and accessibility issues. Can work with common JS frameworks (e.g. mithril.js) and libraries (e.g. jQuery). Can work with the AJAX model. Can use JS (e.g. Transcrypt) and CSS (e.g. Sass) preprocessors. I've created my own Front-End framework, it's part of the [DIMA Project](projects/dima).  
+- Can learn Angular, React, Node or Django if needed.
+
 ### SysAdmin
+- Can perform utility tasks on Linux-based hosts (e.g. Debian). Can setup user access (e.g. sudo). Can configure key-based SSH connections. Can work with relational databases (e.g. Postgres). Can work with project management tools (e.g. GIT). Can create KVM and VirtualBox machines. Can remaster ISO images to preseed Debian for fully automated installs. Can manage public cloud Linux VPSes. Can create mail servers. I've created a system to automate daily and work-related tasks, it's part of the [DIMA Project](projects/dima).
+- Can learn AWS, Azure, Redis if needed.
+
 ### Networking
-### Office
+- Can configure physical devices (e.g. routers, switches, access points) and their wiring. Can create home DNS and DHCP servers using Dnsmasq and ISC DHCP Server. Can create subnets, bridges and routing for local hosts. Can create DNS servers using BIND9. Can create firewalls using nftables (late iptables).
+- Can learn Ansible if needed.
+
 
 ## Core Expertise
 ### Growth mindset
-### Time management
+As the IT world is in constant change, keeping my projects in check with the latest architectures and technologies requires persistent learning. I love learning, especially as there are so many things that passionate me and with every piece of knowledge that I gain, I realise there's so much more to it.
 ### Integrity
+Trust takes time to build, but having someone who's serious about their principles and moral values will make that process easier. I commit to my word, I value honesty to the core and all my actions are transparent and in the name of good.
+### Time management
+Not only that planning my time gives me the ability to accomplish more in a day, but it also gives me a clear direction to where I'm heading at the moment. I can focus on the main things by prioritizing them and deliver the product faster, but, of course, with the promise to work on the details when I have enough time for it.
 ### Critical thinking
+As cliché as it is in all resumes, taking the time to actually think about how an action would affect later on, significantly reduced the magnitude of certain issues that arised in the project development. It's easier to rewrite a part of code than restructure the whole project. So far, developing this skill has helped me make the best decisions in crisis times.
 ### Receptive
+Maybe my ideas seem to be the best at first, but considering other's suggestions can be a much better pick, as I'm given another perspective on the matter I'm working on. After critically assessing what would take to apply the new idea, I always give a feedback stating why we should or should not use it. Sharing knowledge is way easier than learning on my own.
 ### Communication
+Although I love working independently, I genuinely believe that relationships and teams heavily rely on communication because otherwise I could disrupt other's work, duplicate it or even destroy it. This is what keeps everything together, the people, the internet, ourselves.
 
 ## Selected Work
 - see more
-### Hal
+### Dima
 - visit website
 ### lucamatei.xyz
 - visit website

@@ -38,7 +38,6 @@ else:
         "utils/softs.py",
         "soft.py",
         "cli.py",
-        "utils/yml2html.py",
         "main.py",
         ),
         module_path = src_dir + "app/modules/",

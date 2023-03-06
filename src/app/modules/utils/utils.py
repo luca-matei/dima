@@ -274,6 +274,68 @@ class Utils:
     def md2html(self, md):
         return markdown.markdown(md, extensions=["extra"])
 
+    def yml2html(self, yml, lang, default_lang, html_vars={}, host=None):
+        if yml.endswith(".yml"): yml = self.read(yml, host=host)
+        all_data = yaml.YAML(typ="safe").load(yml)
+
+        def solve_children(data):
+            # Data is a list of HTML boxes
+            html = ""
+
+            for box in data:
+                tag = box[0]
+                properties = box[1]
+
+                attrs = []
+                box_html = ""
+                text = ""
+
+                if properties != None:
+                    for prop in properties:
+                        if prop[0] == "children":
+                            box_html = solve_children(prop[1])
+
+                        # Placeholders
+                        elif prop[0] == "global-text":
+                            text = prop[1]
+
+                        elif prop[0] == "text":
+                            texts = dict(prop[1])
+                            text = texts.get(lang, texts.get(default_lang))
+
+                            if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
+                                text = self.md2html(text)
+
+                            text = text.replace("\\", "<br>")
+
+                        else:
+                            attrs.append(list(prop))
+
+                attrs = dict(attrs)
+
+                custom = attrs.pop("custom", "")
+                tag_attrs = ' '.join([f"{k}='{v}'" for k, v in attrs.items()])
+
+                if tag in ("placeholder",):
+                    open_tag = ""
+                    close_tag = ""
+                else:
+                    open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}{' ' if custom else ''}{custom}>"
+
+                    if tag in ("meta", "link"):
+                        open_tag = open_tag[:-1]
+                        close_tag = " />"
+                    elif tag in ("base", "input", "br", "hr"):
+                        close_tag = ""
+                    else:
+                        close_tag = f"</{tag}>"
+
+                html += open_tag + text + box_html + close_tag
+
+            return html
+
+        return solve_children(all_data)
+
     def _cmd(self, call_info, command, catch=False, host=""):
         if call_info: call_info.append(host)
         # To do: display the functions that have called execute, isfile, send_file

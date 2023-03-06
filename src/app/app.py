@@ -274,6 +274,68 @@ class Utils:
     def md2html(self, md):
         return markdown.markdown(md, extensions=["extra"])
 
+    def yml2html(self, yml, lang, default_lang, html_vars={}, host=None):
+        if yml.endswith(".yml"): yml = self.read(yml, host=host)
+        all_data = yaml.YAML(typ="safe").load(yml)
+
+        def solve_children(data):
+            # Data is a list of HTML boxes
+            html = ""
+
+            for box in data:
+                tag = box[0]
+                properties = box[1]
+
+                attrs = []
+                box_html = ""
+                text = ""
+
+                if properties != None:
+                    for prop in properties:
+                        if prop[0] == "children":
+                            box_html = solve_children(prop[1])
+
+                        # Placeholders
+                        elif prop[0] == "global-text":
+                            text = prop[1]
+
+                        elif prop[0] == "text":
+                            texts = dict(prop[1])
+                            text = texts.get(lang, texts.get(default_lang))
+
+                            if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
+                                text = self.md2html(text)
+
+                            text = text.replace("\\", "<br>")
+
+                        else:
+                            attrs.append(list(prop))
+
+                attrs = dict(attrs)
+
+                custom = attrs.pop("custom", "")
+                tag_attrs = ' '.join([f"{k}='{v}'" for k, v in attrs.items()])
+
+                if tag in ("placeholder",):
+                    open_tag = ""
+                    close_tag = ""
+                else:
+                    open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}{' ' if custom else ''}{custom}>"
+
+                    if tag in ("meta", "link"):
+                        open_tag = open_tag[:-1]
+                        close_tag = " />"
+                    elif tag in ("base", "input", "br", "hr"):
+                        close_tag = ""
+                    else:
+                        close_tag = f"</{tag}>"
+
+                html += open_tag + text + box_html + close_tag
+
+            return html
+
+        return solve_children(all_data)
+
     def _cmd(self, call_info, command, catch=False, host=""):
         if call_info: call_info.append(host)
         # To do: display the functions that have called execute, isfile, send_file
@@ -2169,6 +2231,14 @@ class WebUtils:
     methods = "get", "put", "post", "delete"
     modules = {}
 
+    def construct_yaml_map(self, self2, node):
+        data = []
+        yield data
+        for key_node, value_node in node.value:
+            key = self2.construct_object(key_node, deep=True)
+            val = self2.construct_object(value_node, deep=True)
+            data.append((key, val))
+
     def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=(), langs:'list'=(), themes:'list'=(), default_lang:'str'="", default_theme:'str'="", has_animations=False):
         self.__doc__ = Host.create_web.__doc__
         # To do: choose a host and invoke create_web()
@@ -2186,6 +2256,7 @@ class Web(Project):
         params = dbid,
         self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = hal.db.execute(query, params)[0]
 
+        self.html_vars = {}
         self.dev_domain = "dev." + self.domain
         self.modules = [utils.webs.modules[m] for m in self.module_ids]
         self.langs = [utils.projects.langs[l] for l in self.lang_ids]
@@ -2342,6 +2413,10 @@ class Web(Project):
         # RENAME CLASSES
         hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/assets/js/", self.repo_dir + "src/assets/js/")
 
+    def yml2html(self, yml, lang):
+        if yml.endswith(".yml"): yml = self.html_dir + yml
+        return utils.yml2html(yml, lang, self.default_lang, self.html_vars, self.dev_host)
+
     def update_html(self):
         """
             Command only for dev environment.
@@ -2366,12 +2441,22 @@ class Web(Project):
         modules = dict(self.db.execute(query, params))
         modules.update(utils.reverse_dict(modules))
 
-        app_wrapper = "<!doctype html>" + YML2HTML(utils.read(self.html_dir + "wrapper.yml", host=self.dev_host), self.default_lang, self.default_lang).html
-        top_button = YML2HTML(utils.read(self.html_dir + "top-button.yml", host=self.dev_host), self.default_lang, self.default_lang).html
+        app_wrapper = "<!doctype html>" + self.yml2html("wrapper.yml", self.default_lang)
+        top_button = self.yml2html("top-button.yml", self.default_lang)
+
+        self.html_vars = {}
+        var_files = utils.get_files(self.html_dir + "_vars/", host=self.dev_host)
 
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
         for lang in self.langs:
-            user_drop_html = YML2HTML(utils.read(self.html_dir + "user-drop.yml", host=self.dev_host), self.default_lang, lang).html
+            # Save html placeholders
+            if not self.html_vars.get(lang):
+                self.html_vars[lang] = {}
+
+            for var_file in var_files:
+                self.html_vars[lang][var_file[:-4]] = self.yml2html("_vars/" + var_file, lang)
+
+            user_drop_html = self.yml2html("user-drop.yml", lang)
             params = "user-drop", langs[lang], user_drop_html
             self.db.execute(query, params)
 
@@ -2385,7 +2470,7 @@ class Web(Project):
                 if lang == self.langs[0]: to_lang = self.langs[1]
                 else: to_lang = self.langs[0]
 
-                lang_selector = YML2HTML(utils.read(self.html_dir + "lang-switch.yml", host=self.dev_host), self.default_lang, lang).html
+                lang_selector = self.yml2html("lang-switch.yml", lang)
                 lang_selector = utils.format_tpl(lang_selector, {
                     "default_lang": self.default_lang.upper(),
                     "to_lang": to_lang,
@@ -2393,18 +2478,18 @@ class Web(Project):
                     })
 
             else:
-                lang_selector = YML2HTML(utils.read(self.html_dir + "lang-drop.yml", host=self.dev_host), self.default_lang, lang).html
+                lang_selector = self.yml2html("lang-drop.yml", lang)
 
             if len(self.themes) == 1:
                 theme_selector = ""
 
             elif len(self.themes) == 2:
-                theme_selector = YML2HTML(utils.read(self.html_dir + "theme-switch.yml", host=self.dev_host), self.default_lang, lang).html
+                theme_selector = self.yml2html("theme-switch.yml", lang)
 
             else:
-                theme_selector = YML2HTML(utils.read(self.html_dir + "theme-drop.yml", host=self.dev_host), self.default_lang, lang).html
+                theme_selector = self.yml2html("theme-drop.yml", lang)
 
-            guest_drop_html = YML2HTML(utils.read(self.html_dir + "guest-drop.yml", host=self.dev_host), self.default_lang, lang).html
+            guest_drop_html = self.yml2html("guest-drop.yml", lang)
             params = "guest-drop", langs[lang], utils.format_tpl(guest_drop_html, {
                 "lang_selector": lang_selector,
                 "theme_selector": theme_selector,
@@ -2437,10 +2522,10 @@ class Web(Project):
 
                 meta = dict(meta)
                 for lang in self.langs:
-                    body = YML2HTML(yml, self.default_lang, lang).html
-                    app_header = YML2HTML(utils.read(f"{self.html_dir}app-header.yml", host=self.dev_host), self.default_lang, lang).html
-                    app_footer = YML2HTML(utils.read(f"{self.html_dir}app-footer.yml", host=self.dev_host), self.default_lang, lang).html
-                    cookies_notice = YML2HTML(utils.read(f"{self.html_dir}cookies-notice.yml", host=self.dev_host), self.default_lang, lang).html
+                    body = self.yml2html(yml, lang)
+                    app_header = self.yml2html("app-header.yml", lang)
+                    app_footer = self.yml2html("app-footer.yml", lang)
+                    cookies_notice = self.yml2html("cookies-notice.yml", lang)
 
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
                     # FORMAT TITLE
@@ -2481,7 +2566,10 @@ class Web(Project):
             for section in utils.get_dirs(section_dir, self.dev_host):
                 solve_section(section_dir + section + '/', section, section_id)
 
-        for section in utils.get_dirs(self.html_dir, self.dev_host):
+        section_dirs = utils.get_dirs(self.html_dir, self.dev_host)
+        section_dirs.remove("_vars")
+
+        for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
 
     def update_py(self):
@@ -2915,79 +3003,6 @@ class CLI:
 
 cli = CLI()
 
-def construct_yaml_map(self, node):
-    data = []
-    yield data
-    for key_node, value_node in node.value:
-        key = self.construct_object(key_node, deep=True)
-        val = self.construct_object(value_node, deep=True)
-        data.append((key, val))
-
-class YML2HTML:
-    html = ""
-
-    def __init__(self, yml, default_lang, lang):
-        self.default_lang = default_lang
-        self.lang = lang
-
-        yaml.constructor.SafeConstructor.add_constructor(u'tag:yaml.org,2002:map', construct_yaml_map)
-        data = yaml.YAML(typ="safe").load(yml)
-        self.html = self.solve_children(data)
-
-    def solve_children(self, data):
-        # Data is a list of HTML boxes
-        html = ""
-
-        for box in data:
-            tag = box[0]
-            properties = box[1]
-
-            attrs = []
-            box_html = ""
-            text = ""
-
-            if properties != None:
-                for prop in properties:
-                    if prop[0] == "children":
-                        box_html = self.solve_children(prop[1])
-
-                    # Placeholders
-                    elif prop[0] == "global-text":
-                        text = prop[1]
-
-                    elif prop[0] == "text":
-                        texts = dict(prop[1])
-                        text = texts.get(self.lang, texts.get(self.default_lang))
-
-                        if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
-                            text = utils.md2html(text)
-
-                    else:
-                        attrs.append(list(prop))
-
-            attrs = dict(attrs)
-
-            custom = attrs.pop("custom", "")
-            tag_attrs = ' '.join([f"{k}='{v}'" for k, v in attrs.items()])
-
-            if tag == "placeholder":
-                open_tag = ""
-                close_tag = ""
-            else:
-                open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}{' ' if custom else ''}{custom}>"
-
-                if tag in ("meta", "link"):
-                    open_tag = open_tag[:-1]
-                    close_tag = " />"
-                elif tag in ("base", "input", "br", "hr"):
-                    close_tag = ""
-                else:
-                    close_tag = f"</{tag}>"
-
-            html += open_tag + text + box_html + close_tag
-
-        return html
-
 def main():
     cl = sys.argv[1:]
     hal.start()
@@ -3002,5 +3017,7 @@ if __name__ == "__main__":
 
     import psycopg2, netifaces, requests, sass, markdown
     from ruamel import yaml
+
+    yaml.constructor.SafeConstructor.add_constructor(u'tag:yaml.org,2002:map', utils.webs.construct_yaml_map)
 
     main()
