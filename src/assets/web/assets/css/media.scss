@@ -51,7 +51,7 @@
 
     .lmc-3 {
         flex-flow: row wrap;
-        justify-content: space-between;
+        justify-content: center;
     }
 
     .lmc-2-28>div:first-of-type, .lmc-2-82>div:last-of-type {flex: 0 1 calc(20% - var(--lmc-s-2));}
@@ -63,8 +63,11 @@
     .lmc-2-55>div {flex: 0 1 calc(50% - var(--lmc-s-2));}
 
     .lmc-3>div {
-        flex: 0 0 calc(33.33% - 40px);
-        border-radius: $bd-r;
+        flex: 0 0 calc(33.33% - 22px);
+        max-width: 400px;
+        margin: 16px;
+        &:first-of-type {margin: 16px 16px 16px 0;}
+        &:last-of-type {margin: 16px 0 16px 16px;}
     }
 
     /* Templates */

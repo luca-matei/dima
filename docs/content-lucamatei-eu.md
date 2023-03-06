@@ -91,50 +91,79 @@ Although I love working independently, I genuinely believe that relationships an
 ----
 
 # Projects
+## Dima
+- manages networks, hosts, projects like pieces of software, apps and websites. (copy this for Selected Work)
+- self-made CMS, backend and frontend frameworks, deployment and monitoring
+- [Case study](https://thomasbosc.com/bim-case-study)
+- see case study, visit website
+
+## lucamatei.org
+- digital education like courses, tips and other resources from people who want to make the world a better place
+- visit website
+
+## lucamatei.xyz
+-
+
+## Two column cards
+
+### Blog
+- a place where I share my thoughts about topics like tech, education, etc
+- visit website
+
+### Gallery
+- pictures I took on trips
+- visit website
+
+## Digital Marmot
+- my tech startup
+- Coming Soon
+
 ## Showcase
 - samples of work througout the years
 - JavaScript, Python, and more ...
 - I'm currently working on ...
 
-## Opportunities
-- digital education
-- visit website
-
-## Collections
-- visit website
-
-## Hal
-- [Case study](https://thomasbosc.com/bim-case-study)
-- see case study, visit website
-
-## Blog
-- visit website
-
-## Forum
-- visit website
-
-## Gallery
-- visit website
+### Demos
+### QR Library
+### Virtual Gradebook
+### Shop
+### Library
 
 ## Let's work together
 - Content on home
 
 ----
 
-# Partnerships
+# Partners
 
-## Development ethics
-- Over the years, I created a Web Development manifesto that guides my code work and who I do business with. If you like the sound of this, we'll be a good match
+## Website Development Ethics
+- As a developer, I am guided by a set of principles that shape my work and who I do business with. When developing websites, I prioritize the following traits:
 - [Content](https://www.iamtamara.design/about)
 
-## Work process
+### Accessibility
+- I ensure that my websites are compatible with assistive technology, have a high contrast interface, support non-JavaScript users, and can be accessed from all devices.
+
+### Privacy
+- I take the privacy of my users seriously, and I do not use any analytics or tracking tools, nor do I employ cookies without explicit user consent.
+
+### Security
+- I take measures to ensure that users' data is secure and protected, and that websites are safeguarded from security threats.
+
+### Accountability
+- I am committed to providing high-quality, dependable websites that meet my clients' needs and specifications.
+
+### Autonomy
+- I believe that my clients should have control over their websites, so I provide them with the necessary tools and resources to make any changes or updates they need.
+
+### Flexibility
+- I understand that clients' needs and requirements may evolve over time, so I make sure that my websites are adaptable and can be modified as necessary.
+
 
 ## Hiring and Services
-- 20 eur / hour
-- web development, computer installations, networking, it consulting
+As a freelancer, I offer a variety of services, including web development, computer and network management, and IT project consulting. My rate is 20 euros per hour, and I am dedicated to providing high-quality work that meets your needs. For more extensive services, you can also visit [digitalmarmot.com](https://digitalmarmot.com), my IT startup's website. There, you can learn more about the range of services we offer and how we can help you achieve your IT goals.
 
-## Collaborating on a project
-- pro-bono collaborations and opportunities to join charity boards
+## Collaborations
+I'm open to collaborating on projects that share my principles and morals, and I'm particularly interested in pro-bono collaborations and opportunities to join charity boards. Contributing to initiatives that make a positive impact on society is important to me, and I believe in using my skills and knowledge to create meaningful change. If you have a project or opportunity that aligns with my values and interests, I would love to hear about it.
 
 ## Let's work together
 - Content on home

@@ -343,3 +343,11 @@
     transition: opacity $tr-t;
     &:hover {opacity: 0.8;}
 }
+
+.lmtpl-cards-bg2 {
+    &>div {
+        padding: 14px 26px;
+        background-color: var(--bg-2);
+        border-radius: $bd-r;
+    }
+}
