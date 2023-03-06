@@ -158,7 +158,7 @@ class CLI:
 
         # Check for missing positional parameters
         for p in param_pos:
-            if p not in utils.get_keys(args):
+            if not args.get(p):
                 return self.invalid(p=p, pt='missing')
 
         return args

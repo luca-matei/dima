@@ -178,11 +178,11 @@ class Hal:
     def check_alias(self, alias):
         forbidden = "", "q", "exit"
 
-        if alias in forbidden or alias.startswith("lm") or alias in utils.get_keys(cli.acts):
+        if alias in forbidden or alias.startswith("lm") or cli.acts.get(alias):
             log("Can't assign this alias!", level=4, console=True)
             return 0
 
-        elif alias in utils.get_keys(self.lmobjs):
+        elif self.lmobjs.get(alias):
             log(f"Alias already in use by {self.lmobjs[self.lmobjs[alias]][0]}!", level=4, console=True)
             return 0
 

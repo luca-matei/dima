@@ -511,7 +511,7 @@ class Host(lmObj, HostServices):
 
         # To do: validate parameters
 
-        #if domain in utils.get_keys(hal.domains):
+        #if hal.domains.get(domain):
             #log("Domain already exists!", level=4, console=True)
             #return 0
 
