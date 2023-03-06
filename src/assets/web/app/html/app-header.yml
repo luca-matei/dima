@@ -1,48 +1,43 @@
 div:
     id: "app-header"
-    children:
+    div:
+        class: "lmtpl-notice lmbg-orange"
+        noscript:
+            text:
+                en: "To avoid possible errors, please allow JavaScript to run in your browser."
+                ro: "Pentru a evita posibilele erori, vă rugăm să permiteți JavaScript să ruleze în browserul dvs."
+    nav:
+        input:
+            type: "checkbox"
+            id: "nav-check"
+
+        a:
+            href: "https://%DOMAIN%"
+            text:
+                en: "Hello World"
+
+        label:
+            for: "nav-check"
+            i:
+                class: "fa fa-bars"
+
+        span:
+
         div:
-            class: "lmtpl-notice lmbg-orange"
-            children:
-                noscript:
-                    text:
-                        en: "To avoid possible errors, please allow JavaScript to run in your browser."
-                        ro: "Pentru a evita posibilele erori, vă rugăm să permiteți JavaScript să ruleze în browserul dvs."
-        nav:
-            children:
-                input:
-                    type: "checkbox"
-                    id: "nav-check"
-
-                a:
-                    href: "https://%DOMAIN%"
-                    text:
-                        en: "Hello World"
-
-                label:
-                    for: "nav-check"
-                    children:
-                        i:
-                            class: "fa fa-bars"
-
-                span:
-
-                div:
-                    id: "nav-links"
-                    children:
-                        a:
-                            href: "home"
-                            text:
-                                en: "Home"
-                                ro: "Acasă"
-                        a:
-                            href: "about"
-                            text:
-                                en: "About"
-                                ro: "Despre mine"
-                        a:
-                            href: "contact"
-                            text:
-                                en: "Contact"
-                        placeholder:
-                            global-text: "%USER_DROP%"
+            id: "nav-links"
+            a:
+                href: "home"
+                text:
+                    en: "Home"
+                    ro: "Acasă"
+            a:
+                href: "about"
+                text:
+                    en: "About"
+                    ro: "Despre mine"
+            a:
+                href: "contact"
+                text:
+                    en: "Contact"
+            placeholder:
+                global-text: "%USER_DROP%"

@@ -4,6 +4,7 @@ from datetime import datetime
 class Utils:
     localhost = "127.0.0.1"
     abc = string.ascii_lowercase
+    html_tags = "a", "abbr", "address", "area", "article", "aside", "audio", "b", "base", "bdi", "bdo", "blockquote", "body", "br", "button", "canvas", "caption", "cite", "code", "col", "colgroup", "data", "datalist", "dd", "del", "details", "dfn", "dialog", "div", "dl", "dt", "em", "embed", "fieldset", "figcaption", "figure", "footer", "form", "head", "header", "hgroup", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "html", "i", "iframe", "img", "input", "ins", "kbd", "keygen", "label", "legend", "li", "link", "main", "map", "mark", "menu", "menuitem", "meta", "meter", "nav", "noscript", "object", "ol", "optgroup", "option", "output", "p", "param", "picture", "pre", "progress", "q", "rp", "rt", "ruby", "s", "samp", "script", "section", "select", "small", "source", "span", "strong", "style", "sub", "summary", "sup", "svg", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "title", "tr", "track", "u", "ul", "var", "video", "wbr"
     tpl_header = ""
 
     debian_version = None
@@ -276,65 +277,68 @@ class Utils:
 
     def yml2html(self, yml, lang, default_lang, html_vars={}, host=None):
         if yml.endswith(".yml"): yml = self.read(yml, host=host)
-        all_data = yaml.YAML(typ="safe").load(yml)
+        boxes = yaml.YAML(typ="safe").load(yml)
+        html5 = ""
+        tags = "placeholder",
 
-        def solve_children(data):
-            # Data is a list of HTML boxes
+        def solve_box(data):
             html = ""
 
-            for box in data:
-                tag = box[0]
-                properties = box[1]
+            tag = data[0]
+            properties = data[1]
 
-                attrs = []
-                box_html = ""
-                text = ""
+            attrs = []
+            box_html = ""
+            text = ""
 
-                if properties != None:
-                    for prop in properties:
-                        if prop[0] == "children":
-                            box_html = solve_children(prop[1])
+            if properties != None:
+                for prop in properties:
+                    if prop[0] in self.html_tags + tags:
+                        box_html += solve_box(prop)
 
-                        # Placeholders
-                        elif prop[0] == "global-text":
-                            text = prop[1]
+                    # Placeholders
+                    elif prop[0] == "global-text":
+                        text = prop[1]
 
-                        elif prop[0] == "text":
-                            texts = dict(prop[1])
-                            text = texts.get(lang, texts.get(default_lang))
+                    elif prop[0] == "text":
+                        texts = dict(prop[1])
+                        text = texts.get(lang, texts.get(default_lang))
 
-                            if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
-                                text = self.md2html(text)
+                        if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
+                            text = self.md2html(text)
 
-                            text = text.replace("\\", "<br>")
+                        text = text.replace("\\", "<br>")
 
-                        else:
-                            attrs.append(list(prop))
+                    else:
+                        attrs.append(list(prop))
 
-                attrs = dict(attrs)
+            attrs = dict(attrs)
 
-                custom = attrs.pop("custom", "")
-                tag_attrs = ' '.join([f"{k}='{v}'" for k, v in attrs.items()])
+            custom = attrs.pop("custom", "")
+            tag_attrs = ' '.join([f"{k}='{v}'" for k, v in attrs.items()])
 
-                if tag in ("placeholder",):
-                    open_tag = ""
+            if tag in ("placeholder",):
+                open_tag = ""
+                close_tag = ""
+            else:
+                open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}{' ' if custom else ''}{custom}>"
+
+                if tag in ("meta", "link"):
+                    open_tag = open_tag[:-1]
+                    close_tag = " />"
+                elif tag in ("base", "input", "br", "hr"):
                     close_tag = ""
                 else:
-                    open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}{' ' if custom else ''}{custom}>"
+                    close_tag = f"</{tag}>"
 
-                    if tag in ("meta", "link"):
-                        open_tag = open_tag[:-1]
-                        close_tag = " />"
-                    elif tag in ("base", "input", "br", "hr"):
-                        close_tag = ""
-                    else:
-                        close_tag = f"</{tag}>"
-
-                html += open_tag + text + box_html + close_tag
+            html += open_tag + text + box_html + close_tag
 
             return html
 
-        return solve_children(all_data)
+        for box in boxes:
+            html5 += solve_box(box)
+
+        return html5
 
     def _cmd(self, call_info, command, catch=False, host=""):
         if call_info: call_info.append(host)
@@ -2387,6 +2391,7 @@ class Web(Project):
             else:
                 hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
         else:
+            # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
             log(f"Updating structure HTML for '{self.name}' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
             if self.dev_host_id == hal.host_dbid:

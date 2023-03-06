@@ -1,35 +1,31 @@
 div:
     id: "user-drop"
     class: "lmtpl-drop-r"
-    children:
-        a:
-            href: "account"
-            img:
-                src: "/assets/img/avatar.jpg"
-            input:
-                type: "checkbox"
-                id: "drop-4"
-            label:
-                for: "drop-4"
-                class: "fa fa-chevron-up"
-            div:
-                children:
-                    a:
-                        href: "account/settings"
-                        children:
-                            i:
-                                class: "fa fa-sliders-h"
-                            span:
-                                text:
-                                    en: "Settings"
-                                    ro: "Setări"
-                    a:
-                        href: "account/sign-out"
-                        class: "red"
-                        children:
-                            i:
-                                class: "fa fa-sign-out-alt"
-                            span:
-                                text:
-                                    en: "Sign Out"
-                                    ro: "Deconectare"
+    a:
+        href: "account"
+        img:
+            src: "/assets/img/avatar.jpg"
+        input:
+            type: "checkbox"
+            id: "drop-4"
+        label:
+            for: "drop-4"
+            class: "fa fa-chevron-up"
+        div:
+            a:
+                href: "account/settings"
+                i:
+                    class: "fa fa-sliders-h"
+                span:
+                    text:
+                        en: "Settings"
+                        ro: "Setări"
+            a:
+                href: "account/sign-out"
+                class: "red"
+                i:
+                    class: "fa fa-sign-out-alt"
+                span:
+                    text:
+                        en: "Sign Out"
+                        ro: "Deconectare"

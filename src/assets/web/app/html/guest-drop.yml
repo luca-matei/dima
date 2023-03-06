@@ -1,21 +1,19 @@
 div:
     id: "guest-drop"
     class: "lmtpl-drop-r"
-    children:
-        a:
-            href: "sign-in"
-            text:
-                en: "Sign In"
-                ro: "Conectare"
-        input:
-            type: "checkbox"
-            id: "drop-4"
-        label:
-            for: "drop-4"
-            class: "fa fa-chevron-up"
-        div:
-            children:
-                placeholder:
-                    global-text: "%LANG_SELECTOR%"
-                placeholder:
-                    global-text: "%THEME_SELECTOR%"
+    a:
+        href: "sign-in"
+        text:
+            en: "Sign In"
+            ro: "Conectare"
+    input:
+        type: "checkbox"
+        id: "drop-4"
+    label:
+        for: "drop-4"
+        class: "fa fa-chevron-up"
+    div:
+        placeholder:
+            global-text: "%LANG_SELECTOR%"
+        placeholder:
+            global-text: "%THEME_SELECTOR%"

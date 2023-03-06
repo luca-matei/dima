@@ -1,12 +1,11 @@
 div:
     class: "lmtpl-switch"
-    children:
-        input:
-            id: "lmtheme"
-            type: "checkbox"
-        span:
-            class: "fa fa-sun"
-        a:
-            id: "lmid-toggle-theme"
-        span:
-            class: "fa fa-moon"
+    input:
+        id: "lmtheme"
+        type: "checkbox"
+    span:
+        class: "fa fa-sun"
+    a:
+        id: "lmid-toggle-theme"
+    span:
+        class: "fa fa-moon"

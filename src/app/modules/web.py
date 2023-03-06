@@ -137,6 +137,7 @@ class Web(Project):
             else:
                 hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
         else:
+            # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
             log(f"Updating structure HTML for '{self.name}' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
             if self.dev_host_id == hal.host_dbid:
