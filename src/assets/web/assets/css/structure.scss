@@ -36,3 +36,40 @@
 #ga1 {grid-area: ga1;}
 #ga2 {grid-area: ga2;}
 #ga3 {grid-area: ga3;}
+
+
+.lmbox {
+    width: 100%;
+}
+
+@each $breakpoint, $value in $breakpoints {
+    .lmbox-#{$breakpoint} {width: 100%;}
+}
+
+@include media(sm) {
+    .lmbox-sm {width: 540px;}
+}
+
+@include media(md) {
+    @each $size in (sm, md) {
+        .lmbox-#{$size} {width: 720px;}
+    }
+}
+
+@include media(lg) {
+    @each $size in (sm, md, lg) {
+        .lmbox-#{$size} {width: 960px;}
+    }
+}
+
+@include media(xl) {
+    @each $size in (sm, md, lg, xl) {
+        .lmbox-#{$size} {width: 1140px;}
+    }
+}
+
+@include media(xxl) {
+    @each $size in (sm, md, lg, xl, xxl) {
+        .lmbox-#{$size} {width: 1320px;}
+    }
+}

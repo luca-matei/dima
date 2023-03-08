@@ -1,36 +1,58 @@
-/* Padding */
 
-$pad-pos: (
-    t: top,
-    b: bottom,
-    l: left,
-    r: right
+/*
+    Margin and Padding
+    Format: {property}{sides}-{size}
+    Properties: m - margin; p - padding
+    Sides: t - top; b - botom; x - left,right; y - top, bottom; xy - left, right, top, bottom
+*/
+
+$spacer: 60;
+$space-properties: (
+    m: margin,
+    p: padding
+);
+$space-sides: (
+    t: (top),
+    b: (bottom),
+    s: (left),
+    e: (right),
+    x: (left, right),
+    y: (top, bottom),
+    xy: (top, bottom, left, right)
+);
+$space-sizes: (
+    xs: 0.25,
+    sm: 0.5,
+    md: 1,
+    lg: 1.5,
+    xl: 2,
+    xxl: 2.5
 );
 
-$pad-comb: (
-    tb top bottom,
-    lr left right
-);
+@each $p, $property in $space-properties {
+    @each $s, $sides in $space-sides {
+        @each $size, $value in $space-sizes {
+            .lm#{$p}#{$s}-#{$size} {
+                @if $s == xy {
+                    #{$property}: #{$spacer * $value}px;
+                } @else {
+                    @each $side in $sides {
+                        #{$property}-#{$side}: #{$spacer * $value}px;
+                    }
+                }
+            }
 
-$pad-val: (15, 30, 45, 60, 90, 120);
-
-@each $val in $pad-val {
-    @each $pos-s, $pos-l in $pad-pos {
-        .lmp-#{$pos-s}-#{$val} {padding-#{$pos-l}: #{$val}px;}
-    }
-
-    @each $comb, $pos1, $pos2 in $pad-comb {
-        .lmp-#{$comb}-#{$val} {
-            padding-#{$pos1}: #{$val}px;
-            padding-#{$pos2}: #{$val}px;
+            @if $s == xy {
+                @each $size2, $value2 in $space-sizes {
+                    .lm#{$p}-#{$size}-#{$size2} {
+                         #{$property}: #{$spacer * $value}px #{$spacer * $value2}px;
+                     }
+                }
+            }
         }
     }
-
-    .lmp-a-#{$val}-max {padding: #{$val}px var(--max-pad);}
 }
 
-.lmp-lr-auto {padding-left: auto; padding-right: auto;}
-.lmp-lr-max {padding-left: var(--max-pad); padding-right: var(--max-pad);}
 
 /* Alignment */
 

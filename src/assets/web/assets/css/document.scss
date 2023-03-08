@@ -38,6 +38,16 @@ from brightest to darkest
 $bd-r: 4px;   // Border radius
 $tr-t: 0.1s;  // Transition time
 
+$breakpoints: (
+    xs: 0,
+    sm: 576px,
+    md: 768px,
+    lg: 992px,
+    xl: 1200px,
+    xxl: 1400px
+);
+
+
 :root {
     --max-pad: 30px;    // 30px -> 60px -> 50%-600px
     --lmc-s-1: 30px; // 30px -> 60px
@@ -62,6 +72,16 @@ html {
     overflow: hidden;
 }
 
+
+/* MIXINS */
+
+@mixin media($breakpoint) {
+    $breakpoint-value: map-get($breakpoints, $breakpoint);
+    @media only screen and (min-width: #{$breakpoint-value - 0.02px}) {
+        @content();
+    }
+}
+
 @mixin arrow-right {
     margin-left: 0;
     width: 0;
@@ -75,6 +95,7 @@ html {
     width: auto;
     opacity: 1;
 }
+
 
 .grow {flex-grow: 1;}
 
