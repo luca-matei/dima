@@ -132,17 +132,16 @@ html:
         div:
             id: "hide-all"
         div:
-            id: "page-content"
+            id: "page-scroll"
+            div:
+                id: "top"
             placeholder:
                 global-text: "%APP_HEADER%"
             div:
-                id: "page-scroll"
-                div:
-                    id: "top"
-                section:
-                    global-text: "%BODY%"
-                placeholder:
-                    global-text: "%APP_FOOTER%"
+                id: "page-content"
+                global-text: "%BODY%"
+            placeholder:
+                global-text: "%APP_FOOTER%"
         placeholder:
             global-text: "%TOP_BUTTON%"
         button:

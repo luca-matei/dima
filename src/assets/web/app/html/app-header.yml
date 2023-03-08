@@ -1,5 +1,6 @@
 div:
     id: "app-header"
+    class: "lmbox"
     div:
         class: "lmtpl-notice lmbg-orange"
         noscript:
