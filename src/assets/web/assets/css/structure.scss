@@ -40,6 +40,11 @@
 
 .lmbox {
     width: 100%;
+    margin: auto;
+}
+
+.lmbox-max {
+    width: 100%;
 }
 
 @each $breakpoint, $value in $breakpoints {
@@ -47,28 +52,32 @@
 }
 
 @include media(sm) {
-    .lmbox-sm {width: 540px;}
+    .lmbox, .lmbox-sm {width: 540px;}
 }
 
 @include media(md) {
+    .lmbox {width: 720px;}
     @each $size in (sm, md) {
         .lmbox-#{$size} {width: 720px;}
     }
 }
 
 @include media(lg) {
+    .lmbox {width: 960px;}
     @each $size in (sm, md, lg) {
         .lmbox-#{$size} {width: 960px;}
     }
 }
 
 @include media(xl) {
+    .lmbox {width: 1140px;}
     @each $size in (sm, md, lg, xl) {
         .lmbox-#{$size} {width: 1140px;}
     }
 }
 
 @include media(xxl) {
+    .lmbox {width: 1320px;}
     @each $size in (sm, md, lg, xl, xxl) {
         .lmbox-#{$size} {width: 1320px;}
     }

@@ -11,7 +11,7 @@ module: static
 ----
 
 div:
-    class: "lma-h-center lmp-t-60"
+    class: "lma-h-center lmp-t-md"
     text:
         en: |
             # Hello World! {: .lmf-xxl}
