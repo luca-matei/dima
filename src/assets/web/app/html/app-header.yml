@@ -1,6 +1,5 @@
 div:
     id: "app-header"
-    class: "lmbox"
     div:
         class: "lmtpl-notice lmbg-orange"
         noscript:
@@ -8,6 +7,7 @@ div:
                 en: "To avoid possible errors, please allow JavaScript to run in your browser."
                 ro: "Pentru a evita posibilele erori, vă rugăm să permiteți JavaScript să ruleze în browserul dvs."
     nav:
+        class: "lmbox"
         input:
             type: "checkbox"
             id: "nav-check"

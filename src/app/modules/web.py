@@ -195,17 +195,16 @@ class Web(Project):
         app_wrapper = "<!doctype html>" + self.yml2html("wrapper.yml", self.default_lang)
         top_button = self.yml2html("top-button.yml", self.default_lang)
 
-        self.html_vars = {}
-        var_files = utils.get_files(self.html_dir + "_vars/", host=self.dev_host)
+        var_files = utils.get_files(self.html_dir + "vars/*.yml", host=self.dev_host)
 
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
         for lang in self.langs:
-            # Save html placeholders
+            # Save html variables
             if not self.html_vars.get(lang):
                 self.html_vars[lang] = {}
 
             for var_file in var_files:
-                self.html_vars[lang][var_file[:-4]] = self.yml2html("_vars/" + var_file, lang)
+                self.html_vars[lang][var_file[:-4]] = self.yml2html("vars/" + var_file, lang)
 
             user_drop_html = self.yml2html("user-drop.yml", lang)
             params = "user-drop", langs[lang], user_drop_html
@@ -310,6 +309,10 @@ class Web(Project):
                         "permalink": permalink,
                         })
 
+                    html_vars = re.findall("%VAR-([^%]*)%", html)
+                    for v in html_vars:
+                        html = html.replace(f"%VAR-{v}%", self.html_vars[lang].get(v.lower(), "NONE"))
+
                     query = "insert into pages (name, module, section, method, lang, first, html) values (%s, %s, %s, %s, %s, %s, %s);"
                     params = name, modules[meta["module"]], section_id, methods[method], langs[lang], first, html,
                     self.db.execute(query, params)
@@ -318,10 +321,12 @@ class Web(Project):
                 solve_section(section_dir + section + '/', section, section_id)
 
         section_dirs = utils.get_dirs(self.html_dir, self.dev_host)
-        section_dirs.remove("_vars")
+        section_dirs.remove("vars")
 
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
+
+        self.html_vars = {}    # Clear memory
 
     def update_py(self):
         """

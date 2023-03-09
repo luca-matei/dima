@@ -263,6 +263,7 @@ class Utils:
         return [d.split('/')[-2] for d in dirs]
 
     def get_files(self, path, host=None):
+        # WARNING: using * will split by " ", otherwise by "\n"
         files = cmd(f"ls {path}", catch=True, host=host)
         if "No such file or directory" in files: files = []
         else: files = files.split(" ")
@@ -341,6 +342,7 @@ class Utils:
         return html5
 
     def _cmd(self, call_info, command, catch=False, host=""):
+        if "work-together.yml" in command: print(command)
         if call_info: call_info.append(host)
         # To do: display the functions that have called execute, isfile, send_file
 
@@ -2449,17 +2451,16 @@ class Web(Project):
         app_wrapper = "<!doctype html>" + self.yml2html("wrapper.yml", self.default_lang)
         top_button = self.yml2html("top-button.yml", self.default_lang)
 
-        self.html_vars = {}
-        var_files = utils.get_files(self.html_dir + "_vars/", host=self.dev_host)
+        var_files = utils.get_files(self.html_dir + "vars/*.yml", host=self.dev_host)
 
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
         for lang in self.langs:
-            # Save html placeholders
+            # Save html variables
             if not self.html_vars.get(lang):
                 self.html_vars[lang] = {}
 
             for var_file in var_files:
-                self.html_vars[lang][var_file[:-4]] = self.yml2html("_vars/" + var_file, lang)
+                self.html_vars[lang][var_file[:-4]] = self.yml2html("vars/" + var_file, lang)
 
             user_drop_html = self.yml2html("user-drop.yml", lang)
             params = "user-drop", langs[lang], user_drop_html
@@ -2564,6 +2565,11 @@ class Web(Project):
                         "permalink": permalink,
                         })
 
+                    html_vars = re.findall("%VAR-([^%]*)%", html)
+                    print(html_vars)
+                    for v in html_vars:
+                        html = html.replace(f"%VAR-{v}%", self.html_vars[lang].get(v.lower(), "NONE"))
+
                     query = "insert into pages (name, module, section, method, lang, first, html) values (%s, %s, %s, %s, %s, %s, %s);"
                     params = name, modules[meta["module"]], section_id, methods[method], langs[lang], first, html,
                     self.db.execute(query, params)
@@ -2572,10 +2578,12 @@ class Web(Project):
                 solve_section(section_dir + section + '/', section, section_id)
 
         section_dirs = utils.get_dirs(self.html_dir, self.dev_host)
-        section_dirs.remove("_vars")
+        section_dirs.remove("vars")
 
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
+
+        self.html_vars = {}    # Clear memory
 
     def update_py(self):
         """

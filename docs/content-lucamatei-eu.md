@@ -24,10 +24,7 @@
 ## Selected work
 
 ## Let's work together
-- If you'd like to talk about a project you want help with or need an advice about web developing, just drop me a message at contact@lucamatei.eu
-- I'm currently Available for any website creation, educational materials
-- Write me an email -> Contact page
-- Partnerships
+- I'm always eager to discuss any project ideas and share my expertise to ensure that your product meets your desired needs. Currently, I'm available for any website creation projects, and I'm particularly passionate about contributing to educational initiatives that support the broader community. Please feel free to contact me with any questions or to discuss potential projects.
 
 ----
 

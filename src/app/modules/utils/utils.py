@@ -263,6 +263,7 @@ class Utils:
         return [d.split('/')[-2] for d in dirs]
 
     def get_files(self, path, host=None):
+        # WARNING: using * will split by " ", otherwise by "\n"
         files = cmd(f"ls {path}", catch=True, host=host)
         if "No such file or directory" in files: files = []
         else: files = files.split(" ")
