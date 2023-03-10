@@ -284,10 +284,9 @@ class Web(Project):
                         #title += " | " + self.domain
 
                     description = meta["description"].get(lang, meta["description"][self.default_lang])
-                    permalink = ""
                     og_url = ""
                     og_image = ""
-                    alt = ''.join([f'<link rel="alternate" href="/{l}/{permalink}" hreflang="{l}"' for l in self.langs if l != lang])
+                    alt = ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in self.langs if l != lang])
 
                     html = utils.format_tpl(app_wrapper, {
                         "lang": lang,
@@ -308,7 +307,6 @@ class Web(Project):
                         "copyright_name": '.'.join(self.domain.split(".")[-2:]),
                         "top_button": top_button,
                         "cookies_notice": cookies_notice,
-                        "permalink": permalink,
                         })
 
                     html_vars = re.findall("%VAR-([^%]*)%", html)
