@@ -4,8 +4,8 @@ div:
         type: "checkbox"
         custom: "%CHECKED%"
     span:
-        global-text: "%DEFAULT_LANG%"
+        text: "%DEFAULT_LANG%"
     a:
         href: "/%TO_LANG%/%ENDPOINT%"
     span:
-        global-text: "%OTHER_LANG%"
+        text: "%OTHER_LANG%"

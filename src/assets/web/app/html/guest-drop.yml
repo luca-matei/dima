@@ -13,7 +13,7 @@ div:
         for: "drop-4"
         class: "fa fa-chevron-up"
     div:
-        placeholder:
-            global-text: "%LANG_SELECTOR%"
-        placeholder:
-            global-text: "%THEME_SELECTOR%"
+        lm_:
+            text: "%LANG_SELECTOR%"
+        lm_:
+            text: "%THEME_SELECTOR%"

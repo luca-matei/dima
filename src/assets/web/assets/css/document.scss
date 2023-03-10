@@ -161,6 +161,10 @@ body {
     scroll-behavior: smooth;
 }
 
+#page-content {
+    flex: auto;
+}
+
 #app-footer {
     display: flex;
     flex-flow: row wrap;

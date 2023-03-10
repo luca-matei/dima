@@ -8,31 +8,6 @@ input:disabled, textarea:disabled, .disabled {
     cursor: not-allowed !important;
 }
 
-input, textarea, button {
-    background: none;
-    color: var(--tp-1);
-    outline: none;  // For focus
-    border: none;
-}
-
-input, textarea, .lmtpl-form-f2>* {
-    padding: 10px 12px;
-    background-color: var(--p-2);
-    border-bottom: 2px solid $blue-1;
-}
-
-textarea {
-    min-height: 150px;
-    resize: none;
-}
-
-input[type=text],
-input[type=email],
-input[type=tel],
-input[type=password],
-textarea {width: 100%;}
-
-
 /* Form objects */
 
 .lmtpl-switch {
@@ -128,30 +103,45 @@ textarea {width: 100%;}
 .lmbtn-4 {@include lmbtn(4);}
 .lmbtn-4-red {@include lmbtn(4, red);}
 
-.lmtpl-form-f1 {
-    margin-bottom: 10px;
-    h4 {
-        margin-bottom: 10px;
-        &>span:nth-child(2) {
-            color: $red-1;
-            margin-left: 5px;
+.lmforms-field {
+    margin-bottom: 30px;
+    &>h6 {
+        display: flex;
+        flex-flow: row wrap;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+
+        &>span {
+            margin-right: 5px;
+            &:nth-child(2) {
+                color: $red-1;
+            }
+        }
+
+        &>a {
+            padding: 2px;
+            opacity: 0.5;
         }
     }
-}
 
-.lmtpl-form-f2 {
-    display: flex;
-    flex-flow: row nowrap;
-    margin-bottom: 10px;
-
-    &>:first-child {
-        padding: 9px 12px;
-        flex-grow: 1;
+    &>input, &>textarea {
+        padding: 10px 12px;
+        width: 100%;
+        color: var(--rtxt-4);
+        background-color: var(--bg-2);
+        border-radius: $bd-r $bd-r 0 0;
+        border-top: none;
+        border-right: none;
+        border-bottom: 2px solid $blue-1;
+        border-left: none;
+        outline: none;
     }
 
-    &>:last-child {
-        padding: 9px 12px; // Not ok, needs to be solved
-        &:hover {color: var(--tp-1);}
+    &>textarea {
+        min-height: 150px;
+        resize: none;
     }
 }
 

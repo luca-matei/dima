@@ -72,8 +72,8 @@ html:
         meta:
             property: "twitter:image"
             content: "%OG_IMAGE%"
-        placeholder:
-            global-text: "%ALT%"
+        lm_:
+            text: "%ALT%"
         link:
             rel: "preload"
             type: "text/css"
@@ -127,7 +127,7 @@ html:
             src: "/assets/js/load-1.js"
             type: "text/javascript"
         title:
-            global-text: "%TITLE%"
+            text: "%TITLE%"
     body:
         div:
             id: "hide-all"
@@ -135,19 +135,19 @@ html:
             id: "page-scroll"
             div:
                 id: "top"
-            placeholder:
-                global-text: "%APP_HEADER%"
+            lm_:
+                text: "%APP_HEADER%"
             div:
                 id: "page-content"
-                global-text: "%BODY%"
-            placeholder:
-                global-text: "%APP_FOOTER%"
-        placeholder:
-            global-text: "%TOP_BUTTON%"
+                text: "%BODY%"
+            lm_:
+                text: "%APP_FOOTER%"
+        lm_:
+            text: "%TOP_BUTTON%"
         button:
             id: "lmid-message-box"
-        placeholder:
-            global-text: "%COOKIES_NOTICE%"
+        lm_:
+            text: "%COOKIES_NOTICE%"
         div:
             id: "sensor-cpt"
         script:

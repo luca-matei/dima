@@ -40,5 +40,5 @@ div:
                 href: "contact"
                 text:
                     en: "Contact"
-            placeholder:
-                global-text: "%USER_DROP%"
+            lm_:
+                text: "%USER_DROP%"

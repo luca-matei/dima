@@ -113,8 +113,7 @@ h1::after {
     width: 33.33%;
     border-radius: 4px;
     height: 2px;
-    background-color: var(--txt-2);
-    opacity: 0.2;
+    background-color: $blue-1;
 }
 
 ul {font-size: 1.1rem;}

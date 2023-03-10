@@ -280,7 +280,7 @@ class Utils:
         if yml.endswith(".yml"): yml = self.read(yml, host=host)
         boxes = yaml.YAML(typ="safe").load(yml)
         html5 = ""
-        tags = "placeholder",
+        tags = "lm_", "lminput", "lmtextarea",
 
         def solve_box(data):
             html = ""
@@ -292,21 +292,22 @@ class Utils:
             box_html = ""
             text = ""
 
+            # Solve properties
             if properties != None:
                 for prop in properties:
                     if prop[0] in self.html_tags + tags:
                         box_html += solve_box(prop)
 
-                    # Placeholders
-                    elif prop[0] == "global-text":
-                        text = prop[1]
-
                     elif prop[0] == "text":
-                        texts = dict(prop[1])
-                        text = texts.get(lang, texts.get(default_lang))
+                        if type(prop[1]) == list:
+                            texts = dict(prop[1])
+                            text = texts.get(lang, texts.get(default_lang))
 
-                        if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
-                            text = self.md2html(text)
+                            if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
+                                text = self.md2html(text)
+
+                        else:
+                            text = prop[1]
 
                         text = text.replace("\\", "<br>")
 
@@ -314,23 +315,68 @@ class Utils:
                         attrs.append(list(prop))
 
             attrs = dict(attrs)
-
             custom = attrs.pop("custom", "")
-            tag_attrs = ' '.join([f"{k}='{v}'" for k, v in attrs.items()])
 
-            if tag in ("placeholder",):
-                open_tag = ""
+            if tag in ("lminput", "lmtextarea"):
+                f_data = utils.webs.fields.get(attrs.get('type'), {})
+                f_type = f_data.get("type")
+                f_class = attrs.get('class', 'lmforms-field')
+                f_placeholder = attrs.get('placeholder', "")
+                f_heading = attrs.get('heading')
+                required = attrs.get('required')
+                f_minlen = f_data.get('minlen')
+                f_maxlen = f_data.get('maxlen')
+                f_pattern = f" data-pattern='{repr(f_data.get('pattern'))}'"
+
+                f_minlen = f" minlength={f_minlen}" if f_minlen else ""
+                f_maxlen = f" maxlength={f_maxlen}" if f_maxlen else ""
+
+                if f_placeholder:
+                    if type(f_placeholder) == list:
+                        texts = dict(f_placeholder)
+                        f_text = texts.get(lang, texts.get(default_lang))
+                    else:
+                        f_text = f_placeholder
+                    f_placeholder = f" placeholder='{f_text}'"
+
+                tag_html = [f"""<div class=\"{f_class}\">"""]
+
+                if f_heading:
+                    if type(f_heading) == list:
+                        texts = dict(f_heading)
+                        f_text = texts.get(lang, texts.get(default_lang))
+                    else:
+                        f_text = f_heading
+
+                    f_required = """<span>*</span>""" if required else ""
+                    tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"grow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
+
+                if tag == "lminput":
+                    tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}{f_pattern}>""")
+                else:
+                    tag_html.append(f"""<textarea{f_placeholder}{f_minlen}{f_maxlen}{f_pattern}></textarea>""")
+                tag_html.append("</div>")
+
+                open_tag = ''.join(tag_html)
                 close_tag = ""
-            else:
-                open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}{' ' if custom else ''}{custom}>"
 
-                if tag in ("meta", "link"):
-                    open_tag = open_tag[:-1]
-                    close_tag = " />"
-                elif tag in ("base", "input", "br", "hr"):
+            else:
+                tag_attrs = ' '.join([f"{k}='{v}'" for k, v in attrs.items()])
+
+                # Solve tags
+                if tag in ("lm_",):
+                    open_tag = ""
                     close_tag = ""
                 else:
-                    close_tag = f"</{tag}>"
+                    open_tag = f"<{tag}{' ' if tag_attrs else ''}{tag_attrs}{' ' if custom else ''}{custom}>"
+
+                    if tag in ("meta", "link"):
+                        open_tag = open_tag[:-1]
+                        close_tag = " />"
+                    elif tag in ("base", "input", "br", "hr"):
+                        close_tag = ""
+                    else:
+                        close_tag = f"</{tag}>"
 
             html += open_tag + text + box_html + close_tag
 
@@ -342,7 +388,6 @@ class Utils:
         return html5
 
     def _cmd(self, call_info, command, catch=False, host=""):
-        if "work-together.yml" in command: print(command)
         if call_info: call_info.append(host)
         # To do: display the functions that have called execute, isfile, send_file
 
@@ -2236,6 +2281,115 @@ class Project(lmObj):
 class WebUtils:
     methods = "get", "put", "post", "delete"
     modules = {}
+    fields = {
+        "id": {
+            'type': 'hidden',
+            'minlen': 1,
+            'maxlen': 10,
+            'pattern': r"""^[\d]{1,10}$""",
+        },
+        "cat": {
+            'type': 'hidden',
+            'minlen': 1,
+            'maxlen': 10,
+            'pattern': r"""^[1-9]\d{,10}$""",
+        },
+        "tags": {
+            'type': 'hidden',
+            'minlen': 1,
+            'maxlen': 88,
+            'pattern': r"""^([0-9]+(,[0-9]{1,10}){0,8}){0,1}$""",
+        },
+        "lang": {
+            'type': 'hidden',
+            'minlen': 1,
+            'maxlen': 1,
+            'pattern': r"""^[\d]{1}$""",
+        },
+        "theme": {
+            'type': 'hidden',
+            'minlen': 1,
+            'maxlen': 1,
+            'pattern': r"""^[\d]{1}$""",
+        },
+        "title": {
+            'type': 'text',
+            'minlen': 1,
+            'maxlen': 128,
+            'pattern': r"""^[\sa-zA-Z0-9ăĂâîÎşŞţŢ'".!+?-]{1,128}$""",
+        },
+        "user": {
+            'type': 'text',
+            'minlen': 1,
+            'maxlen': 64,
+            'pattern': r"""^(?=.{1,64}$)(([a-z0-9._-]+)|([a-z0-9._+-]+@[a-z0-9._-]+\.[a-z]+))$""",
+        },
+        "username": {
+            'type': 'text',
+            'minlen': 1,
+            'maxlen': 64,
+            'pattern': r"""^[a-z0-9._-]{1,64}$""",
+        },
+        "email": {
+            'type': 'email',
+            'minlen': 5,
+            'maxlen': 64,
+            'pattern': r"""^(?=.{5,64}$)[a-z0-9._+-]+@[a-z0-9._-]+\.[a-z]+$""",
+        },
+        "password": {
+            'type': 'password',
+            'minlen': 1,
+            'maxlen': 128,
+            'pattern': """^[\w\d~`,.!@#$%^&*()\-+=\[\]'"?<>|]{1,128}$""",
+        },
+        "name": {
+            'type': 'text',
+            'minlen': 3,
+            'maxlen': 64,
+            'pattern': r"""^[\sa-zA-ZăĂâîÎşŞţŢ-]{3,64}$""",
+        },
+        "subject": {
+            'type': 'hidden',
+            'minlen': 3,
+            'maxlen': 32,
+            'pattern': r"""^[\sa-zA-ZăĂâîÎşŞţŢ-]{3,32}$""",
+        },
+        "phone": {
+            'type': 'tel',
+            'minlen': 0,
+            'maxlen': 16,
+            'pattern': r"""^[\d\s+.-]{0,16}$""",
+        },
+        "msg": {
+            'minlen': 4,
+            'maxlen': 4096,
+            'pattern': r"""^[\s\w\dăĂâîÎşŞţŢ~`,.!@#$%^&*()+='"?<>|:;-]{4,4096}$""",
+        },
+        "cedit": {
+            'type': 'text',
+            'minlen': 4,
+            'maxlen': 16384,
+            'pattern': r"""^[\s\w\dăĂâîÎşŞţŢ~`,.!@#$%^&*()+=_'"?<>|:;\/\[\]-]{4,16384}$""",
+        },
+        "summary": {
+            'type': 'text',
+            'minlen': 1,
+            'maxlen': 256,
+            'pattern': r"""^[\sa-zA-Z0-9ăĂâîÎşŞţŢ,.!+?-]{1,256}$""",
+        },
+        "img": {
+            'type': 'hidden',
+            'minlen': 0,
+            'maxlen': 65000,
+            'pattern': r"""^((data:image\/)(jpg|jpeg)(;base64){0,1},([a-zA-Z0-9\/=+|]{10,65000})){0,1}$""",
+        },
+        "color": {
+            'type': 'color',
+            'minlen': 4,
+            'maxlen': 7,
+            'pattern': r"""^#(?:[0-9a-fA-F]{3}){1,2}$""",
+        },
+    }
 
     def construct_yaml_map(self, self2, node):
         data = []
@@ -2566,7 +2720,6 @@ class Web(Project):
                         })
 
                     html_vars = re.findall("%VAR-([^%]*)%", html)
-                    print(html_vars)
                     for v in html_vars:
                         html = html.replace(f"%VAR-{v}%", self.html_vars[lang].get(v.lower(), "NONE"))
 
