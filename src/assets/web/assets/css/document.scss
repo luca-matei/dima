@@ -102,6 +102,7 @@ html {
 
 
 .grow {flex-grow: 1;}
+.hidden {display: none;}
 
 body {
     height: inherit;
@@ -329,6 +330,30 @@ section {
     &:hover {background-color: var(--bg-4);}
     &.in {animation-name: top-btn-in;}
     &.out {animation-name: top-btn-out;}
+}
+
+@keyframes top-btn-in {
+    0% {
+        transform: scale(0);
+    }
+    60% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes top-btn-out {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(0);
+    }
 }
 
 #message-box {

@@ -1,3 +1,4 @@
+const $ = query => document.querySelector(query);
 
 // Enables animations and other JS dependent CSS classes
 document.documentElement.classList.add("js");
@@ -10,6 +11,9 @@ window.addEventListener("DOMContentLoaded", function() {
         hideObj.style.display = "flex";
         clearTimeout(lmHideAllTimeout);
     }, 1000);
+
+    $("#top-btn").style.display = "none";
+
 }, true);
 
 window.addEventListener("load", function() {

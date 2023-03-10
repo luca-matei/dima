@@ -1,12 +1,3 @@
-//import * as lm from '/commons/js/app.js';
-//window.lm = lm;
-
-const $ = query => document.querySelector(query);
-
-// TODO: lmCrsl, lmSlides
-
-// UTILS
-
 class lmUtils {
   constructor() {
     this.messageDelay = null;
@@ -50,27 +41,18 @@ class lmUtils {
   }
 
 }
-
 let utils = new lmUtils();
 
-
-// TOP BUTTON
-
-const topBtn = class lmTopBtn {
-  constructor() {
-    this.scroll = $('#page-scroll');
-    this.btn = $('#top-btn');
-    console.log(this.scroll, this.btn)
-    this.check();
-  }
-
-  check() {
-    this.btn.className = this.scroll.scrollTop < this.scroll.offsetHeight ? 'out' : 'in';
-  }
-
+function lmTopBtnCheck() {
+    if ($('#page-scroll').scrollTop < $('#page-scroll').offsetHeight) {
+        $('#top-btn').className = 'out';
+    } else {
+        $('#top-btn').style.display = "";
+        $('#top-btn').className = 'in';
+    }
 }
+lmTopBtnCheck();
 
-// COOKIES
 
 class lmCookies {
   constructor() {
@@ -112,11 +94,8 @@ class lmCookies {
   }
 
 }
-
 let cookies = new lmCookies();
 
-
-// SETTINGS
 
 class lmSettings {
   toggleTheme() {
@@ -131,11 +110,8 @@ class lmSettings {
   }
 
 }
-
 let settings = new lmSettings();
 
-
-// ANIMATIONS
 
 class lmAnim {
     constructor() {
@@ -168,11 +144,8 @@ class lmAnim {
             }
     }
 }
-
 //let anim = new lmAnim();
 
-
-// FORMS
 
 class lmForms {
   togglePassword() {
@@ -188,18 +161,17 @@ class lmForms {
     }
   }
 }
-
 let forms = new lmForms();
 
 
-document.getElementById("lmid-message-box").addEventListener("click", utils.hideMessage);
-document.getElementById("lmid-policy-accept").addEventListener(
+$("#page-scroll").addEventListener("scroll", lmTopBtnCheck);
+$("#lmid-message-box").addEventListener("click", utils.hideMessage);
+$("#lmid-policy-accept").addEventListener(
     "click", function() {cookies.setCookie('__Host-Consent', 1)});
-document.getElementById("lmid-toggle-theme").addEventListener("click", settings.toggleTheme);
-document.getElementById("page-scroll").addEventListener("scroll", topBtn.check);
+$("#lmid-toggle-theme").addEventListener("click", settings.toggleTheme);
 
 let tmp;
-tmp = document.getElementById("lmid-policy-withdraw");
+tmp = $("#lmid-policy-withdraw");
 if (tmp) {tmp.addEventListener("click", cookies.withdraw);}
-tmp = document.getElementById("lmid-toggle-password");
+tmp = $("#lmid-toggle-password");
 if (tmp) {tmp.addEventListener("click", forms.togglePassword);}
