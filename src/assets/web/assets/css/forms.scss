@@ -54,6 +54,9 @@ input:disabled, textarea:disabled, .disabled {
     padding: 8px 16px;
     transition: background-color $tr-t, color $tr-t, transform $tr-t;
     border-radius: $bd-r;
+    width: fit-content;
+    outline: none;
+    border: none;
 
     .fa-check {margin-right: 8px;}
 
@@ -71,7 +74,7 @@ input:disabled, textarea:disabled, .disabled {
         &:hover {
             @if $color == red {background-color: $red-2;}
             @else {
-                background-color: var(--rbg-2);
+                background-color: var(--rbg-4);
                 color: var(--rtxt-2);
             }
         }
@@ -111,16 +114,18 @@ input:disabled, textarea:disabled, .disabled {
         align-items: center;
         width: 100%;
         margin-bottom: 6px;
-        font-size: 0.9rem;
 
         &>span {
+            font-size: 0.9rem;
             margin-right: 5px;
+
             &:nth-child(2) {
                 color: $red-1;
             }
         }
 
         &>a {
+            font-size: 0.8rem;
             padding: 2px;
             opacity: 0.5;
         }
@@ -143,6 +148,10 @@ input:disabled, textarea:disabled, .disabled {
         min-height: 150px;
         resize: none;
     }
+}
+
+.lmforms-counter {
+    font-size: 0.8rem;
 }
 
 .lmtpl-select {

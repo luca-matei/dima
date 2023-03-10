@@ -326,7 +326,6 @@ class Utils:
                 required = attrs.get('required')
                 f_minlen = f_data.get('minlen')
                 f_maxlen = f_data.get('maxlen')
-                f_pattern = f" data-pattern='{repr(f_data.get('pattern'))}'"
 
                 f_minlen = f" minlength={f_minlen}" if f_minlen else ""
                 f_maxlen = f" maxlength={f_maxlen}" if f_maxlen else ""
@@ -352,9 +351,13 @@ class Utils:
                     tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"grow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
 
                 if tag == "lminput":
-                    tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}{f_pattern}>""")
+                    tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}>""")
                 else:
-                    tag_html.append(f"""<textarea{f_placeholder}{f_minlen}{f_maxlen}{f_pattern}></textarea>""")
+                    tag_html.append(f"""<textarea{f_placeholder}{f_minlen}{f_maxlen}></textarea>""")
+
+                if attrs.get("counter"):
+                    tag_html.append(f"<span class='lmforms-counter'>0 / {f_data.get('maxlen')}</span>")
+
                 tag_html.append("</div>")
 
                 open_tag = ''.join(tag_html)
@@ -2344,9 +2347,9 @@ class WebUtils:
         },
         "name": {
             'type': 'text',
-            'minlen': 3,
+            'minlen': 2,
             'maxlen': 64,
-            'pattern': r"""^[\sa-zA-ZăĂâîÎşŞţŢ-]{3,64}$""",
+            'pattern': r"""^[\sa-zA-ZăĂâîÎşŞţŢ-]{2,64}$""",
         },
         "subject": {
             'type': 'hidden',

@@ -64,9 +64,9 @@ class WebUtils:
         },
         "name": {
             'type': 'text',
-            'minlen': 3,
+            'minlen': 2,
             'maxlen': 64,
-            'pattern': r"""^[\sa-zA-ZăĂâîÎşŞţŢ-]{3,64}$""",
+            'pattern': r"""^[\sa-zA-ZăĂâîÎşŞţŢ-]{2,64}$""",
         },
         "subject": {
             'type': 'hidden',

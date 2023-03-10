@@ -354,6 +354,10 @@ class Utils:
                     tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}>""")
                 else:
                     tag_html.append(f"""<textarea{f_placeholder}{f_minlen}{f_maxlen}></textarea>""")
+
+                if attrs.get("counter"):
+                    tag_html.append(f"<span class='lmforms-counter'>0 / {f_data.get('maxlen')}</span>")
+
                 tag_html.append("</div>")
 
                 open_tag = ''.join(tag_html)
