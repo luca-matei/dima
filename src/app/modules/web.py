@@ -276,6 +276,7 @@ class Web(Project):
                     app_header = self.yml2html("app-header.yml", lang)
                     app_footer = self.yml2html("app-footer.yml", lang)
                     cookies_notice = self.yml2html("cookies-notice.yml", lang)
+                    hide_all = self.yml2html("hide-all.yml", lang)
 
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
                     # FORMAT TITLE
@@ -297,6 +298,7 @@ class Web(Project):
                         "description": description,
                         "og_url": og_url,
                         "og_image": og_image,
+                        "hide_all": hide_all,
                         "app_header": app_header,
                         "domain": self.domain,
                         "aside": "",

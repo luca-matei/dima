@@ -3,8 +3,24 @@
 document.documentElement.classList.add("js");
 document.documentElement.classList.remove("no-js");
 
-// Get everything ready before displaying it
-window.addEventListener("load", function() {hideObj.style.animationName = "hide-all";}, true);
+let lmHideAllTimeout;
+window.addEventListener("DOMContentLoaded", function() {
+    // Wait 1 second before displaying hide-all to avoid flashing
+    lmHideAllTimeout = setTimeout(function() {
+        hideObj.style.display = "flex";
+        clearTimeout(lmHideAllTimeout);
+    }, 1000);
+}, true);
+
+window.addEventListener("load", function() {
+    // If page loading took less than 1 sec, avoid displaying hide-all
+    let loadTime = window.performance.timing.domContentLoadedEventEnd- window.performance.timing.navigationStart;
+    if (loadTime <= 1000) {
+        clearTimeout(lmHideAllTimeout);
+    } else {
+        hideObj.style.animationName = "reveal-all";
+    }
+}, true);
 
 // Set theme from cookies
 let lmCheckedThemeSwitch = false;
@@ -20,6 +36,8 @@ function lmSetTheme() {
                 lmCheckedThemeSwitch = true;
             }
         }
+    } else if (document.documentElement.getAttribute("data-theme") == '2') {
+        lmCheckedThemeSwitch = true;
     }
 }
 

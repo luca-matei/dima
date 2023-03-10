@@ -129,8 +129,8 @@ html:
         title:
             text: "%TITLE%"
     body:
-        div:
-            id: "hide-all"
+        lm_:
+            text: "%HIDE_ALL%"
         div:
             id: "page-scroll"
             div:

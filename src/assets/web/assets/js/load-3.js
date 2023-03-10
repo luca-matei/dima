@@ -19,6 +19,7 @@ class lmUtils {
   }
   */
 
+  // Activate navbar links
   setActive() {
     let [section, resource] = document.URL.substr(document.baseURI.length).split('/');
     let navs = Array.from(document.querySelectorAll('#app-header, #compaside'));
@@ -55,10 +56,11 @@ let utils = new lmUtils();
 
 // TOP BUTTON
 
-class lmTopBtn {
+const topBtn = class lmTopBtn {
   constructor() {
     this.scroll = $('#page-scroll');
     this.btn = $('#top-btn');
+    console.log(this.scroll, this.btn)
     this.check();
   }
 
@@ -67,9 +69,6 @@ class lmTopBtn {
   }
 
 }
-
-let topBtn = new lmTopBtn();
-
 
 // COOKIES
 
@@ -144,9 +143,9 @@ class lmAnim {
         this.scrollObj = $('#page-scroll');
         this.buffer = 0.25 * window.innerHeight;
 
-        console.log(this.sensorObj);
-        console.log(this.scrollObj);
-        console.log(this.buffer);
+        //console.log(this.sensorObj);
+        //console.log(this.scrollObj);
+        //console.log(this.buffer);
 
         this.cptObjs = document.querySelectorAll('.cpt');
         window.addEventListener('load', this.check, true);
@@ -170,7 +169,7 @@ class lmAnim {
     }
 }
 
-let anim = new lmAnim();
+//let anim = new lmAnim();
 
 
 // FORMS

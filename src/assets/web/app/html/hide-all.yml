@@ -1,0 +1,9 @@
+div:
+    id: "hide-all"
+    h2:
+        class: "lmpe-xs"
+        text:
+            en: "Loading"
+            ro: "Se încarcă"
+    span:
+        class: "lmforms-spinner"
