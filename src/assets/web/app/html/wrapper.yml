@@ -145,7 +145,7 @@ html:
         lm_:
             text: "%TOP_BUTTON%"
         button:
-            id: "lmid-message-box"
+            id: "message-box"
         lm_:
             text: "%COOKIES_NOTICE%"
         div:

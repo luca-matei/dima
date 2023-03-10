@@ -75,11 +75,13 @@ class lmCookies {
     }
 
     setCookie(key, value) {
-        console.log(key, value);
-        document.cookie = `${key}=${value};Path=/;SameSite=Strict;Secure;${document.cookie}`;
-        if (key == '__Host-Consent') {
-            this.setCookie('__Host-Theme', $('html').getAttribute('data-theme'));
-            this.hideNotice();
+        // If the new cookie is for consent or if the user has consented to the cookies module
+        if (key == '__Host-Consent' || this.getCookie('__Host-Consent')) {
+            document.cookie = `${key}=${value};Path=/;SameSite=Strict;Secure;${document.cookie}`;
+            if (key == '__Host-Consent') {
+                this.setCookie('__Host-Theme', $('html').getAttribute('data-theme'));
+                this.hideNotice();
+            }
         }
     }
 
@@ -98,7 +100,6 @@ class lmSettings {
     toggleTheme() {
         let theme = $('html').getAttribute('data-theme') || 1;
         let newTheme = theme == 2 ? 1 : 2;
-        console.log(newTheme);
 
         cookies.setCookie('__Host-Theme', newTheme);
         $('html').setAttribute('data-theme', newTheme);
@@ -163,7 +164,7 @@ let forms = new lmForms();
 
 
 $("#page-scroll").addEventListener("scroll", lmTopBtnCheck);
-$("#lmid-message-box").addEventListener("click", utils.hideMessage);
+$("#message-box").addEventListener("click", utils.hideMessage);
 $("#lmid-policy-accept").addEventListener(
     "click", function() {cookies.setCookie('__Host-Consent', 1)});
 $("#lmid-toggle-theme").addEventListener("click", settings.toggleTheme);

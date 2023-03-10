@@ -362,8 +362,9 @@ section {
     bottom: 60px;
     left: 60px;
     padding: 14px 16px;
-    background-color: var(--p-2);
-    color: var(--tp-1);
+    background-color: var(--bg-3);
+    outline: none;
+    border: none;
     border-left-width: 6px;
     border-left-style: solid;
     border-radius: 0 $bd-r $bd-r 0;
