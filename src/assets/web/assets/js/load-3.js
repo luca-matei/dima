@@ -55,59 +55,57 @@ lmTopBtnCheck();
 
 
 class lmCookies {
-  constructor() {
-    if (!this.getCookie('__Host-Consent')) {
-      this.showNotice();
+    constructor() {
+        if (!this.getCookie('__Host-Consent')) {
+            this.showNotice();
+        }
     }
-  }
 
-  showNotice() {
-    $('#cookies-notice').style.display = 'block';
-  }
-
-  hideNotice() {
-    $('#cookies-notice').style.display = 'none';
-  }
-
-  getCookie() {
-    return Object.fromEntries(document.cookie.split(';').map(cookie => cookie.split('=')));
-  }
-
-  setCookie(key, value) {
-    if (key == '__Host-Consent' || this.getCookie[key]) {
-      document.cookie = `${key}=${value};Path=/;SameSite=Strict;Secure;${document.cookie}`;
-      if (key == '__Host-Consent') {
-        this.setCookie('__Host-Theme', $('html').getAttribute('data-theme'));
-        this.hideNotice();
-      }
+    showNotice() {
+        $('#cookies-notice').style.display = 'block';
     }
-  }
 
-  withdraw() {
+    hideNotice() {
+        $('#cookies-notice').style.display = 'none';
+    }
 
-    this.showNotice();
+    getCookie(key) {
+        let cks = Object.fromEntries(document.cookie.split(';').map(cookie => cookie.split('=')));
+        return cks[key]
+    }
 
-    Object.entries(this.getCookie()).forEach(([key, value]) => {
-      document.cookie = `${key}=${value};max-age=0;path=/;SameSite=Strict;Secure;${document.cookie}`;
-    });
+    setCookie(key, value) {
+        console.log(key, value);
+        document.cookie = `${key}=${value};Path=/;SameSite=Strict;Secure;${document.cookie}`;
+        if (key == '__Host-Consent') {
+            this.setCookie('__Host-Theme', $('html').getAttribute('data-theme'));
+            this.hideNotice();
+        }
+    }
 
-  }
+    withdraw() {
+        this.showNotice();
+        Object.entries(this.getCookie()).forEach(([key, value]) => {
+            document.cookie = `${key}=${value};max-age=0;path=/;SameSite=Strict;Secure;${document.cookie}`;
+        });
+    }
 
 }
 let cookies = new lmCookies();
 
 
 class lmSettings {
-  toggleTheme() {
-    let theme = $('html').getAttribute('data-theme') || 1;
-    let newTheme = theme == 2 ? 1 : 2;
+    toggleTheme() {
+        let theme = $('html').getAttribute('data-theme') || 1;
+        let newTheme = theme == 2 ? 1 : 2;
+        console.log(newTheme);
 
-    cookies.setCookie('__Host-Theme', newTheme);
-    $('html').setAttribute('data-theme', newTheme);
+        cookies.setCookie('__Host-Theme', newTheme);
+        $('html').setAttribute('data-theme', newTheme);
 
-    if (newTheme == 2) $('#lmtheme').setAttribute('checked', '');
-    else $('#lmtheme').removeAttribute('checked');
-  }
+        if (newTheme == 2) $('#lmtheme').setAttribute('checked', '');
+        else $('#lmtheme').removeAttribute('checked');
+    }
 
 }
 let settings = new lmSettings();

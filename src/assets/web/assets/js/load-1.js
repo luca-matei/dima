@@ -35,9 +35,11 @@ function lmSetTheme() {
         cookies = cookies.split(';');
         for (let i=0; i<cookies.length; i++) {
             cookie = cookies[i].split('=');
-            if (cookie[0].trim() == '__Host-Theme' && cookie[1] == '2') {
-                document.documentElement.setAttribute("data-theme", '2');
-                lmCheckedThemeSwitch = true;
+            if (cookie[0].trim() == '__Host-Theme') {
+                document.documentElement.setAttribute("data-theme", cookie[1]);
+                if (cookie[1] == '2') {
+                    lmCheckedThemeSwitch = true;
+                }
             }
         }
     } else if (document.documentElement.getAttribute("data-theme") == '2') {
