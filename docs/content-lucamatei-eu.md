@@ -82,52 +82,44 @@ Although I love working independently, I genuinely believe that relationships an
 ### lucamatei.org
 - visit website
 
-## Let's work together
-- Content on home
 
 ----
 
 # Projects
 ## Dima
-- manages networks, hosts, projects like pieces of software, apps and websites. (copy this for Selected Work)
-- self-made CMS, backend and frontend frameworks, deployment and monitoring
+- Dima is a remarkable tool that I developed for automating work-related tasks when creating and managing software like programs and scripts, apps, and web applications. Its comprehensive functionality includes the management of DHCP, DNS, Web, and Mail servers. Dima allows developers to manage the entire digital infrastructure, visuals, and deployment of websites using self-made CMS, backend, and front-end frameworks, along with tools for deployment and monitoring.
 - [Case study](https://thomasbosc.com/bim-case-study)
-- see case study, visit website
+- visit website
 
 ## lucamatei.org
-- digital education like courses, tips and other resources from people who want to make the world a better place
+- lucamatei.org is a digital platform I created to offer free educational resources for people who are interested in IT and science but may not have the financial means to access them. The website includes a variety of resources such as courses, tips, tutorials, and more, all aimed at providing a comprehensive education for those eager to learn.
+- The goal of lucamatei.org is to help those who want to make the world a better place through their work in technology and science. I believe that everyone should have access to high-quality education, regardless of their financial situation. By providing these resources, I hope to level the playing field and help bridge the gap for those who are motivated to learn but may not have the resources to do so.
+- As a developer and educator, I understand the value of accessible education and its potential to create positive change in the world. I am proud to have created a platform that can offer support and resources to individuals who share my vision. Through lucamatei.org, I hope to inspire and empower learners to pursue their passions and make a difference in the world.
 - visit website
 
 ## lucamatei.xyz
--
+- lucamatei.xyz is a digital project I developed that includes a range of open source software created with Python and JavaScript. The project features a collection of tools such as converters, calculators, and simple games. Additionally, there are bots specifically designed for Discord and Reddit that allow users to streamline their social media experience. Users have the freedom to customize the software according to their needs.
+- visit website
 
 ## Two column cards
 
 ### Blog
-- a place where I share my thoughts about topics like tech, education, etc
+- I have a blog where I write about technology, education, world news, and other topics that interest me. It's a place where I can share my thoughts and engage with readers through comments and discussions. I hope that my blog provides a useful resource for people who want to learn and stay informed on various subjects.
 - visit website
 
 ### Gallery
-- pictures I took on trips
+- I have a web gallery where I share my personal collection of nature and travel photographs. It's a way for me to showcase the beauty of the places I've visited and to share my passion for photography with others. I hope that my web gallery inspires people to appreciate the natural world and to explore new destinations through their own travels.
 - visit website
 
-## Digital Marmot
-- my tech startup
-- Coming Soon
+## Upcoming Projects
 
-## Showcase
-- samples of work througout the years
-- JavaScript, Python, and more ...
-- I'm currently working on ...
-
+### Digital Marmot
 ### Demos
 ### QR Library
 ### Virtual Gradebook
 ### Shop
 ### Library
 
-## Let's work together
-- Content on home
 
 ----
 

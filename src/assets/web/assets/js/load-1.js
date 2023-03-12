@@ -4,11 +4,11 @@ const $ = query => document.querySelector(query);
 document.documentElement.classList.add("js");
 document.documentElement.classList.remove("no-js");
 
-let lmHideAllTimeout;
+let lmHideAllTimeout, lmHideObj;
 window.addEventListener("DOMContentLoaded", function() {
     // Wait 1 second before displaying hide-all to avoid flashing
     lmHideAllTimeout = setTimeout(function() {
-        hideObj.style.display = "flex";
+        lmHideObj.style.display = "flex";
         clearTimeout(lmHideAllTimeout);
     }, 1000);
 
@@ -22,7 +22,7 @@ window.addEventListener("load", function() {
     if (loadTime <= 1000) {
         clearTimeout(lmHideAllTimeout);
     } else {
-        hideObj.style.animationName = "reveal-all";
+        lmHideObj.style.animationName = "reveal-all";
     }
 }, true);
 

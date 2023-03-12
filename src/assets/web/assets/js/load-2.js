@@ -1,6 +1,6 @@
 function lmRevealAll() {
-    hideObj = document.getElementById("hide-all");
-    hideObj.addEventListener("animationend", function() {hideObj.remove();}, true);
+    lmHideObj = document.getElementById("hide-all");
+    lmHideObj.addEventListener("animationend", function() {lmHideObj.remove();}, true);
     if (lmCheckedThemeSwitch) {document.getElementById("lmtheme").setAttribute("checked", "");}
 }
 

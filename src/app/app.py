@@ -2697,7 +2697,6 @@ class Web(Project):
                         #title += " | " + self.domain
 
                     description = meta["description"].get(lang, meta["description"][self.default_lang])
-                    print(section_dir)
                     og_url = ""
                     og_image = ""
                     alt = ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in self.langs if l != lang])
