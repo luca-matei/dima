@@ -1,0 +1,5 @@
+
+div:
+    class: "lmbox lmpy-md"
+    lm_:
+        text: "%CONTENT%"

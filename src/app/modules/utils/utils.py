@@ -265,8 +265,13 @@ class Utils:
     def get_files(self, path, host=None):
         # WARNING: using * will split by " ", otherwise by "\n"
         files = cmd(f"ls {path}", catch=True, host=host)
-        if "No such file or directory" in files: files = []
-        else: files = files.split(" ")
+        if "No such file or directory" in files:
+            files = []
+        elif "\n" in files:
+            files = files.split("\n")
+        else:
+            files = files.split(" ")
+        print(files)
         return [f.split('/')[-1] for f in files]
 
     def join_modules(self, modules, module_path, file_path, module_host=None, file_host=None):

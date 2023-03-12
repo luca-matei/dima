@@ -1,0 +1,23 @@
+title:
+    en: "Error 404"
+    ro: "Eroare 404"
+description:
+    en: "Default description"
+keywords:
+    en: ""
+has_wrapper: True
+module: static
+
+----
+
+lm_:
+    text:
+        en: |
+            # Error 404
+
+            We couldn't find the page!
+
+        ro: |
+            # Eroare 404
+
+            Nu am putut găsi pagina!

@@ -1,0 +1,15 @@
+title:
+    en: "Status"
+description:
+    en: "Default description"
+keywords:
+    en: ""
+has_wrapper: True
+module: static
+
+----
+
+lm_:
+    text:
+        en: |
+            # Status Page

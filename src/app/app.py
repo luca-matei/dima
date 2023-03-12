@@ -265,8 +265,13 @@ class Utils:
     def get_files(self, path, host=None):
         # WARNING: using * will split by " ", otherwise by "\n"
         files = cmd(f"ls {path}", catch=True, host=host)
-        if "No such file or directory" in files: files = []
-        else: files = files.split(" ")
+        if "No such file or directory" in files:
+            files = []
+        elif "\n" in files:
+            files = files.split("\n")
+        else:
+            files = files.split(" ")
+        print(files)
         return [f.split('/')[-1] for f in files]
 
     def join_modules(self, modules, module_path, file_path, module_host=None, file_host=None):
@@ -2605,10 +2610,8 @@ class Web(Project):
         modules = dict(self.db.execute(query, params))
         modules.update(utils.reverse_dict(modules))
 
-        app_wrapper = "<!doctype html>" + self.yml2html("wrapper.yml", self.default_lang)
-        top_button = self.yml2html("top-button.yml", self.default_lang)
-
-        var_files = utils.get_files(self.html_dir + "vars/*.yml", host=self.dev_host)
+        global_html = {}  # Header, Hide-All, Footer etc.
+        var_files = utils.get_files(self.html_dir + "_vars/*.yml", host=self.dev_host)
 
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
         for lang in self.langs:
@@ -2617,12 +2620,14 @@ class Web(Project):
                 self.html_vars[lang] = {}
 
             for var_file in var_files:
-                self.html_vars[lang][var_file[:-4]] = self.yml2html("vars/" + var_file, lang)
+                self.html_vars[lang][var_file[:-4]] = self.yml2html("_vars/" + var_file, lang)
 
+            # Save logged user dropdown
             user_drop_html = self.yml2html("user-drop.yml", lang)
             params = "user-drop", langs[lang], user_drop_html
             self.db.execute(query, params)
 
+            # Choose language selector
             if len(self.langs) == 1:
                 lang_selector = ""
 
@@ -2639,19 +2644,19 @@ class Web(Project):
                     "to_lang": to_lang,
                     "other_lang": other_lang.upper(),
                     })
-
             else:
                 lang_selector = self.yml2html("lang-drop.yml", lang)
 
+            # Choose theme selector
             if len(self.themes) == 1:
                 theme_selector = ""
 
             elif len(self.themes) == 2:
                 theme_selector = self.yml2html("theme-switch.yml", lang)
-
             else:
                 theme_selector = self.yml2html("theme-drop.yml", lang)
 
+            # Save language and theme selectors
             guest_drop_html = self.yml2html("guest-drop.yml", lang)
             params = "guest-drop", langs[lang], utils.format_tpl(guest_drop_html, {
                 "lang_selector": lang_selector,
@@ -2659,12 +2664,22 @@ class Web(Project):
                 })
             self.db.execute(query, params)
 
+            # Save global html
+            if not global_html.get(lang):
+                global_html[lang] = {}
+
+            for h in ("app-wrapper", "app-header", "app-footer", "cookies-notice", "hide-all", "top-button"):
+                global_html[lang][h] = self.yml2html(h + ".yml", lang)
+
+            global_html[lang]["app-wrapper"] = "<!doctype html>" + global_html[lang]["app-wrapper"]
+
         def solve_section(section_dir, section_name, parent_id):
             query = "insert into sections (name, parent) values (%s, %s) returning id;"
             params = section_name, parent_id
             section_id = self.db.execute(query, params)[0][0]
 
             pages = utils.get_files(section_dir + "*.yml", host=self.dev_host)
+            #print(pages)
             for page in pages:
                 filename = page.split(".")[0].split("-")
                 name, method = filename[:2]
@@ -2686,12 +2701,13 @@ class Web(Project):
                 meta = dict(meta)
                 for lang in self.langs:
                     body = self.yml2html(yml, lang)
-                    app_header = self.yml2html("app-header.yml", lang)
-                    app_footer = self.yml2html("app-footer.yml", lang)
-                    cookies_notice = self.yml2html("cookies-notice.yml", lang)
-                    hide_all = self.yml2html("hide-all.yml", lang)
-
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
+                    if meta["wrapper"]:
+                        print("WRAPPER")
+                        lm_wrapper = self.yml2html(f"{meta['wrapper']}-{method}.yml", lang)
+                        print(lm_wrapper)
+                        body = lm_wrapper.replace("%CONTENT%", body)
+
                     # FORMAT TITLE
                     #if self.has_domain_in_title:
                         #title += " | " + self.domain
@@ -2701,7 +2717,7 @@ class Web(Project):
                     og_image = ""
                     alt = ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in self.langs if l != lang])
 
-                    html = utils.format_tpl(app_wrapper, {
+                    html = utils.format_tpl(global_html[lang]["app-wrapper"], {
                         "lang": lang,
                         "default_theme": str(self.default_theme_id),
                         "alt": alt,
@@ -2710,16 +2726,16 @@ class Web(Project):
                         "description": description,
                         "og_url": og_url,
                         "og_image": og_image,
-                        "hide_all": hide_all,
-                        "app_header": app_header,
+                        "hide_all": global_html[lang]["hide-all"],
+                        "app_header": global_html[lang]["app-header"],
                         "domain": self.domain,
                         "aside": "",
                         "body": body,
-                        "app_footer": app_footer,
+                        "app_footer": global_html[lang]["app-footer"],
                         "copyright_year": datetime.now().year,
                         "copyright_name": '.'.join(self.domain.split(".")[-2:]),
-                        "top_button": top_button,
-                        "cookies_notice": cookies_notice,
+                        "top_button": global_html[lang]["top-button"],
+                        "cookies_notice": global_html[lang]["cookies-notice"],
                         })
 
                     html_vars = re.findall("%VAR-([^%]*)%", html)
@@ -2734,7 +2750,7 @@ class Web(Project):
                 solve_section(section_dir + section + '/', section, section_id)
 
         section_dirs = utils.get_dirs(self.html_dir, self.dev_host)
-        section_dirs.remove("vars")
+        section_dirs.remove("_vars")
 
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
