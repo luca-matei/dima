@@ -1,6 +1,6 @@
 title:
-    en: "Error 404"
-    ro: "Eroare 404"
+    en: "Error 403"
+    ro: "Eroare 403"
 description:
     en: "Default description"
 keywords:
@@ -13,11 +13,11 @@ module: "static"
 lm_:
     text:
         en: |
-            # Error 404
+            # Error 403
 
-            We couldn't find the page!
+            You don't have access here!
 
         ro: |
-            # Eroare 404
+            # Eroare 403
 
-            Nu am putut găsi pagina!
+            Nu ai acces aici!

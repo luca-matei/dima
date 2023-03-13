@@ -458,6 +458,7 @@ class Web(Project):
             "ssl_dir": ssl_dir,
             "hal_ssl_dir": utils.ssl_dir,
             "ocsp": "off", # Check environment, 'on' for production
+            "projects_dir": utils.projects_dir,
             "res_dir": utils.res_dir,
             "repo_dir": self.repo_dir,
             "port": self.port,

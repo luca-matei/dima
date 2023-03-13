@@ -1562,41 +1562,10 @@ class HostServices:
         self.manage_service("restart", "nftables")
 
     # Nginx
-    def config_default_server(self):
-        log(f"Configuring Nginx for the default server on '{self.name}' ...", console=True)
-        nginx_config = utils.format_tpl("web/app/default_server.tpl", {
-            "projects_dir": hal.projects_dir,
-            })
-
-        utils.write(f"/etc/nginx/sites-enabled/default", nginx_config, host=host)
-        self.restart_nginx()
-
-    def update_default_server(self):
-        log(f"Updating files for the default server on '{self.name}' ...", console=True)
-        root_dir = hal.assets_dir + "web/default_server/"
-        wrapper = yml2html(root_dir + "wrapper.yml", "en", "en")
-
-        default_dir = hal.projects_dir + "default_server/"
-        log(f"Removing '{default_dir}'!", level=3, console=True)
-        cmd(f"rm -r {default_dir}", host=self.name)
-
-        dir_tree = (
-            "status/",
-            )
-
-        utils.create_dir_tree(dir_tree, root=default_dir, host=self.name)
-
-        for status_path in utils.get_files(root_dir + "status/*.yml"):
-            status_name = status_path.split['/'][-1][:-4]  # Take last part of the path and remove extension
-            html = utils.format_tpl(wrapper, {
-                "title": status_name,
-                "body": yml2html(status_path, "en", "en"),
-                })
-            utils.write(html, f"{default_dir}status/{status_name}.html", host=self.name)
-
     def config_nginx(self):
         log(f"Configuring Nginx for '{self.name}' ...")
         self.send_file(hal.tpls_dir + "web/nginx.tpl", "/etc/nginx/nginx.conf")
+        cmd("sudo rm /etc/nginx/sites-enabled/default", host=self.name)
         self.manage_service("restart", "nginx")
 
     def reload_nginx(self):
@@ -2912,6 +2881,7 @@ class Web(Project):
             "ssl_dir": ssl_dir,
             "hal_ssl_dir": utils.ssl_dir,
             "ocsp": "off", # Check environment, 'on' for production
+            "projects_dir": utils.projects_dir,
             "res_dir": utils.res_dir,
             "repo_dir": self.repo_dir,
             "port": self.port,

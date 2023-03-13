@@ -1,6 +1,6 @@
 title:
-    en: "Error 404"
-    ro: "Eroare 404"
+    en: "Error 500"
+    ro: "Eroare 500"
 description:
     en: "Default description"
 keywords:
@@ -13,11 +13,11 @@ module: "static"
 lm_:
     text:
         en: |
-            # Error 404
+            # Error 500
 
-            We couldn't find the page!
+            Internal issues!
 
         ro: |
-            # Eroare 404
+            # Eroare 500
 
-            Nu am putut găsi pagina!
+            Probleme interioare!

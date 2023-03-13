@@ -32,6 +32,13 @@ http {
     include /etc/nginx/conf.d/*.conf;
     include /etc/nginx/sites-enabled/*;
 
+    server {
+        listen 80 default_server;
+        server_name _;
+
+        return 444;
+    }
+
     client_body_buffer_size 1K;
     client_header_buffer_size 1k;
     client_max_body_size 1k;

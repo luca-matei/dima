@@ -35,6 +35,14 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header X-Xss-Protection "1; mode=block" always;
 
+    error_page 403                /http/403;
+    error_page 404                /http/404;
+    error_page 500 502 503 504    /http/50x;
+
+    location /http/ {
+        internal;
+    }
+
     if ($request_method !~ ^(GET|HEAD|POST)$ ) {
         return 405;
     }
