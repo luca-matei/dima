@@ -51,8 +51,7 @@ class Hal:
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
-        self.db.erase()
-        self.db.build()
+        #self.db.rebuild()
 
         self.load_database()
 

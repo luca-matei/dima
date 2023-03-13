@@ -278,7 +278,9 @@ class Utils:
         self.write(file_path, "\n\n".join(mammoth), host=file_host)
 
     def create_dir_tree(self, dir_tree, root="", host=None):
-        if root: cmd(f"mkdir {root}", host=host)
+        if root and not self.isfile(root, host=host):
+            cmd(f"mkdir {root}", host=host)
+            
         for node in dir_tree:
             if root: node = root + node
 

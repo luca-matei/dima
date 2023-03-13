@@ -28,6 +28,13 @@ class Db:
 
         log(self.lmid + " database connected.")
 
+    def rebuild(self):
+        self.erase()
+        self.build()
+
+    def format_table(self, table):
+        self.execute(f"truncate {table};")
+
     def erase(self):
         log(f"Erasing '{self.lmid}' database ...", level=3, console=True)
 

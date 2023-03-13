@@ -24,10 +24,10 @@
 ("pages", (
     "id serial primary key",
     "name varchar",
-    "module int references modules (id)",
-    "section int references sections (id)",
-    "method int references methods (id)",
-    "lang int references langs (id)",
+    "module int",
+    "section int",
+    "method int",
+    "lang int",
     "first boolean default false",
     "html varchar",
     )),
@@ -35,7 +35,7 @@
 ("fractions", (
     "id serial primary key",
     "name varchar",
-    "lang int references langs (id)",
+    "lang int",
     "html varchar",
     )),
 

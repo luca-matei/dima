@@ -57,14 +57,7 @@ class Web(Project):
             "README.md",
             )
 
-        for node in dir_tree:
-            node = self.repo_dir + node
-            if not utils.isfile(node, host=self.dev_host):
-                if node.endswith('/'):
-                    cmd(f"mkdir " + node, host=self.dev_host)
-                else:
-                    cmd(f"touch " + node, host=self.dev_host)
-
+        utils.create_dir_tree(dir_tree, root=self.repo_dir, host=self.dev_host)
         self.create_db()
         self.generate_ssl()
         self.default(yes=True)
@@ -97,6 +90,19 @@ class Web(Project):
             }
 
         utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
+        self.default_db(yes=True)
+        self.update_py()
+        self.default_html(yes=True, hello=True)
+        self.config()
+        self.update_css()
+        self.default_js(True)
+
+    def default_db(self, yes:'bool'=False):
+        if not yes:
+            yes = utils.yes_no(f"Are you sure you want to format '{self.name}' database?")
+            if not yes:
+                log("Aborted.", console=True)
+                return
 
         host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
         remote_struct_file = self.app_dir + "db/struct.ast"
@@ -110,11 +116,19 @@ class Web(Project):
             hal.pools.get(self.dev_host_id).send_file(host_struct_file, remote_struct_file)
             hal.pools.get(self.dev_host_id).send_file(host_default_file, remote_default_file)
 
-        self.update_py()
-        self.default_html(yes=True, hello=True)
-        self.config()
-        self.update_css()
-        self.default_js(True)
+        self.db.rebuild()
+
+        query = f"insert into methods (name) values {', '.join(['(%s)' for m in utils.webs.methods])};"
+        params = utils.webs.methods
+        self.db.execute(query, params)
+
+        query = f"insert into langs (code) values {', '.join(['(%s)' for l in self.langs])};"
+        params = self.langs
+        self.db.execute(query, params)
+
+        query = f"insert into modules (name) values {', '.join(['(%s)' for m in self.modules])};"
+        params = self.modules
+        self.db.execute(query, params)
 
     def default_html(self, yes:'bool'=False, hello:'bool'=False):
         """
@@ -171,29 +185,29 @@ class Web(Project):
         if yml.endswith(".yml"): yml = self.html_dir + yml
         return utils.yml2html(yml, lang, self.default_lang, self.html_vars, self.dev_host)
 
-    def update_html(self):
+    def update_html(self, section:'str'= ""):
         """
             Command only for dev environment.
         """
         log(f"Updating html for '{self.name}' ...", console=True)
 
-        self.db.erase()
-        self.db.build()
-
-        query = f"insert into methods (name) values {', '.join(['(%s)' for m in utils.webs.methods])} returning id, name;"
-        params = utils.webs.methods
-        methods = dict(self.db.execute(query, params))
+        # Get methods, langs and modules
+        query = "select id, name from methods;"
+        methods = dict(self.db.execute(query))
         methods.update(utils.reverse_dict(methods))
 
-        query = f"insert into langs (code) values {', '.join(['(%s)' for l in self.langs])} returning id, code;"
-        params = self.langs
-        langs = dict(self.db.execute(query, params))
+        query = "select id, code from langs;"
+        langs = dict(self.db.execute(query))
         langs.update(utils.reverse_dict(langs))
 
-        query = f"insert into modules (name) values {', '.join(['(%s)' for m in self.modules])} returning id, name;"
-        params = self.modules
-        modules = dict(self.db.execute(query, params))
+        query = "select id, name from modules;"
+        modules = dict(self.db.execute(query))
         modules.update(utils.reverse_dict(modules))
+
+        # Erase current html
+        self.db.format_table("sections")
+        self.db.format_table("pages")
+        self.db.format_table("fractions")
 
         global_html = {}  # Header, Hide-All, Footer etc.
         var_files = utils.get_files(self.html_dir + "_vars/*.yml", host=self.dev_host)
