@@ -50,6 +50,9 @@ class lmApp:
             self.sections[parent][s[0]] = s[1]    # id = name
             self.sections[parent][s[1]] = s[0]    # name = id
 
+        # Home
+        self.sections[0][''] = self.sections[0]["home"]
+
         for p in self.db.execute("select section, name, lang, method, id, module, first from pages;"):
             parent = p[0]
             name = p[1]

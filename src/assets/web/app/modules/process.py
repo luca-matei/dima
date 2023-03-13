@@ -53,16 +53,19 @@ class lmProcess:
             endpoint.pop(0)
             find_end_section(section_id)
         else:
-            section_id = lm.sections[0]["home"]
-            section = "home"
+            section_id = lm.sections[0]["http"]
+            section = "http"
 
         page = endpoint[0]
         page_data = lm.pages[section_id].get(page, 0)
         # Check for illegal page
         if page_data:
             endpoint.pop(0)
-        else:
+        elif page == "":
             page = lm.first_pages[section_id]
+            page_data = lm.pages[section_id][page]
+        else:
+            page = "404"
             page_data = lm.pages[section_id][page]
 
         # Check for illegal method
