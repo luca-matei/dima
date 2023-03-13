@@ -499,7 +499,7 @@ class Hal:
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
-        self.db.rebuild()
+        #self.db.rebuild()
 
         self.load_database()
 
@@ -2437,10 +2437,20 @@ class Web(Project):
         params = dbid,
         self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = hal.db.execute(query, params)[0]
 
-        self.html_vars = {}
+        self.global_html = {}
         self.dev_domain = "dev." + self.domain
-        self.modules = [utils.webs.modules[m] for m in self.module_ids]
-        self.langs = [utils.projects.langs[l] for l in self.lang_ids]
+        self.modules = {}
+        for m_id in self.module_ids:
+            m_name = utils.webs.modules[m_id]
+            self.modules[m_id] = m_name
+            self.modules[m_name] = m_id
+
+        self.langs = {}
+        for l_id in self.lang_ids:
+            l_name = utils.projects.langs[l_id]
+            self.langs[l_id] = l_name
+            self.langs[l_name] = l_id
+
         self.themes = [utils.projects.themes[t] for t in self.theme_ids]
         self.default_lang = utils.projects.langs[self.default_lang_id]
         self.default_theme = utils.projects.themes[self.default_theme_id]
@@ -2466,6 +2476,7 @@ class Web(Project):
             self.build()
 
         self.db = Db(self.lmid, self.dbid, self.dev_host)
+        if self.lmid == "lm7": self.update_global_html()    # Fix for other projects
 
     def build(self):
         """
@@ -2553,12 +2564,14 @@ class Web(Project):
         params = utils.webs.methods
         self.db.execute(query, params)
 
-        query = f"insert into langs (code) values {', '.join(['(%s)' for l in self.langs])};"
-        params = self.langs
+        langs = [v for k, v in self.langs.items() if type(v)==str]
+        query = f"insert into langs (code) values {', '.join(['(%s)' for l in langs])};"
+        params = langs
         self.db.execute(query, params)
 
-        query = f"insert into modules (name) values {', '.join(['(%s)' for m in self.modules])};"
-        params = self.modules
+        modules = [v for k, v in self.modules.items() if type(v)==str]
+        query = f"insert into modules (name) values {', '.join(['(%s)' for m in modules])};"
+        params = modules
         self.db.execute(query, params)
 
     def default_html(self, yes:'bool'=False, hello:'bool'=False):
@@ -2614,59 +2627,36 @@ class Web(Project):
 
     def yml2html(self, yml, lang):
         if yml.endswith(".yml"): yml = self.html_dir + yml
-        return utils.yml2html(yml, lang, self.default_lang, self.html_vars, self.dev_host)
+        return utils.yml2html(yml, lang, self.default_lang, self.global_html, self.dev_host)
 
-    def update_html(self, section:'str'= ""):
-        """
-            Command only for dev environment.
-        """
-        log(f"Updating html for '{self.name}' ...", console=True)
-
-        # Get methods, langs and modules
-        query = "select id, name from methods;"
-        methods = dict(self.db.execute(query))
-        methods.update(utils.reverse_dict(methods))
-
-        query = "select id, code from langs;"
-        langs = dict(self.db.execute(query))
-        langs.update(utils.reverse_dict(langs))
-
-        query = "select id, name from modules;"
-        modules = dict(self.db.execute(query))
-        modules.update(utils.reverse_dict(modules))
-
-        # Erase current html
-        self.db.format_table("sections")
-        self.db.format_table("pages")
-        self.db.format_table("fractions")
-
-        global_html = {}  # Header, Hide-All, Footer etc.
-        var_files = utils.get_files(self.html_dir + "_vars/*.yml", host=self.dev_host)
-
+    def update_global_html(self):
+        var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
-        for lang in self.langs:
-            # Save html variables
-            if not self.html_vars.get(lang):
-                self.html_vars[lang] = {}
+
+        # Update global and variables html
+        langs = [v for k, v in self.langs.items() if type(v)==str]
+        for lang in langs:
+            if not self.global_html.get(lang):
+                self.global_html[lang] = {}
 
             for var_file in var_files:
-                self.html_vars[lang][var_file[:-4]] = self.yml2html("_vars/" + var_file, lang)
+                self.global_html[lang][var_file[:-4]] = self.yml2html("_fractions/" + var_file, lang)
 
             # Save logged user dropdown
             user_drop_html = self.yml2html("user-drop.yml", lang)
-            params = "user-drop", langs[lang], user_drop_html
+            params = "user-drop", self.langs[lang], user_drop_html
             self.db.execute(query, params)
 
             # Choose language selector
-            if len(self.langs) == 1:
+            if len(langs) == 1:
                 lang_selector = ""
 
-            elif len(self.langs) == 2:
-                if self.langs[0] == self.default_lang: other_lang = self.langs[1]
-                else: other_lang = self.langs[0]
+            elif len(langs) == 2:
+                if langs[0] == self.default_lang: other_lang = langs[1]
+                else: other_lang = langs[0]
 
-                if lang == self.langs[0]: to_lang = self.langs[1]
-                else: to_lang = self.langs[0]
+                if lang == langs[0]: to_lang = langs[1]
+                else: to_lang = langs[0]
 
                 lang_selector = self.yml2html("lang-switch.yml", lang)
                 lang_selector = utils.format_tpl(lang_selector, {
@@ -2688,21 +2678,34 @@ class Web(Project):
 
             # Save language and theme selectors
             guest_drop_html = self.yml2html("guest-drop.yml", lang)
-            params = "guest-drop", langs[lang], utils.format_tpl(guest_drop_html, {
+            params = "guest-drop", self.langs[lang], utils.format_tpl(guest_drop_html, {
                 "lang_selector": lang_selector,
                 "theme_selector": theme_selector,
                 })
             self.db.execute(query, params)
 
-            # Save global html
-            if not global_html.get(lang):
-                global_html[lang] = {}
-
             for h in ("app-wrapper", "app-header", "app-footer", "cookies-notice", "hide-all", "top-button"):
-                global_html[lang][h] = self.yml2html(h + ".yml", lang)
+                self.global_html[lang][h] = self.yml2html(h + ".yml", lang)
 
-            global_html[lang]["app-wrapper"] = "<!doctype html>" + global_html[lang]["app-wrapper"]
+            self.global_html[lang]["app-wrapper"] = "<!doctype html>" + self.global_html[lang]["app-wrapper"]
 
+    def update_html(self, section:'str'= "", global_html:'bool'=False):
+        """
+            Command only for dev environment.
+        """
+        log(f"Updating html for '{self.name}' ...", console=True)
+
+        method_ids = dict(self.db.execute("select name, id from methods;"))
+
+        # Erase current html
+        self.db.format_table("sections")
+        self.db.format_table("pages")
+
+        if global_html:
+            self.db.format_table("fractions")
+            self.update_global_html()
+
+        langs = [v for k, v in self.langs.items() if type(v)==str]
         def solve_section(section_dir, section_name, parent_id):
             query = "insert into sections (name, parent) values (%s, %s) returning id;"
             params = section_name, parent_id
@@ -2728,10 +2731,11 @@ class Web(Project):
                         meta.append(field)
 
                 meta = dict(meta)
-                for lang in self.langs:
+                for lang in langs:
                     body = self.yml2html(yml, lang)
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
                     if meta["wrapper"]:
+                        # Save wrappers under meta["wrapper"]
                         body = self.yml2html(f"{meta['wrapper']}-{method}.yml", lang).replace("%CONTENT%", body)
 
                     # FORMAT TITLE
@@ -2741,9 +2745,9 @@ class Web(Project):
                     description = meta["description"].get(lang, meta["description"][self.default_lang])
                     og_url = ""
                     og_image = ""
-                    alt = ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in self.langs if l != lang])
+                    alt = ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in langs if l != lang])
 
-                    html = utils.format_tpl(global_html[lang]["app-wrapper"], {
+                    html = utils.format_tpl(self.global_html[lang]["app-wrapper"], {
                         "lang": lang,
                         "default_theme": str(self.default_theme_id),
                         "alt": alt,
@@ -2752,36 +2756,36 @@ class Web(Project):
                         "description": description,
                         "og_url": og_url,
                         "og_image": og_image,
-                        "hide_all": global_html[lang]["hide-all"],
-                        "app_header": global_html[lang]["app-header"],
+                        "hide_all": self.global_html[lang]["hide-all"],
+                        "app_header": self.global_html[lang]["app-header"],
                         "domain": self.domain,
                         "aside": "",
                         "body": body,
-                        "app_footer": global_html[lang]["app-footer"],
+                        "app_footer": self.global_html[lang]["app-footer"],
                         "copyright_year": datetime.now().year,
                         "copyright_name": '.'.join(self.domain.split(".")[-2:]),
-                        "top_button": global_html[lang]["top-button"],
-                        "cookies_notice": global_html[lang]["cookies-notice"],
+                        "top_button": self.global_html[lang]["top-button"],
+                        "cookies_notice": self.global_html[lang]["cookies-notice"],
                         })
 
                     html_vars = re.findall("%VAR-([^%]*)%", html)
                     for v in html_vars:
-                        html = html.replace(f"%VAR-{v}%", self.html_vars[lang].get(v.lower(), "NONE"))
+                        html = html.replace(f"%VAR-{v}%", self.global_html[lang].get(v.lower(), "NONE"))
 
                     query = "insert into pages (name, module, section, method, lang, first, html) values (%s, %s, %s, %s, %s, %s, %s);"
-                    params = name, modules[meta["module"]], section_id, methods[method], langs[lang], first, html,
+                    params = name, self.modules[meta["module"]], section_id, method_ids[method], self.langs[lang], first, html,
                     self.db.execute(query, params)
 
             for section in utils.get_dirs(section_dir, self.dev_host):
                 solve_section(section_dir + section + '/', section, section_id)
 
         section_dirs = utils.get_dirs(self.html_dir, self.dev_host)
-        section_dirs.remove("_vars")
+        section_dirs.remove("_fractions")
 
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
 
-        self.html_vars = {}    # Clear memory
+        self.restart()
 
     def update_py(self):
         """
