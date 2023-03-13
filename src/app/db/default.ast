@@ -138,6 +138,7 @@
         ("Host", "", ("check", "mount", "unmount", "update", "reboot", "status", "reach", "setup",)),
         ("Host", "alias", ("set", "delete")),
         ("Host", "nginx", ("config", "reload", "start", "stop", "restart")),
+        ("Host", "default_server", ("config", "update")),
         ("Host", "postgres", ("config", "reload", "start", "stop", "restart")),
         ("Host", "supervisor", ("restart", "start", "stop")),
         ("Host", "firewall", ("config", "enable", "disable", "start", "stop", "restart")),
@@ -177,7 +178,7 @@
         ("Web", "html", ("update", "default",)),
         ("Web", "css", ("update",)),
         ("Web", "py", ("update",)),
-        ("Web", "js", ("default",)),
+        ("Web", "js", ("default", "update")),
 
         ("Soft", "", ("check", "save",)),
         ("Soft", "alias", ("set", "delete")),

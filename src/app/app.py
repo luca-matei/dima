@@ -271,12 +271,24 @@ class Utils:
             files = files.split("\n")
         else:
             files = files.split(" ")
-        print(files)
         return [f.split('/')[-1] for f in files]
 
     def join_modules(self, modules, module_path, file_path, module_host=None, file_host=None):
         mammoth = [self.read(module_path + m, host=module_host) for m in modules]
         self.write(file_path, "\n\n".join(mammoth), host=file_host)
+
+    def create_dir_tree(self, dir_tree, root="", host=None):
+        if root: cmd(f"mkdir {root}", host=host)
+        for node in dir_tree:
+            if root: node = root + node
+
+            # It's a directory
+            if node.endswith('/') and not self.isfile(node, host=host):
+                cmd(f"mkdir {node}", host=host)
+
+            # It's a file
+            elif not self.isfile(node, host=host):
+                cmd(f"touch {node}", host=host)
 
     def md2html(self, md):
         return markdown.markdown(md, extensions=["extra"])
@@ -1550,6 +1562,38 @@ class HostServices:
         self.manage_service("restart", "nftables")
 
     # Nginx
+    def config_default_server(self):
+        log(f"Configuring Nginx for the default server on '{self.name}' ...", console=True)
+        nginx_config = utils.format_tpl("web/app/default_server.tpl", {
+            "projects_dir": hal.projects_dir,
+            })
+
+        utils.write(f"/etc/nginx/sites-enabled/default", nginx_config, host=host)
+        self.restart_nginx()
+
+    def update_default_server(self):
+        log(f"Updating files for the default server on '{self.name}' ...", console=True)
+        root_dir = hal.assets_dir + "web/default_server/"
+        wrapper = yml2html(root_dir + "wrapper.yml", "en", "en")
+
+        default_dir = hal.projects_dir + "default_server/"
+        log(f"Removing '{default_dir}'!", level=3, console=True)
+        cmd(f"rm -r {default_dir}", host=self.name)
+
+        dir_tree = (
+            "status/",
+            )
+
+        utils.create_dir_tree(dir_tree, root=default_dir, host=self.name)
+
+        for status_path in utils.get_files(root_dir + "status/*.yml"):
+            status_name = status_path.split['/'][-1][:-4]  # Take last part of the path and remove extension
+            html = utils.format_tpl(wrapper, {
+                "title": status_name,
+                "body": yml2html(status_path, "en", "en"),
+                })
+            utils.write(html, f"{default_dir}status/{status_name}.html", host=self.name)
+
     def config_nginx(self):
         log(f"Configuring Nginx for '{self.name}' ...")
         self.send_file(hal.tpls_dir + "web/nginx.tpl", "/etc/nginx/nginx.conf")
@@ -2142,15 +2186,7 @@ class Host(lmObj, HostServices):
         if self.env == "dev":
             dir_tree.extend([utils.ssh_dir])
 
-        for node in dir_tree:
-            # It's a directory
-            if node.endswith('/') and not utils.isfile(node, host=self.lmid):
-                cmd(f"mkdir {node}", host=self.lmid)
-
-            # It's a file
-            elif not utils.isfile(node, host=self.lmid):
-                cmd(f"touch {node}", host=self.lmid)
-
+        utils.create_dir_tree(dir_tree)
         cmd(f"sudo chown www-data:www-data {utils.projects_dir}pids", host=self.lmid)
 
     def build_venv(self):
@@ -2582,6 +2618,9 @@ class Web(Project):
         # RENAME CLASSES
         hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/assets/js/", self.repo_dir + "src/assets/js/")
 
+    def update_js(self):
+        self.default_js(yes=True)
+
     def yml2html(self, yml, lang):
         if yml.endswith(".yml"): yml = self.html_dir + yml
         return utils.yml2html(yml, lang, self.default_lang, self.html_vars, self.dev_host)
@@ -2679,7 +2718,6 @@ class Web(Project):
             section_id = self.db.execute(query, params)[0][0]
 
             pages = utils.get_files(section_dir + "*.yml", host=self.dev_host)
-            #print(pages)
             for page in pages:
                 filename = page.split(".")[0].split("-")
                 name, method = filename[:2]
@@ -2703,10 +2741,7 @@ class Web(Project):
                     body = self.yml2html(yml, lang)
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
                     if meta["wrapper"]:
-                        print("WRAPPER")
-                        lm_wrapper = self.yml2html(f"{meta['wrapper']}-{method}.yml", lang)
-                        print(lm_wrapper)
-                        body = lm_wrapper.replace("%CONTENT%", body)
+                        body = self.yml2html(f"{meta['wrapper']}-{method}.yml", lang).replace("%CONTENT%", body)
 
                     # FORMAT TITLE
                     #if self.has_domain_in_title:
@@ -2858,6 +2893,7 @@ class Web(Project):
         log(f"Configuring Nginx for '{self.name}' ({env}) ...", console=True)
         host = getattr(self, env + "_host")
         host_id = getattr(self, env + "_host_id")
+
         if env == "dev":
             domain = self.dev_domain
             ssl_dir = self.dev_ssl_dir

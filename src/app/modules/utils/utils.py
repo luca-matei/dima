@@ -271,12 +271,24 @@ class Utils:
             files = files.split("\n")
         else:
             files = files.split(" ")
-        print(files)
         return [f.split('/')[-1] for f in files]
 
     def join_modules(self, modules, module_path, file_path, module_host=None, file_host=None):
         mammoth = [self.read(module_path + m, host=module_host) for m in modules]
         self.write(file_path, "\n\n".join(mammoth), host=file_host)
+
+    def create_dir_tree(self, dir_tree, root="", host=None):
+        if root: cmd(f"mkdir {root}", host=host)
+        for node in dir_tree:
+            if root: node = root + node
+
+            # It's a directory
+            if node.endswith('/') and not self.isfile(node, host=host):
+                cmd(f"mkdir {node}", host=host)
+
+            # It's a file
+            elif not self.isfile(node, host=host):
+                cmd(f"touch {node}", host=host)
 
     def md2html(self, md):
         return markdown.markdown(md, extensions=["extra"])

@@ -164,6 +164,9 @@ class Web(Project):
         # RENAME CLASSES
         hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/assets/js/", self.repo_dir + "src/assets/js/")
 
+    def update_js(self):
+        self.default_js(yes=True)
+
     def yml2html(self, yml, lang):
         if yml.endswith(".yml"): yml = self.html_dir + yml
         return utils.yml2html(yml, lang, self.default_lang, self.html_vars, self.dev_host)
@@ -436,6 +439,7 @@ class Web(Project):
         log(f"Configuring Nginx for '{self.name}' ({env}) ...", console=True)
         host = getattr(self, env + "_host")
         host_id = getattr(self, env + "_host_id")
+
         if env == "dev":
             domain = self.dev_domain
             ssl_dir = self.dev_ssl_dir
