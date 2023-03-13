@@ -1,20 +1,61 @@
 /* Columns */
 
-.lmc-1-33 {max-width: 400px;} // 33% of maximum width
-.lmc-1-50 {max-width: 600px;}
-.lmc-1-75 {max-width: 900px;}
+$col-sizes: (
+    1: 8.33333333%,
+    2: 16.66666667%,
+    3: 25%,
+    4: 33.33333333%,
+    5: 41.66666667%,
+    6: 50%,
+    7: 58.33333333%,
+    8: 66.66666667%,
+    9: 75%,
+    10: 83.33333333%,
+    11: 91.66666667%,
+    12: 100%
+);
 
-.lmc-2-28, .lmc-2-37, .lmc-2-46, .lmc-2-55, .lmc-2-82, .lmc-2-73, .lmc-2-64,
-.lmc-3 {
+.lmrow {
+    --lmg-x: 0;
+    --lmg-y: 0;
     display: flex;
-    flex-flow: column nowrap;
-    &.lmc-s-15 {--lmc-s-2: 15px;}
+    flex-flow: row wrap;
+
+    margin-left: calc(-0.5 * var(--lmg-x));
+    margin-right: calc(-0.5 * var(--lmg-x));
 }
 
-.lmc-3>div {
-    margin: 16px 0;
+.lmrow > * {
+    padding-left: calc(0.5 * var(--lmg-x));
+    padding-right: calc(0.5 * var(--lmg-x));
 }
 
+.lmcol {flex: 1 0 0%;}
+@each $id, $size in $col-sizes {
+    .lmcol-#{$id} {flex: 0 1 #{$size};}
+    @each $breakpoint in (sm, md, lg, xl, xxl) {
+        .lmcol-#{$breakpoint}-#{$id} {flex: 0 0 100%};
+    }
+}
+
+$gutter-sizes: (
+    1: 1rem,
+    2: 2rem,
+    3: 3rem,
+    4: 4rem,
+    5: 5rem
+);
+
+@each $axis in (x, y) {
+    @each $id, $size in $gutter-sizes {
+        .lmg#{$axis}-#{$id} {
+            --lmg-#{$axis}: #{$size};
+        }
+    }
+}
+
+
+/* Boxes */
 
 .lmbox {
     width: 100%;
@@ -31,12 +72,22 @@
 
 @include media(sm) {
     .lmbox, .lmbox-sm {width: 540px;}
+
+    .lmcol-sm {flex: 1 0 0%;}
+    @each $id, $size in $col-sizes {
+        .lmcol-sm-#{$id} {flex: 0 1 #{$size};}
+    }
 }
 
 @include media(md) {
     .lmbox {width: 720px;}
     @each $size in (sm, md) {
         .lmbox-#{$size} {width: 720px;}
+    }
+
+    .lmcol-md {flex: 1 0 0%;}
+    @each $id, $size in $col-sizes {
+        .lmcol-md-#{$id} {flex: 0 1 #{$size};}
     }
 }
 
@@ -45,6 +96,11 @@
     @each $size in (sm, md, lg) {
         .lmbox-#{$size} {width: 960px;}
     }
+
+    .lmcol-lg {flex: 1 0 0%;}
+    @each $id, $size in $col-sizes {
+        .lmcol-lg-#{$id} {flex: 0 1 #{$size};}
+    }
 }
 
 @include media(xl) {
@@ -52,11 +108,21 @@
     @each $size in (sm, md, lg, xl) {
         .lmbox-#{$size} {width: 1140px;}
     }
+
+    .lmcol-xl {flex: 1 0 0%;}
+    @each $id, $size in $col-sizes {
+        .lmcol-xl-#{$id} {flex: 0 1 #{$size};}
+    }
 }
 
 @include media(xxl) {
     .lmbox {width: 1320px;}
     @each $size in (sm, md, lg, xl, xxl) {
         .lmbox-#{$size} {width: 1300px;}
+    }
+
+    .lmcol-xxl {flex: 1 0 0%;}
+    @each $id, $size in $col-sizes {
+        .lmcol-xxl-#{$id} {flex: 0 1 #{$size};}
     }
 }

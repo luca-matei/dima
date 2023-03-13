@@ -53,9 +53,6 @@
 .lmtpl-drop-r {@include lmtpl-drop(r);}
 
 .lmtpl-ilust {
-    display: flex;
-    order: -1;
-
     &-round {
         @extend .lmtpl-ilust;
         img {
@@ -65,7 +62,6 @@
 
     img {
         width: 100%;
-        max-width: 500px;
         height: auto;
         margin-left: auto;
         margin-right: auto;

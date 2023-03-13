@@ -2701,6 +2701,9 @@ class Web(Project):
         self.db.format_table("sections")
         self.db.format_table("pages")
 
+        section_dirs = utils.get_dirs(self.html_dir, self.dev_host)
+        section_dirs.remove("_fractions")
+
         if global_html:
             self.db.format_table("fractions")
             self.update_global_html()
@@ -2778,9 +2781,6 @@ class Web(Project):
 
             for section in utils.get_dirs(section_dir, self.dev_host):
                 solve_section(section_dir + section + '/', section, section_id)
-
-        section_dirs = utils.get_dirs(self.html_dir, self.dev_host)
-        section_dirs.remove("_fractions")
 
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)

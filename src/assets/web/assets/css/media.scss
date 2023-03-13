@@ -1,81 +1,11 @@
 
 @include media(sm) {
-    .lmtpl-crsl-elems>div {width: calc(66.66% - 30px;)}
 }
 
 @include media(md) {
-    footer {justify-content: space-between;}
-
-    .lmtpl-ilust>img {width: 75%;}
-    .lmtpl-crsl-elems>div {width: calc(50% - 30px);}
 }
 
 @include media(lg) {
-    :root {--max-pad: 60px;}
-
-    /* Template */
-    section {
-        aside {
-            transform: translate(0, 0);
-
-            label[for=aside-collapse] {
-                display: none;
-            }
-
-            & ~ main {
-                padding-left: 310px; // aside width + main padding-left
-            }
-        }
-    }
-
-    /* Columns */
-
-    @each $cols in (28, 37, 46, 55, 82, 73, 64) {
-        .lmc-2-#{$cols} {
-            flex-flow: row wrap;
-            justify-content: space-between;
-
-            &>div {
-                display: flex;
-                flex-flow: column nowrap;
-            }
-        }
-    }
-
-    .lmc-3 {
-        flex-flow: row wrap;
-        justify-content: center;
-    }
-
-    .lmc-2-28>div:first-of-type, .lmc-2-82>div:last-of-type {flex: 0 1 calc(20% - var(--lmc-s-2));}
-    .lmc-2-28>div:last-of-type, .lmc-2-82>div:first-of-type {flex: 0 1 calc(80% - var(--lmc-s-2));}
-    .lmc-2-37>div:first-of-type, .lmc-2-73>div:last-of-type {flex: 0 1 calc(30% - var(--lmc-s-2));}
-    .lmc-2-37>div:last-of-type, .lmc-2-73>div:first-of-type {flex: 0 1 calc(70% - var(--lmc-s-2));}
-    .lmc-2-46>div:first-of-type, .lmc-2-64>div:last-of-type {flex: 0 1 calc(40% - var(--lmc-s-2));}
-    .lmc-2-46>div:last-of-type, .lmc-2-64>div:first-of-type {flex: 0 1 calc(60% - var(--lmc-s-2));}
-    .lmc-2-55>div {flex: 0 1 calc(50% - var(--lmc-s-2));}
-
-    .lmc-3>div {
-        flex: 0 0 calc(33.33% - 22px);
-        max-width: 400px;
-        margin: 16px;
-        &:first-of-type {margin: 16px 16px 16px 0;}
-        &:last-of-type {margin: 16px 0 16px 16px;}
-    }
-
-    /* Templates */
-
-    .lmtpl-ilust {
-        order: 0;
-        &>img {width: 100%;}
-    }
-
-    /* Custom */
-
-    #home-welcome>div {
-        text-align: left;
-        &.lmtpl-ilust {display: flex;}
-    }
 }
 
 /* Header break */
@@ -103,10 +33,7 @@
 }
 
 @include media(xl) {
-    html {--col-space: 60px;}
-    .lmtpl-crsl-elems>div {width: calc(33.33% - 30px);}
 }
 
 @include media(xxl) {
-    :root {--max-pad: calc(50% - 600px);}
 }
