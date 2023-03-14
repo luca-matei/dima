@@ -1,7 +1,7 @@
 html:
     lang: "%LANG%"
     dir: "ltr"
-    class: "no-js"
+    class: "lmnojs"
     data-theme: "%DEFAULT_THEME%"
     prefix: "og: https://ogp.me/ns#"
     head:
@@ -132,24 +132,24 @@ html:
         lm_:
             text: "%HIDE_ALL%"
         div:
-            id: "page-scroll"
+            id: "lmid-page-scroll"
             div:
                 id: "top"
             lm_:
                 text: "%APP_HEADER%"
             div:
-                id: "page-content"
+                id: "lmid-page-content"
                 text: "%BODY%"
             lm_:
                 text: "%APP_FOOTER%"
         lm_:
             text: "%TOP_BUTTON%"
         button:
-            id: "message-box"
+            id: "lmid-message-box"
         lm_:
             text: "%COOKIES_NOTICE%"
         div:
-            id: "sensor-cpt"
+            id: "lmid-sensor-cpt"
         script:
             src: "/assets/js/load-2.js"
             type: "text/javascript"

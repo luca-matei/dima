@@ -3,7 +3,7 @@
 
 a, label, button {cursor: pointer;}
 
-input:disabled, textarea:disabled, .disabled {
+input:disabled, textarea:disabled, .lmdisabled {
     opacity: 0.6;
     cursor: not-allowed !important;
 }
@@ -170,11 +170,11 @@ input:disabled, textarea:disabled, .disabled {
             width: 100%;
             z-index: 1;
 
-            &.opened {
+            &.lmopened {
                 display: flex;
             }
 
-            .selected {
+            .lmselected {
                 background-color: var(--p-2);
             }
 
@@ -194,7 +194,7 @@ input:disabled, textarea:disabled, .disabled {
 
 .lmforms-spinner {
     // Add xs, md, lg when we use this in places other than hide-all
-    &:after {
+    &::after {
         content: " ";
         display: block;
         width: 18px;
@@ -209,7 +209,7 @@ input:disabled, textarea:disabled, .disabled {
     }
 }
 
-#unsaved-changes {
+#lmid-unsaved-changes {
     display: none;
     color: $red-1;
 }

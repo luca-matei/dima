@@ -1,13 +1,14 @@
 const lm = {
 
-scrollObj: $('#page-scroll'),
+scrollObj: $('#lmid-page-scroll'),
 
 init: function() {
     this.scrollObj.addEventListener("scroll", this.topBtnCheck);
     this.topBtnCheck();
+    this.utils.setActive();
     this.anims.init();
 
-    $("#message-box").addEventListener("click", this.utils.hideMessage);
+    $("#lmid-message-box").addEventListener("click", this.utils.hideMessage);
     $("#lmid-policy-accept").addEventListener("click", function() {this.cookies.setCookie('__Host-Consent', 1)});
     $("#lmid-toggle-theme").addEventListener("click", this.settings.toggleTheme);
 
@@ -16,12 +17,12 @@ init: function() {
 },
 
 topBtnCheck: function() {
-    let topBtnObj = $('#top-btn');
+    let topBtnObj = $('#lmid-top-btn');
     if (lm.scrollObj.scrollTop < lm.scrollObj.offsetHeight) {
-        topBtnObj.className = 'out';
+        topBtnObj.className = 'lmbtn-out';
     } else {
         topBtnObj.style.display = "";
-        topBtnObj.className = 'in';
+        topBtnObj.className = 'lmbtn-in';
     }
 },
 
@@ -30,7 +31,7 @@ utils: {
     // Activate navbar links
     setActive: function() {
         let [section, resource] = document.URL.substr(document.baseURI.length).split('/');
-        let navs = Array.from(document.querySelectorAll('#app-header, #compaside'));
+        let navs = Array.from(document.querySelectorAll('#lmid-app-header, #lmid-compaside'));
         let links = new Array, res = section ? `${section}/${resource}` : resource;
 
         for (let nav of navs) links.push(...nav.getElementsByTagName('a'));
@@ -39,13 +40,13 @@ utils: {
         for (let link of links) {
             let href = link.getAttribute('href');
             if ([section, res].includes(href) && href != 'coming-soon') {
-                link.classList.add('active');
+                link.classList.add('lmactive');
             }
         }
     },
 
     setMessage: function(color, message) {
-        let box = $('#message-box');
+        let box = $('#lmid-message-box');
         box.textContent = message;
         box.style.display = 'block';
         box.className = `lmbd-${color}`;
@@ -54,13 +55,13 @@ utils: {
     },
 
     hideMessage: function() {
-        $('#message-box').style.display = 'none';
+        $('#lmid-message-box').style.display = 'none';
     }
 
 },
 
 cookies: {
-    noticeObj: $('#cookies-notice'),
+    noticeObj: $('#lmid-cookies-notice'),
 
     check: function() {
         if (!this.getCookie('__Host-Consent')) {
@@ -108,13 +109,13 @@ settings: {
         lm.cookies.setCookie('__Host-Theme', newTheme);
         $('html').setAttribute('data-theme', newTheme);
 
-        if (newTheme == 2) $('#lmtheme').setAttribute('checked', '');
-        else $('#lmtheme').removeAttribute('checked');
+        if (newTheme == 2) $('#lmid-theme').setAttribute('checked', '');
+        else $('#lmid-theme').removeAttribute('checked');
     }
 },
 
 anims: {
-    sensorObj: $('#sensor-cpt'),
+    sensorObj: $('#lmid-sensor-cpt'),
     buffer: 0.25 * window.innerHeight,
     cptObjs: $('.cpt'),
 
@@ -130,8 +131,8 @@ anims: {
             let cptObj = this.cptObjs[0];
 
             if (cptObj.getBoundingClientRect().top < this.sensorObj.getBoundingClientRect().top - buffer) {
-                cptObj.classList.add('anim'), cptObj.classList.remove('cpt');
-                this.cptObjs = $('.cpt');
+                cptObj.classList.add('lmanim'), cptObj.classList.remove('lmcpt');
+                this.cptObjs = $('.lmcpt');
                 this.check();
             }
         }
@@ -144,7 +145,7 @@ lm.init();
 
 class lmForms {
   togglePassword() {
-    let field = $('#lmpassword');
+    let field = $('#lmid-password');
     let eye = field.nextElementSibling.children[0];
 
     if (field.getAttribute('type') === 'password') {

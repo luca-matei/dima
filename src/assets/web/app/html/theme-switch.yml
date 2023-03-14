@@ -1,7 +1,7 @@
 div:
     class: "lmtpl-switch"
     input:
-        id: "lmtheme"
+        id: "lmid-theme"
         type: "checkbox"
     span:
         class: "fa fa-sun"

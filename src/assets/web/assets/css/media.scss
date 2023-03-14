@@ -10,13 +10,13 @@
 
 /* Header break */
 @media only screen and (min-width: 1053.98px) {
-    #app-header>nav {
+    #lmid-app-header>nav {
         overflow: visible;
         &>label {display: none;}
         &>span {flex: 0;}
     }
 
-    #nav-links {
+    #lmid-nav-links {
         flex: 0 0 auto;
         display: flex;
         flex-flow: row nowrap;

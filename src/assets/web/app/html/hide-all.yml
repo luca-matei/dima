@@ -1,5 +1,5 @@
 div:
-    id: "hide-all"
+    id: "lmid-hide-all"
     h2:
         class: "lmpe-xs"
         text:

@@ -215,13 +215,19 @@ class Utils:
             return 0
         return 1
 
-    def format_tpl(self, tpl, keys):
+    def replace_multiple(self, text:'str', reps:'dict'):
+        # Reps = Replacements
+        reps_sorted = sorted(reps, key=len, reverse=True)
+        reps_escaped = map(re.escape, reps_sorted)
+        pattern = re.compile("|".join(reps_escaped))
+
+        return pattern.sub(lambda match: reps[match.group(0)], text)
+
+    def format_tpl(self, tpl:'str', keys:'dict'):
         tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl) if tpl.endswith(".tpl") else tpl
 
-        for key in self.get_keys(keys):
-            tpl = tpl.replace("%" + key.upper() + "%", str(keys[key]))
-
-        return tpl
+        reps = {"%" + k.upper() + "%": v for k, v in keys.items()}
+        return self.replace_multiple(tpl, reps)
 
     def yes_no(self, question):
         # To do: implement number of tries (see select_opt())
@@ -280,7 +286,7 @@ class Utils:
     def create_dir_tree(self, dir_tree, root="", host=None):
         if root and not self.isfile(root, host=host):
             cmd(f"mkdir {root}", host=host)
-            
+
         for node in dir_tree:
             if root: node = root + node
 

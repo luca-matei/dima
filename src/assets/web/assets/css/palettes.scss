@@ -104,9 +104,9 @@ html {
 
 /* Text */
 
-span.red {color: $red-1;}
-span.blue {color: $blue-1;}
-a.red:hover {
+span.lmred {color: $red-1;}
+span.lmblue {color: $blue-1;}
+a.lmred:hover {
     background-color: $red-1;
     color: var(--tp-1-2);
 }

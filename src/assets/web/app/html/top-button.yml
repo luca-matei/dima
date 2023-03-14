@@ -1,5 +1,5 @@
 a:
-    id: "top-btn"
+    id: "lmid-top-btn"
     href: "%PERMALINK%#top"
     i:
         class: "fa fa-chevron-up"

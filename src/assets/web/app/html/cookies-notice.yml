@@ -1,5 +1,5 @@
 div:
-    id: "cookies-notice"
+    id: "lmid-cookies-notice"
     text:
         en: "This website uses cookies to improve browsing experience. [Learn More](docs/cookies)"
         ro: "Acest website folosește cookie-uri pentru a îmbunătăți experiența de navigare. [Află mai multe](docs/cookies)"

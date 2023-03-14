@@ -7,6 +7,7 @@ class Web(Project):
         self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = hal.db.execute(query, params)[0]
 
         self.global_html = {}
+        self.css_classes = {}
         self.dev_domain = "dev." + self.domain
         self.modules = {}
         for m_id in self.module_ids:
@@ -45,7 +46,10 @@ class Web(Project):
             self.build()
 
         self.db = Db(self.lmid, self.dbid, self.dev_host)
-        if self.lmid == "lm7": self.update_global_html()    # Fix for other projects
+
+        # Fix for other projects
+        if self.lmid == "lm7":
+            self.update_css()  # Bcs I'm not saving the translates
 
     def build(self):
         """
@@ -187,9 +191,14 @@ class Web(Project):
 
         log(f"Setting '{self.name}' JS to 'Hello World' ...", console=True)
 
-        cmd(f"rm -r {self.repo_dir}src/assets/js/", host=self.dev_host)
-        # RENAME CLASSES
-        hal.pools.get(self.dev_host_id).send_file(utils.src_dir + "assets/web/assets/js/", self.repo_dir + "src/assets/js/")
+        cmd(f"rm {self.repo_dir}src/assets/js/*.js", host=self.dev_host)
+        src_js_dir = utils.src_dir + "assets/web/assets/js/"
+        for script in utils.get_files(src_js_dir):
+            utils.write(
+                self.repo_dir + "src/assets/js/" + script,
+                utils.replace_multiple(utils.read(src_js_dir + script), self.css_classes),
+                host=self.dev_host
+                )
 
     def update_js(self):
         self.default_js(yes=True)
@@ -199,6 +208,8 @@ class Web(Project):
         return utils.yml2html(yml, lang, self.default_lang, self.global_html, self.dev_host)
 
     def update_global_html(self):
+        log(f"Updating global html for '{self.name}' ...", console=True)
+
         var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
 
@@ -212,7 +223,7 @@ class Web(Project):
                 self.global_html[lang][var_file[:-4]] = self.yml2html("_fractions/" + var_file, lang)
 
             # Save logged user dropdown
-            user_drop_html = self.yml2html("user-drop.yml", lang)
+            user_drop_html = utils.replace_multiple(self.yml2html("user-drop.yml", lang), self.css_classes)
             params = "user-drop", self.langs[lang], user_drop_html
             self.db.execute(query, params)
 
@@ -246,11 +257,12 @@ class Web(Project):
                 theme_selector = self.yml2html("theme-drop.yml", lang)
 
             # Save language and theme selectors
-            guest_drop_html = self.yml2html("guest-drop.yml", lang)
-            params = "guest-drop", self.langs[lang], utils.format_tpl(guest_drop_html, {
+            guest_drop_html = utils.format_tpl(self.yml2html("guest-drop.yml", lang), {
                 "lang_selector": lang_selector,
                 "theme_selector": theme_selector,
                 })
+            guest_drop_html = utils.replace_multiple(guest_drop_html, self.css_classes)
+            params = "guest-drop", self.langs[lang], guest_drop_html,
             self.db.execute(query, params)
 
             for h in ("app-wrapper", "app-header", "app-footer", "cookies-notice", "hide-all", "top-button"):
@@ -340,9 +352,14 @@ class Web(Project):
                         "cookies_notice": self.global_html[lang]["cookies-notice"],
                         })
 
+                    # Replace reusable components
                     html_vars = re.findall("%VAR-([^%]*)%", html)
-                    for v in html_vars:
-                        html = html.replace(f"%VAR-{v}%", self.global_html[lang].get(v.lower(), "NONE"))
+                    reps = {f"%VAR-{k}%": self.global_html[lang].get(k.lower(), "NONE") for k in html_vars}
+
+                    # Rename CSS classes
+                    reps.update(self.css_classes)
+
+                    html = utils.replace_multiple(html, reps)
 
                     query = "insert into pages (name, module, section, method, lang, first, html) values (%s, %s, %s, %s, %s, %s, %s);"
                     params = name, self.modules[meta["module"]], section_id, method_ids[method], self.langs[lang], first, html,
@@ -391,6 +408,10 @@ class Web(Project):
         """
         log(f"Updating CSS for '{self.name}' ...", console=True)
 
+        def rename_classes():
+            for i in range(len(classes)):
+                yield ''.join(random.SystemRandom().choice(string.ascii_letters) for _ in range(8))
+
         scss_file = utils.tmp_dir + "css.scss"
         utils.join_modules((
             "palettes.scss",
@@ -406,9 +427,31 @@ class Web(Project):
             module_path = utils.src_dir + "assets/web/assets/css/",
             file_path = scss_file)
 
-        css = sass.compile(string=utils.read(scss_file), output_style='compressed')
-        # RENAME CLASSES
-        utils.write(self.repo_dir + "src/assets/css/app.css", css, host=self.dev_host)
+        try:
+            css = sass.compile(string=utils.read(scss_file), output_style='compressed')
+        except Exception as e:
+            log("Couldn't compile Sass! Exception:\n\n" + e, level=4, console=True)
+            return
+
+        self.css_classes = {}
+        classes = re.findall("[#\.][_a-zA-Z]+[_a-zA-Z0-9-]*[:\w\s]*\{", css)
+        new_classes = rename_classes()
+
+        for c in classes:
+            if not c.startswith(".fa"):
+                c_name = c.split(' ')[0].split(":")[0][1:].replace("{", "")
+                print(c_name)
+                self.css_classes[c_name] = next(new_classes)
+
+        utils.write(
+            self.repo_dir + "src/assets/css/app.css",
+            utils.replace_multiple(css, self.css_classes),
+            host=self.dev_host
+            )
+
+        self.update_js()
+        self.update_global_html()
+        self.update_html()
 
     def generate_ssl(self):
         if not utils.isfile(self.dev_ssl_dir, host=self.dev_host):

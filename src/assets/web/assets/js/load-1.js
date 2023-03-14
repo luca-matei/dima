@@ -1,8 +1,8 @@
 const $ = query => document.querySelector(query);
 
 // Enables animations and other JS dependent CSS classes
-document.documentElement.classList.add("js");
-document.documentElement.classList.remove("no-js");
+document.documentElement.classList.add("lmjs");
+document.documentElement.classList.remove("lmnojs");
 
 let lmHideAllTimeout, lmHideObj;
 window.addEventListener("DOMContentLoaded", function() {
@@ -12,7 +12,7 @@ window.addEventListener("DOMContentLoaded", function() {
         clearTimeout(lmHideAllTimeout);
     }, 1000);
 
-    $("#top-btn").style.display = "none";
+    $("#lmid-top-btn").style.display = "none";
 
 }, true);
 

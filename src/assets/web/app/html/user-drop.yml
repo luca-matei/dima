@@ -1,5 +1,5 @@
 div:
-    id: "user-drop"
+    id: "lmid-user-drop"
     class: "lmtpl-drop-r"
     a:
         href: "account"
@@ -22,7 +22,7 @@ div:
                         ro: "Setări"
             a:
                 href: "account/sign-out"
-                class: "red"
+                class: "lmred"
                 i:
                     class: "fa fa-sign-out-alt"
                 span:

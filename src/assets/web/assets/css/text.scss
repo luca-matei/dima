@@ -62,7 +62,7 @@ a  {
     text-decoration: none;
     transition: background-color $tr-t, color $tr-t;
 
-    &.active {
+    &.lmactive {
         background-color: var(--bg-2);
         color: var(--txt-2);
 

@@ -1,5 +1,5 @@
 div:
-    id: "app-header"
+    id: "lmid-app-header"
     div:
         class: "lmtpl-notice lmbg-orange"
         noscript:
@@ -10,7 +10,7 @@ div:
         class: "lmbox"
         input:
             type: "checkbox"
-            id: "nav-check"
+            id: "lmid-nav-check"
 
         a:
             href: "https://%DOMAIN%"
@@ -18,14 +18,14 @@ div:
                 en: "Hello World"
 
         label:
-            for: "nav-check"
+            for: "lmid-nav-check"
             i:
                 class: "fa fa-bars"
 
         span:
 
         div:
-            id: "nav-links"
+            id: "lmid-nav-links"
             a:
                 href: "home"
                 text:

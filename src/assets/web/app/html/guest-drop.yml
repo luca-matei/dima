@@ -1,5 +1,5 @@
 div:
-    id: "guest-drop"
+    id: "lmid-guest-drop"
     class: "lmtpl-drop-r"
     a:
         href: "sign-in"
