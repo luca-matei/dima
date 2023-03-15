@@ -1,9 +1,14 @@
 def main():
+    os.environ.__setitem__('DISPLAY', 'unix:0.0')
     cl = sys.argv[1:]
     hal.start()
 
-    if cl: cli.process(' '.join(cl))
-    else: cli.start()
+    if cl:
+        cli.process(' '.join(cl))
+    else:
+        cli.load_history()
+        gui = GUI()
+        gui.start()
 
 if __name__ == "__main__":
     lib_path = utils.projects_dir + "venv/lib/"

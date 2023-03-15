@@ -1,4 +1,6 @@
 import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress, crypt
+import tkinter as tk
+from tkinter import ttk
 from datetime import datetime
 
 class Utils:
@@ -65,9 +67,7 @@ class Utils:
         is_ast = path.endswith('.ast')
         is_json = path.endswith('.json')
 
-        if path.startswith("/etc/"): root = True
-        else: root = False
-
+        root = path.startswith("/etc/")
         contents = no_logs_cmd(f"{'sudo ' if root else ''}cat {path}", catch=True, host=host)
 
         if f"cat: {path}: No such file or directory" in contents:
@@ -88,7 +88,7 @@ class Utils:
             else: return ""
 
         elif lines:
-            return [x+'\n' for x in contents.split('\n')]
+            return contents.split('\n')
 
         else:
             return contents
@@ -194,11 +194,10 @@ class Utils:
                 field = str(field)
                 spaces = (col_lens[i] - len(field) + min_spacing)/2
 
-                if int(spaces) == spaces: odd = 0
-                else: odd = 1
+                even = int(spaces == int(spaces))
                 spaces = int(spaces)
 
-                table_row += "|" + spaces*' ' + field + spaces*' ' + odd*' '
+                table_row += "|" + spaces*' ' + field + spaces*' ' + even*' '
             table_row += "|"
             table.append(table_row)
         table.append(row_sep)

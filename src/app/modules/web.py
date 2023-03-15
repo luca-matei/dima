@@ -49,10 +49,11 @@ class Web(Project):
         self.db = Db(self.lmid, self.dbid, self.dev_host)
 
         # Fix for other projects
-        if self.lmid == "lm7":
-            self.update_global_html()
-            if False:
-                self.update_css()  # Bcs I'm not saving the translates
+        if False:
+            if self.lmid == "lm7":
+                self.update_global_html()
+                if False:
+                    self.update_css()  # Bcs I'm not saving the translates
 
     def build(self):
         """

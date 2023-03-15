@@ -4,24 +4,6 @@ class CLI:
     objs = {}
     skip = False
 
-    def start(self):
-        log("Starting CLI ...")
-
-        command = ""
-        while self.receive_command:
-            command = input(" > ")
-
-            if command in ("q", "exit"):
-                self.stop()
-            elif command == "":
-                continue
-            else:
-                self.process(command)
-
-    def stop(self):
-        log("Stopping CLI ...")
-        self.receive_command = False
-
     def invalid(self, a=None, o=None, ao=None, p=None, pt=None):
         if a and o:
             log(f"Invalid action '{a}' on object '{o}'!", level=4, console=True)
@@ -163,9 +145,23 @@ class CLI:
 
         return args
 
+    def load_history(self):
+        self.history = utils.read(utils.src_dir + "app/history.txt", lines=True)
+
+    def append_history(self, command):
+        if len(self.history) >= 300:
+            self.history = self.history[-200:]
+            utils.write(utils.src_dir + "app/history.txt", '\n'.join(self.history))
+
+        if command not in self.history[-3:]:
+            self.history.append(command)
+            utils.write(utils.src_dir + "app/history.txt", command + "\n", mode="a")
+
     def process(self, command):
         log("Issued command: " + command)
+
         if not self.validate(command): return
+        self.append_history(command)
 
         command = [p for p in re.split("( |\\\".*?\\\"|'.*?')", command) if p.strip()] + ['']    # Split by spaces unless surrounded by quotes
 

@@ -38,6 +38,7 @@ else:
         "utils/softs.py",
         "soft.py",
         "cli.py",
+        "gui.py",
         "main.py",
         ),
         module_path = src_dir + "app/modules/",
