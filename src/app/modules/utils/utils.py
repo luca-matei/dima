@@ -216,12 +216,15 @@ class Utils:
         return 1
 
     def replace_multiple(self, text:'str', reps:'dict'):
-        # Reps = Replacements
-        reps_sorted = sorted(reps, key=len, reverse=True)
-        reps_escaped = map(re.escape, reps_sorted)
-        pattern = re.compile("|".join(reps_escaped))
+        if reps:
+            # Reps = Replacements
+            reps_sorted = sorted(reps, key=len, reverse=True)
+            reps_escaped = map(re.escape, reps_sorted)
+            pattern = re.compile("|".join(reps_escaped))
 
-        return pattern.sub(lambda match: reps[match.group(0)], text)
+            return pattern.sub(lambda match: reps[match.group(0)], text)
+        else:
+            return text
 
     def format_tpl(self, tpl:'str', keys:'dict'):
         tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl) if tpl.endswith(".tpl") else tpl
@@ -373,7 +376,7 @@ class Utils:
                         f_text = f_heading
 
                     f_required = """<span>*</span>""" if required else ""
-                    tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"grow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
+                    tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"lmgrow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
 
                 if tag == "lminput":
                     tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}>""")

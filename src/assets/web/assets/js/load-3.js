@@ -116,27 +116,24 @@ settings: {
 
 anims: {
     sensorObj: $('#lmid-sensor-cpt'),
-    buffer: 0.25 * window.innerHeight,
-    cptObjs: $('.cpt'),
+    cptObjs: document.getElementsByClassName('lmcpt'),
 
-    init: function() {
-        window.addEventListener('load', this.check, true);
-        lm.scrollObj.addEventListener('scroll', this.check);
+    init: ()=> {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.intersectionRatio >= 0.5) {
+                    entry.target.classList.add('lmanim');
+                    entry.target.classList.remove('lmcpt');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { root: document.querySelector("#lmid-page-scroll"), threshold: 0.5});
+
+        const cpts = document.querySelectorAll(".lmcpt");
+        cpts.forEach((elem) => {
+            observer.observe(elem);
+        });
     },
-
-    check: function() {
-        if (!this.cptObjs) {
-            lm.scrollObj.removeEventListener('scroll', this.check, true);
-        } else {
-            let cptObj = this.cptObjs[0];
-
-            if (cptObj.getBoundingClientRect().top < this.sensorObj.getBoundingClientRect().top - buffer) {
-                cptObj.classList.add('lmanim'), cptObj.classList.remove('lmcpt');
-                this.cptObjs = $('.lmcpt');
-                this.check();
-            }
-        }
-    }
 }
 
 }

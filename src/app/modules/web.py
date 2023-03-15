@@ -1,5 +1,6 @@
 class Web(Project):
     def __init__(self, dbid):
+        ## Double '#' is for production
         Project.__init__(self, dbid)
 
         query = "select a.name, b.port, b.modules, b.langs, b.themes, b.default_lang, b.default_theme, b.has_animations from domains a, web.webs b where b.domain=a.id and b.lmobj=%s;"
@@ -49,7 +50,9 @@ class Web(Project):
 
         # Fix for other projects
         if self.lmid == "lm7":
-            self.update_css()  # Bcs I'm not saving the translates
+            self.update_global_html()
+            if False:
+                self.update_css()  # Bcs I'm not saving the translates
 
     def build(self):
         """
@@ -434,14 +437,14 @@ class Web(Project):
             return
 
         self.css_classes = {}
-        classes = re.findall("[#\.][_a-zA-Z]+[_a-zA-Z0-9-]*[:\w\s]*\{", css)
-        new_classes = rename_classes()
+        if False:  # For production
+            classes = re.findall("[#\.][_a-zA-Z]+[_a-zA-Z0-9-]*[:\w\s]*\{", css)
+            new_classes = rename_classes()
 
-        for c in classes:
-            if not c.startswith(".fa"):
-                c_name = c.split(' ')[0].split(":")[0][1:].replace("{", "")
-                print(c_name)
-                self.css_classes[c_name] = next(new_classes)
+            for c in classes:
+                if not c.startswith(".fa"):
+                    c_name = c.split(' ')[0].split(":")[0][1:].replace("{", "")
+                    self.css_classes[c_name] = next(new_classes)
 
         utils.write(
             self.repo_dir + "src/assets/css/app.css",
@@ -449,9 +452,10 @@ class Web(Project):
             host=self.dev_host
             )
 
-        self.update_js()
-        self.update_global_html()
-        self.update_html()
+        if False:
+            self.update_js()
+            self.update_global_html()
+            self.update_html()
 
     def generate_ssl(self):
         if not utils.isfile(self.dev_ssl_dir, host=self.dev_host):

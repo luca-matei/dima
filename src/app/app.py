@@ -216,12 +216,15 @@ class Utils:
         return 1
 
     def replace_multiple(self, text:'str', reps:'dict'):
-        # Reps = Replacements
-        reps_sorted = sorted(reps, key=len, reverse=True)
-        reps_escaped = map(re.escape, reps_sorted)
-        pattern = re.compile("|".join(reps_escaped))
+        if reps:
+            # Reps = Replacements
+            reps_sorted = sorted(reps, key=len, reverse=True)
+            reps_escaped = map(re.escape, reps_sorted)
+            pattern = re.compile("|".join(reps_escaped))
 
-        return pattern.sub(lambda match: reps[match.group(0)], text)
+            return pattern.sub(lambda match: reps[match.group(0)], text)
+        else:
+            return text
 
     def format_tpl(self, tpl:'str', keys:'dict'):
         tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl) if tpl.endswith(".tpl") else tpl
@@ -373,7 +376,7 @@ class Utils:
                         f_text = f_heading
 
                     f_required = """<span>*</span>""" if required else ""
-                    tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"grow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
+                    tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"lmgrow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
 
                 if tag == "lminput":
                     tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}>""")
@@ -2437,6 +2440,7 @@ utils.webs = WebUtils()
 
 class Web(Project):
     def __init__(self, dbid):
+        ## Double '#' is for production
         Project.__init__(self, dbid)
 
         query = "select a.name, b.port, b.modules, b.langs, b.themes, b.default_lang, b.default_theme, b.has_animations from domains a, web.webs b where b.domain=a.id and b.lmobj=%s;"
@@ -2486,7 +2490,9 @@ class Web(Project):
 
         # Fix for other projects
         if self.lmid == "lm7":
-            self.update_css()  # Bcs I'm not saving the translates
+            self.update_global_html()
+            if False:
+                self.update_css()  # Bcs I'm not saving the translates
 
     def build(self):
         """
@@ -2871,14 +2877,14 @@ class Web(Project):
             return
 
         self.css_classes = {}
-        classes = re.findall("[#\.][_a-zA-Z]+[_a-zA-Z0-9-]*[:\w\s]*\{", css)
-        new_classes = rename_classes()
+        if False:  # For production
+            classes = re.findall("[#\.][_a-zA-Z]+[_a-zA-Z0-9-]*[:\w\s]*\{", css)
+            new_classes = rename_classes()
 
-        for c in classes:
-            if not c.startswith(".fa"):
-                c_name = c.split(' ')[0].split(":")[0][1:].replace("{", "")
-                print(c_name)
-                self.css_classes[c_name] = next(new_classes)
+            for c in classes:
+                if not c.startswith(".fa"):
+                    c_name = c.split(' ')[0].split(":")[0][1:].replace("{", "")
+                    self.css_classes[c_name] = next(new_classes)
 
         utils.write(
             self.repo_dir + "src/assets/css/app.css",
@@ -2886,9 +2892,10 @@ class Web(Project):
             host=self.dev_host
             )
 
-        self.update_js()
-        self.update_global_html()
-        self.update_html()
+        if False:
+            self.update_js()
+            self.update_global_html()
+            self.update_html()
 
     def generate_ssl(self):
         if not utils.isfile(self.dev_ssl_dir, host=self.dev_host):
