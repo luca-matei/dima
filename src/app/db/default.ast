@@ -152,7 +152,7 @@
         ("Host", "dh", ("generate",)),
         ("Host", "host", ("create",)),
         ("Host", "project", ("create",)),
-        ("Host", "web", ("create", "config", "restart",)),
+        ("Host", "web", ("create",)),
         ("Host", "app", ("create",)),
         ("Host", "soft", ("create",)),
         ("Host", "file", ("has", "send", "retrieve",)),

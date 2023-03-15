@@ -3300,85 +3300,137 @@ class GUI:
         self.style.theme_use("clam")
 
         # Structure
-        self.create_page("main")
-        self.create_frame("main", "body", expand=True)
-        self.create_frame("main", "status")
+        """
+        root
+            main
+                body
+                    command
+                    hosts
+                    webs
+                status
+        """
+        self.create_obj("frame", "root", name="main", fill="both", expand=True, padx=16, pady=16)
+        self.create_obj("frame", "main", name="body", fill="both", expand=True)
+        self.create_obj("frame", "body", name="command", fill="x")
+        self.create_obj("frame", "body", name="hosts", fill="x", pady=8)
+        self.create_obj("frame", "main", name="status", fill="x")
 
         # Command input
-        self.create_obj("label", "body", text="Command:", anchor="NW", side="left", ipady=2)
+        self.create_obj("label", "command", text="Command:", side="left", ipady=2)
         self.history_index = 0
         self.command = tk.StringVar()
-        cmd_input = self.create_obj("input", "body", value=self.command, anchor="NW", side="left", padx=4, ipadx=8, ipady=2)
-        cmd_input.bind('<Return>', self.send_command)
-        cmd_input.bind('<Up>', self.history_up)
-        cmd_input.bind('<Down>', self.history_down)
-        cmd_input.focus()
+        self.cmd_input = self.create_obj("input", "command", str_store=self.command, anchor="NW", side="left", padx=4, ipadx=8, ipady=2)
+        self.cmd_input.bind('<Return>', self.send_command)
+        self.cmd_input.bind('<Up>', self.history_up)
+        self.cmd_input.bind('<Down>', self.history_down)
+        self.cmd_input.focus()
+
+        # Hosts panel
+        self.create_obj("label", "hosts", text="Hosts", font=("Arial", 12), fill="x", pady=8)
+        hosts = [x[0] for x in hal.db.execute("select lmid from lmobjs where module=(select id from modules where name='Host');")]
+
+        self.host_acts = {
+            "nginx": ("config", "reload", "start", "stop", "restart"),
+            "hosts_file": ("update",),
+        }
+        xyz = hal.db.execute("select name, acts from command.objs where module=(select id from modules where name='Host');")
+        print(xyz)
+        self.host_acts = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in xyz}
+        print(self.host_acts)
+
+        self.host_opt = tk.StringVar()
+        self.obj_opt = tk.StringVar()
+        self.act_opt = tk.StringVar()
+
+        self.create_obj("option_menu", "hosts", str_store=self.host_opt, opts=hosts, side="left")
+        self.create_obj("option_menu", "hosts", str_store=self.obj_opt,
+            opts = sorted(utils.get_keys(self.host_acts)),
+            command = self.change_acts,
+            side = "left")
+
+        self.acts_menu = self.create_obj("option_menu", "hosts", str_store=self.act_opt,
+            opts = self.host_acts[sorted(utils.get_keys(self.host_acts))[0]],
+            side = "left")
+
+        self.create_obj("btn", "hosts", text="Process", command=self.send_host_cmd)
 
         # Status section
         self.create_obj("btn", "status", text="Quit", command=self.quit, anchor="SE")
-        print(cli.history)
 
 
     def history_up(self, event):
         self.history_index -= 1
         if abs(self.history_index) <= len(cli.history):
             self.command.set(cli.history[self.history_index])
+            self.cmd_input.icursor("end")
         else:
             self.history_index += 1
-
-        print(self.history_index, cli.history[self.history_index])
 
     def history_down(self, event):
         self.history_index += 1
         if self.history_index < 0:
-            self.command.set(cli.history(self.history_index))
+            self.command.set(cli.history[self.history_index])
+            self.cmd_input.icursor("end")
         elif self.history_index == 0:
             self.command.set("")
         else:
             self.history_index -= 1
-
-        print(self.history_index, cli.history[self.history_index])
 
     def send_command(self, event):
         cli.process(self.command.get())
         self.command.set("")
         self.history_index = 0
 
+    def send_host_cmd(self):
+        print(self.host_opt.get() + " " + self.act_opt.get() + " " + self.obj_opt.get())
+
     ## WIDGET UTILS ##
 
-    def pack(self, obj, anchor, expand, side, padx, pady, ipadx, ipady):
+    def create_obj(self, obj, frame, anchor=None, expand=False, fill=None, side=None, padx=0, pady=0, ipadx=0, ipady=0, **kwargs):
+        if frame == "root": frame_obj = self.root
+        else: frame_obj = self.frames[frame]
+
+        obj = getattr(self, "create_" + obj)(frame_obj, **kwargs)
+
         if anchor: anchor = getattr(tk, anchor.upper())
         if side: side = getattr(tk, side.upper())
-        obj.pack(anchor=anchor, expand=expand, side=side, padx=padx, pady=pady, ipadx=ipadx, ipady=ipady)
+        if fill: fill = getattr(tk, fill.upper())
 
-    def create_obj(self, obj, frame, anchor=None, expand=False, side=None, padx=0, pady=0, ipadx=0, ipady=0, **kwargs):
-        obj = getattr(self, "create_" + obj)(self.frames[frame], **kwargs)
-        self.pack(obj, anchor, expand, side, padx, pady, ipadx, ipady)
+        obj.pack(anchor=anchor, expand=expand, fill=fill, side=side, padx=padx, pady=pady, ipadx=ipadx, ipady=ipady)
+
         return obj
+
+    def change_acts(self, event):
+        self.acts_menu['menu'].delete(0, tk.END)
+        opts = sorted(self.host_acts[self.obj_opt.get()])
+        self.act_opt.set(opts[0])
+        for opt in opts:
+            self.acts_menu['menu'].add_command(label=opt, command=tk._setit(self.act_opt, opt))
+
 
     ## WIDGETS ##
 
-    def create_label(self, frame, text="Label"):
-        label = ttk.Label(frame, text=text)
+    def create_label(self, frame, text="Label", font=()):
+        label = ttk.Label(frame, text=text, font=font)
         return label
 
-    def create_input(self, frame, value=None):
-        field = ttk.Entry(frame, textvariable=value)
+    def create_input(self, frame, str_store=None):
+        field = ttk.Entry(frame, textvariable=str_store)
         return field
 
     def create_btn(self, frame, text="Button", command=None):
         btn = ttk.Button(frame, text=text, command=command)
         return btn
 
+    def create_option_menu(self, frame, str_store, opts, command=None):
+        option_menu = ttk.OptionMenu(frame, str_store, opts[0], *opts, command=command)
+        return option_menu
+
     ## FRAMES ##
 
-    def create_page(self, name):
-        self.frames[name] = ttk.Frame(self.root, borderwidth=1)
-        self.frames[name].pack(fill=tk.BOTH, padx=16, pady=16, expand=True)
-
-    def create_frame(self, page, name, expand=False):
-        self.frames[name] = ttk.Frame(self.frames[page], borderwidth=1)
-        self.frames[name].pack(fill=tk.BOTH, expand=expand)
+    def create_frame(self, frame, name):
+        self.frames[name] = ttk.Frame(frame)
+        return self.frames[name]
 
     def start(self):
         self.root.mainloop()
