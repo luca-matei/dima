@@ -82,6 +82,8 @@ class Web(Project):
         self.default(yes=True)
         hal.pools.get(hal.host_dbid).update_hosts_file()
 
+        log(f"Built '{self.name}'", console=True)
+
     def create_db(self, env:'env'="dev"):
         host = getattr(self, env + "_host")
         host_id = getattr(self, env + "_host_id")
@@ -95,7 +97,7 @@ class Web(Project):
         if not yes:
             yes = utils.yes_no(f"Are you sure you want to format '{self.name}'?")
             if not yes:
-                log("Aborted.", console=True)
+                log("Aborted", console=True)
                 return
 
         log(f"Setting '{self.name}' to 'Hello World' ...", console=True)
@@ -116,11 +118,13 @@ class Web(Project):
         self.update_css()
         self.default_js(True)
 
+        log(f"Set '{self.name}' to 'Hello World'", console=True)
+
     def default_db(self, yes:'bool'=False):
         if not yes:
             yes = utils.yes_no(f"Are you sure you want to format '{self.name}' database?")
             if not yes:
-                log("Aborted.", console=True)
+                log("Aborted", console=True)
                 return
 
         host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
@@ -158,7 +162,7 @@ class Web(Project):
         if not yes:
             yes = utils.yes_no(f"Are you sure you want to format '{self.name}' HTML?")
             if not yes:
-                log("Aborted.", console=True)
+                log("Aborted", console=True)
                 return
 
         src_html = utils.src_dir + "assets/web/app/html/"
@@ -171,14 +175,18 @@ class Web(Project):
                 utils.copy(src_html, dest_html)
             else:
                 hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
+
+            log(f"Set '{self.name}' HTML to 'Hello World.'", console=True)
         else:
             # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
-            log(f"Updating structure HTML for '{self.name}' ...", console=True)
+            log(f"Setting '{self.name}' Global HTML to 'Hello World' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
             if self.dev_host_id == hal.host_dbid:
                 utils.copy(src_html + "*.yml", dest_html)
             else:
                 hal.pools.get(self.dev_host_id).send_file(dest_html + "*.yml", dest_html)
+
+            log(f"Set '{self.name}' Global HTML to 'Hello World'", console=True)
 
         self.update_html()
         self.restart()
@@ -190,7 +198,7 @@ class Web(Project):
         if not yes:
             yes = utils.yes_no(f"Are you sure you want to format {self.name} JS?")
             if not yes:
-                log("Aborted.", console=True)
+                log("Aborted", console=True)
                 return
 
         log(f"Setting '{self.name}' JS to 'Hello World' ...", console=True)
@@ -204,6 +212,8 @@ class Web(Project):
                 host=self.dev_host
                 )
 
+        log(f"Set '{self.name}' JS to 'Hello World'", console=True)
+
     def update_js(self):
         self.default_js(yes=True)
 
@@ -212,7 +222,7 @@ class Web(Project):
         return utils.yml2html(yml, lang, self.default_lang, self.global_html, self.dev_host)
 
     def update_global_html(self):
-        log(f"Updating global html for '{self.name}' ...", console=True)
+        log(f"Updating Global HTML for '{self.name}' ...", console=True)
 
         var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
@@ -274,11 +284,13 @@ class Web(Project):
 
             self.global_html[lang]["app-wrapper"] = "<!doctype html>" + self.global_html[lang]["app-wrapper"]
 
+        log(f"Updated Global HTML for '{self.name}'", console=True)
+
     def update_html(self, section:'str'= "", global_html:'bool'=False):
         """
             Command only for dev environment.
         """
-        log(f"Updating html for '{self.name}' ...", console=True)
+        log(f"Updating HTML for '{self.name}' ...", console=True)
 
         method_ids = dict(self.db.execute("select name, id from methods;"))
 
@@ -376,6 +388,7 @@ class Web(Project):
             solve_section(self.html_dir + section + '/', section, 0)
 
         self.restart()
+        log(f"Updated HTML for '{self.name}'", console=True)
 
     def update_py(self):
         """
@@ -404,6 +417,7 @@ class Web(Project):
             file_host = self.dev_host)
 
         self.restart()
+        log(f"Updated source code for '{self.name}'", console=True)
 
     def update_css(self):
         """
@@ -458,6 +472,8 @@ class Web(Project):
             self.update_global_html()
             self.update_html()
 
+        log(f"Updated CSS for '{self.name}'", console=True)
+
     def generate_ssl(self):
         if not utils.isfile(self.dev_ssl_dir, host=self.dev_host):
             cmd("mkdir " + self.dev_ssl_dir, host=self.dev_host)
@@ -465,12 +481,14 @@ class Web(Project):
         # Production certificates
         #log(f"Generating Let's Encrypt SSL certs for {self.dev_domain}. This may take a while ...", console=True)
 
-        log(f"Generating self-signed SSL certs for '{self.name}'. This may take a while ...", console=True)
+        log(f"Generating TLS certificates for '{self.name}'. This may take a while ...", console=True)
         cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {self.dev_ssl_dir}privkey.pem -out {self.dev_ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={hal.domain}/CN={self.dev_domain}"', host=self.dev_host)
 
         query = "update web.webs set ssl_last_gen=%s where lmobj=%s;"
         params = datetime.now(), self.dbid,
         hal.db.execute(query, params)
+
+        log(f"Generated TLS certificates for '{self.name}'", console=True)
 
     def config_uwsgi(self, env:'env'="dev"):
         log(f"Configuring uWSGI for '{self.name}' ({env}) ...", console=True)
@@ -486,6 +504,7 @@ class Web(Project):
         utils.write(self.app_dir + "uwsgi.ini", uwsgi_config, host=host)
 
         self.restart(env)
+        log(f"Configured uWSGI for '{self.name}' ({env})", console=True)
 
     def config_supervisor(self, env:'env'="dev"):
         log(f"Configuring Supervisor for '{self.name}' ({env}) ...", console=True)
@@ -500,6 +519,7 @@ class Web(Project):
         utils.write(f"/etc/supervisor/conf.d/{self.lmid}.conf", supervisor_config, host=host)
 
         hal.pools.get(host_id).restart_supervisor()
+        log(f"Configured Supervisor for '{self.name}' ({env})", console=True)
 
     def config_nginx(self, env:'env'="dev"):
         log(f"Configuring Nginx for '{self.name}' ({env}) ...", console=True)
@@ -533,6 +553,8 @@ class Web(Project):
         utils.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, host=host)
         hal.pools.get(host_id).restart_nginx()
 
+        log(f"Configured Nginx for '{self.name}' ({env})", console=True)
+
     def config(self, env:'env'="dev"):
         self.config_uwsgi(env)
         self.config_supervisor(env)
@@ -544,3 +566,4 @@ class Web(Project):
         # To do: Save log file
         cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;", host=host)
         cmd(f"sudo supervisorctl restart {self.lmid}", host=host)
+        log(f"Restarted '{self.name}' ({env})", console=True)

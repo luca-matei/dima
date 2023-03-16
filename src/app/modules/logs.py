@@ -31,6 +31,9 @@ class Logs:
         if console and not self.quiet:
             print(utils.color(*self.levels[level]) + ": " + message)
 
+            if gui:
+                gui.set_status(*self.levels[level], message)
+
         if level == 5:
             print("Exiting ...")
             sys.exit()

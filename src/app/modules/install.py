@@ -104,7 +104,7 @@ class Install:
     def add_to_group(self):
         users = ', '.join([x.split(':')[-1] for x in cmd("sudo -u hal getent group hal", catch=True).split('\n')])
         if users:
-            print(f"Users already in Hal's group: {users}.")
+            print(f"Users already in Hal's group: {users}")
             yes = utils.yes_no("Add another one?")
             if not yes:
                 return

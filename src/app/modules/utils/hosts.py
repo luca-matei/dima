@@ -10,6 +10,7 @@ class HostUtils:
         hal.pools.get(host_dbid).create_host(env, alias, mem, cpus, disk)
 
     def preseed_host(self, hostname, net_id, ip, ssh_port, host=hal.host_lmid):
+        log(f"Preseeding '{hostname}' ...", console=True)
         # To do: preseed static ip
         arch = "amd" # "386"
         iso_dir = f"{utils.tmp_dir}debian-{utils.debian_version}/"
@@ -89,7 +90,7 @@ class HostUtils:
             log(f"Removing {iso_dir} ...", level=3)
             cmd("sudo rm -r " + iso_dir, host=host)
 
-        log(f"Preseeded ISO image for {hostname} stored at {tmp_iso}", console=True)
+        log(f"Preseeded ISO image for '{hostname}' stored at '{tmp_iso}'", console=True)
 
     def register_host(self, mode=None):
         # This host can only be a PM

@@ -1,12 +1,23 @@
 class GUI:
+    colors = {
+        "blue": "#0000FF",
+        "green": "#008000",
+        "yellow": "#FFFF00",
+        "lred": "#FF3333",
+        "red": "#FF0000",
+        }
+
     def __init__(self):
         self.root = tk.Tk()
         self.style = ttk.Style(self.root)
         self.frames = {}
+        self.widgets = {}
+        self.panel_acts = {}
+        self.last_timer = None
 
         # Window geometry
-        self.w_width = 600
-        self.w_height = 400
+        self.w_width = 800
+        self.w_height = 600
 
         self.screen_width = 1920    # w.winfo_screenwidth()
         self.screen_height = 1080    # w.winfo_screenheight()
@@ -24,138 +35,251 @@ class GUI:
 
         # Style
         self.style.theme_use("clam")
+        self.build_interface()
 
-        # Structure
-        """
-        root
-            main
-                body
-                    command
-                    hosts
-                    webs
+    def build_interface(self):
+        def structure():
+            """
+            root
+                main
+                --- dashboard
+                        command
+                --- hosts
+                        panel
+                --- webs
+                        panel
                 status
-        """
-        self.create_obj("frame", "root", name="main", fill="both", expand=True, padx=16, pady=16)
-        self.create_obj("frame", "main", name="body", fill="both", expand=True)
-        self.create_obj("frame", "body", name="command", fill="x")
-        self.create_obj("frame", "body", name="hosts", fill="x", pady=8)
-        self.create_obj("frame", "main", name="status", fill="x")
+            """
+            self.create_obj("frame", "root",
+                name = "main",
+                notebook = True,
+                fill="both", expand=True, padx=16, pady=16
+                )
 
-        # Command input
-        self.create_obj("label", "command", text="Command:", side="left", ipady=2)
-        self.history_index = 0
-        self.command = tk.StringVar()
-        self.cmd_input = self.create_obj("input", "command", str_store=self.command, anchor="NW", side="left", padx=4, ipadx=8, ipady=2)
-        self.cmd_input.bind('<Return>', self.send_command)
-        self.cmd_input.bind('<Up>', self.history_up)
-        self.cmd_input.bind('<Down>', self.history_down)
-        self.cmd_input.focus()
+            self.create_obj("page", "main",
+                name = "dashboard",
+                title = "Dashboard",
+                fill="both", expand=True
+                )
 
-        # Hosts panel
-        self.create_obj("label", "hosts", text="Hosts", font=("Arial", 12), fill="x", pady=8)
-        hosts = [x[0] for x in hal.db.execute("select lmid from lmobjs where module=(select id from modules where name='Host');")]
+            self.create_obj("page", "main",
+                name = "hosts",
+                title = "Hosts",
+                fill="both", expand=True
+                )
 
-        self.host_acts = {
-            "nginx": ("config", "reload", "start", "stop", "restart"),
-            "hosts_file": ("update",),
-        }
-        xyz = hal.db.execute("select name, acts from command.objs where module=(select id from modules where name='Host');")
-        print(xyz)
-        self.host_acts = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in xyz}
-        print(self.host_acts)
+            self.create_obj("page", "main",
+                name = "webs",
+                title = "Webs",
+                fill="both", expand=True
+                )
 
-        self.host_opt = tk.StringVar()
-        self.obj_opt = tk.StringVar()
-        self.act_opt = tk.StringVar()
+            self.create_obj("page", "main",
+                name = "console",
+                title = "Console",
+                fill="both", expand=True
+                )
 
-        self.create_obj("option_menu", "hosts", str_store=self.host_opt, opts=hosts, side="left")
-        self.create_obj("option_menu", "hosts", str_store=self.obj_opt,
-            opts = sorted(utils.get_keys(self.host_acts)),
-            command = self.change_acts,
-            side = "left")
+            self.create_obj("frame", "dashboard", name="command", fill="x")
+            self.create_obj("frame", "root",
+                name="status",
+                fill="x", pady=16, padx=16
+                )
 
-        self.acts_menu = self.create_obj("option_menu", "hosts", str_store=self.act_opt,
-            opts = self.host_acts[sorted(utils.get_keys(self.host_acts))[0]],
-            side = "left")
+        def manual_cmd():
+            self.history_index = 0
+            self.create_obj("frame", "dashboard",
+                name="manual_cmd",
+                fill="x", pady=16)
 
-        self.create_obj("btn", "hosts", text="Process", command=self.send_host_cmd)
+            self.create_obj("label", "manual_cmd",
+                text="Manual Command",
+                fill="x", anchor="NW")
+            self.widgets["cmd_str"] = tk.StringVar()
 
-        # Status section
-        self.create_obj("btn", "status", text="Quit", command=self.quit, anchor="SE")
+            self.widgets["cmd_input"] = self.create_obj("input", "manual_cmd",
+                str_store = self.widgets["cmd_str"],
+                anchor = "NW", side="left", pady=8, ipadx=8, ipady=2
+                )
 
+            self.widgets["cmd_input"].bind('<Return>', lambda event: self.send_command("manual"))
+            self.widgets["cmd_input"].bind('<Up>', self.history_up)
+            self.widgets["cmd_input"].bind('<Down>', self.history_down)
+            self.widgets["cmd_input"].focus()
+
+        def panel(name):
+            self.create_obj("frame", name + "s", name=name, fill="x", pady=12)
+            self.create_obj("label", name,
+                text="Command",
+                fill="x", anchor="NW", pady=4)
+            lmids = [x[0] for x in hal.db.execute(f"select lmid from lmobjs where module=(select id from modules where name='{name.capitalize()}');")]
+
+            acts = hal.db.execute(f"select name, acts from command.objs where module=(select id from modules where name='{name.capitalize()}');")
+            self.panel_acts[name] = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in acts}
+
+            self.widgets[f"{name}_lmid"] = tk.StringVar()
+            self.widgets[f"{name}_obj"] = tk.StringVar()
+            self.widgets[f"{name}_act"] = tk.StringVar()
+
+            self.create_obj("option_menu", name,
+                str_store = self.widgets[f"{name}_lmid"],
+                opts = lmids,
+                side = "left", pady=4
+                )
+
+            self.create_obj("option_menu", name,
+                str_store = self.widgets[f"{name}_obj"],
+                opts = sorted(utils.get_keys(self.panel_acts[name])),
+                command = lambda event: self.change_acts(name),
+                side = "left", pady=4
+                )
+
+            self.widgets[f"{name}_acts"] = self.create_obj("option_menu", name,
+                str_store = self.widgets[f"{name}_act"],
+                opts = self.panel_acts[name][sorted(utils.get_keys(self.panel_acts[name]))[0]],
+                side = "left", pady=4
+                )
+
+            self.create_obj("btn", name,
+                text="Process",
+                command = lambda: self.send_command(name),
+                side = "left", padx=16, pady=4
+                )
+
+        def status():
+            self.widgets["status_lvl_str"] = self.create_obj("str", "status")
+            self.widgets["status_str"] = self.create_obj("str", "status")
+            self.widgets["status_lvl"] = self.create_obj("label", "status",
+                textvariable = self.widgets["status_lvl_str"],
+                ipadx = 4, side = "left", anchor="SW"
+                )
+            self.create_obj("label", "status",
+                textvariable=self.widgets["status_str"],
+                ipadx = 4, side = "left", anchor="SW"
+                )
+            self.create_obj("btn", "status", text="Quit", command=self.quit, anchor="SE")
+
+        structure()
+        manual_cmd()
+        for p in ("host", "web"):
+            panel(p)
+        status()
+
+
+    ## HISTORY
 
     def history_up(self, event):
         self.history_index -= 1
         if abs(self.history_index) <= len(cli.history):
-            self.command.set(cli.history[self.history_index])
-            self.cmd_input.icursor("end")
+            self.widgets["cmd_str"].set(cli.history[self.history_index])
+            self.widgets["cmd_input"].icursor("end")
         else:
             self.history_index += 1
 
     def history_down(self, event):
         self.history_index += 1
         if self.history_index < 0:
-            self.command.set(cli.history[self.history_index])
-            self.cmd_input.icursor("end")
+            self.widgets["cmd_str"].set(cli.history[self.history_index])
+            self.widgets["cmd_input"].icursor("end")
         elif self.history_index == 0:
-            self.command.set("")
+            self.widgets["cmd_str"].set("")
         else:
             self.history_index -= 1
 
-    def send_command(self, event):
-        cli.process(self.command.get())
-        self.command.set("")
-        self.history_index = 0
-
-    def send_host_cmd(self):
-        print(self.host_opt.get() + " " + self.act_opt.get() + " " + self.obj_opt.get())
-
     ## WIDGET UTILS ##
 
-    def create_obj(self, obj, frame, anchor=None, expand=False, fill=None, side=None, padx=0, pady=0, ipadx=0, ipady=0, **kwargs):
+    def create_obj(self, obj_name, frame, anchor=None, expand=False, fill=None, side=None, padx=0, pady=0, ipadx=0, ipady=0, **kwargs):
         if frame == "root": frame_obj = self.root
         else: frame_obj = self.frames[frame]
 
-        obj = getattr(self, "create_" + obj)(frame_obj, **kwargs)
+        obj = getattr(self, "create_" + obj_name)(frame_obj, **kwargs)
 
-        if anchor: anchor = getattr(tk, anchor.upper())
-        if side: side = getattr(tk, side.upper())
-        if fill: fill = getattr(tk, fill.upper())
+        if obj_name not in ("str",):
+            if anchor: anchor = getattr(tk, anchor.upper())
+            if side: side = getattr(tk, side.upper())
+            if fill: fill = getattr(tk, fill.upper())
 
-        obj.pack(anchor=anchor, expand=expand, fill=fill, side=side, padx=padx, pady=pady, ipadx=ipadx, ipady=ipady)
+            obj.pack(anchor=anchor, expand=expand, fill=fill, side=side, padx=padx, pady=pady, ipadx=ipadx, ipady=ipady)
+
+            if obj_name == "page":
+                frame_obj.add(self.frames[kwargs["name"] + "_page"], text=kwargs["title"])
+                self.create_obj("frame", kwargs["name"] + "_page",
+                    name = kwargs["name"],
+                    fill = "both", expand=True, padx=16
+                    )
 
         return obj
 
-    def change_acts(self, event):
-        self.acts_menu['menu'].delete(0, tk.END)
-        opts = sorted(self.host_acts[self.obj_opt.get()])
-        self.act_opt.set(opts[0])
-        for opt in opts:
-            self.acts_menu['menu'].add_command(label=opt, command=tk._setit(self.act_opt, opt))
+    def change_acts(self, t):
+        self.widgets[t + "_acts"]['menu'].delete(0, tk.END)
 
+        opts = sorted(self.panel_acts[t][self.widgets[t + "_obj"].get()])
+        self.widgets[t + "_act"].set(opts[0])
+
+        for opt in opts:
+            self.widgets[t + "_acts"]['menu'].add_command(
+                label = opt,
+                command = tk._setit(self.widgets[t + "_act"], opt))
+
+    def send_command(self, t):
+        if t == "manual":
+            cli.process(self.widgets["cmd_str"].get())
+            self.widgets["cmd_str"].set("")
+            self.history_index = 0
+
+        elif t in ("host", "web"):
+            name = self.widgets[t + "_lmid"].get()
+            act = self.widgets[t + "_act"].get()
+            obj = self.widgets[t + "_obj"].get()
+
+            if obj:
+                cli.process(' '.join([name, act, obj]))
+            else:
+                cli.process(' '.join([name, act]))
+
+    def reset_status(self):
+        if self.last_timer + timedelta(seconds=10) <= datetime.now():
+            self.widgets["status_lvl_str"].set("")
+            self.widgets["status_str"].set("")
+
+    def set_status(self, level, color, message):
+        self.widgets["status_lvl_str"].set(level)
+        self.widgets["status_lvl"].config(foreground = self.colors[color])
+        self.widgets["status_str"].set(message)
+
+        if not message.endswith("..."):
+            self.widgets["status_lvl"].after(10000, self.reset_status)
+            self.last_timer = datetime.now()
 
     ## WIDGETS ##
 
-    def create_label(self, frame, text="Label", font=()):
-        label = ttk.Label(frame, text=text, font=font)
-        return label
+    def create_str(self, frame):
+        return tk.StringVar(frame)
+
+    def create_label(self, frame, text="Label", textvariable=None, font=()):
+        return ttk.Label(frame, text=text, textvariable=textvariable, font=font)
 
     def create_input(self, frame, str_store=None):
-        field = ttk.Entry(frame, textvariable=str_store)
-        return field
+        return ttk.Entry(frame, textvariable=str_store)
 
     def create_btn(self, frame, text="Button", command=None):
-        btn = ttk.Button(frame, text=text, command=command)
-        return btn
+        return ttk.Button(frame, text=text, command=command)
 
     def create_option_menu(self, frame, str_store, opts, command=None):
-        option_menu = ttk.OptionMenu(frame, str_store, opts[0], *opts, command=command)
-        return option_menu
+        return ttk.OptionMenu(frame, str_store, opts[0], *opts, command=command)
 
     ## FRAMES ##
 
-    def create_frame(self, frame, name):
-        self.frames[name] = ttk.Frame(frame)
+    def create_page(self, frame, name, title):
+        self.frames[name + "_page"] = ttk.Frame(self.frames["main"])
+        return self.frames[name + "_page"]
+
+    def create_frame(self, frame, name, notebook=False):
+        if notebook:
+            self.frames[name] = ttk.Notebook(frame)
+            print(name)
+        else:
+            self.frames[name] = ttk.Frame(frame)
         return self.frames[name]
 
     def start(self):
@@ -163,3 +287,5 @@ class GUI:
 
     def quit(self):
         self.root.destroy()
+
+gui = None

@@ -1,4 +1,5 @@
 def main():
+    global gui
     os.environ.__setitem__('DISPLAY', 'unix:0.0')
     cl = sys.argv[1:]
     hal.start()

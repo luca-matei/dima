@@ -26,7 +26,7 @@ class Db:
             log(e, level=4)
             log(f"Cannot connect to '{self.lmid}' database!", level=5, console=True)
 
-        log(self.lmid + " database connected.")
+        log(self.lmid + " database connected")
 
     def rebuild(self):
         self.erase()
@@ -48,6 +48,8 @@ class Db:
         for table in tables:
             self.execute(f"drop table if exists {table} cascade;")
 
+        log(f"'{self.lmid}' database erased", console=True)
+
     def build(self):
         log(f"Building '{self.lmid}' database ...", console=True)
         struct = utils.read(self.db_dir + "struct.ast", host=self.host)
@@ -68,6 +70,7 @@ class Db:
                 self.execute(f"create table {group[0]} ({','.join(group[1])});")
 
         self.load(default_file)
+        log(f"'{self.lmid}' database built", console=True)
 
     def load(self, file):
         # Web apps load data differently bcs they have .html files
@@ -82,6 +85,8 @@ class Db:
 
         Special first row for translating columns from a table
         """
+
+        log(f"Loading '{file}' into '{self.lmid}' ...", console=True)
 
         db_data = utils.read(file, host=self.host)
         for schema in db_data:
@@ -170,6 +175,8 @@ class Db:
 
                     self.execute(f"insert into {schema[0]}.{table[0]} ({struct_row}) values {ss};", rows)
 
+        log(f"Loaded '{file}'", console=True)
+
     def export(self, file_path=""):
         if not file_path: file_path = f"/home/hal/tmp/{self.lmid}.db.ast"
         log(f"Exported {self.lmid} database to {file_path}", console=True)
@@ -210,4 +217,4 @@ class Db:
 
     def disconnect(self):
         self.conn.close()
-        log(self.lmid + " database disconnected.")
+        log(self.lmid + " database disconnected")

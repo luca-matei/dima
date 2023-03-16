@@ -147,11 +147,11 @@ class Hal:
 
     def create_pool(self, dbid):
         self.pools[dbid] = getattr(sys.modules[__name__], self.modules[self.lmobjs[dbid][1]])(dbid)
-        log(f"Pool {dbid} created.")
+        log(f"Pool {dbid} created")
 
     def destroy_pool(self, dbid):
         self.pools.pop(dbid, None)
-        log(f"Pool {dbid} destroyed.")
+        log(f"Pool {dbid} destroyed")
 
     def insert_lmobj(self, lmid, module, alias):
         log(f"Inserting {lmid} of type {module} ...")
@@ -250,6 +250,5 @@ class Hal:
 
         if reload:
             self.load_database()
-
 
 hal = Hal()

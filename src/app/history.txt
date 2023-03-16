@@ -1,2 +1,16 @@
 status
 lm1 save
+lm6 mount 
+lm6 unmount 
+lm4 restart
+lm6 restart nginx
+lm6 mount
+lm6 unmount
+lm6 status
+lm6 restart nginx
+lm7 update css
+lm5 update css
+lm7 update global_html
+lm6 unmount
+lm7 update css
+lm1 save

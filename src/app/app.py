@@ -1,7 +1,7 @@
 import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress, crypt
 import tkinter as tk
 from tkinter import ttk
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class Utils:
     localhost = "127.0.0.1"
@@ -443,7 +443,6 @@ class Utils:
             #print(response)
             return response
 
-
 utils = Utils()
 
 def cmd(*args, **kwargs):
@@ -603,11 +602,11 @@ class Hal:
 
     def create_pool(self, dbid):
         self.pools[dbid] = getattr(sys.modules[__name__], self.modules[self.lmobjs[dbid][1]])(dbid)
-        log(f"Pool {dbid} created.")
+        log(f"Pool {dbid} created")
 
     def destroy_pool(self, dbid):
         self.pools.pop(dbid, None)
-        log(f"Pool {dbid} destroyed.")
+        log(f"Pool {dbid} destroyed")
 
     def insert_lmobj(self, lmid, module, alias):
         log(f"Inserting {lmid} of type {module} ...")
@@ -707,7 +706,6 @@ class Hal:
         if reload:
             self.load_database()
 
-
 hal = Hal()
 
 class Logs:
@@ -742,6 +740,9 @@ class Logs:
 
         if console and not self.quiet:
             print(utils.color(*self.levels[level]) + ": " + message)
+
+            if gui:
+                gui.set_status(*self.levels[level], message)
 
         if level == 5:
             print("Exiting ...")
@@ -805,7 +806,7 @@ class Db:
             log(e, level=4)
             log(f"Cannot connect to '{self.lmid}' database!", level=5, console=True)
 
-        log(self.lmid + " database connected.")
+        log(self.lmid + " database connected")
 
     def rebuild(self):
         self.erase()
@@ -827,6 +828,8 @@ class Db:
         for table in tables:
             self.execute(f"drop table if exists {table} cascade;")
 
+        log(f"'{self.lmid}' database erased", console=True)
+
     def build(self):
         log(f"Building '{self.lmid}' database ...", console=True)
         struct = utils.read(self.db_dir + "struct.ast", host=self.host)
@@ -847,6 +850,7 @@ class Db:
                 self.execute(f"create table {group[0]} ({','.join(group[1])});")
 
         self.load(default_file)
+        log(f"'{self.lmid}' database built", console=True)
 
     def load(self, file):
         # Web apps load data differently bcs they have .html files
@@ -861,6 +865,8 @@ class Db:
 
         Special first row for translating columns from a table
         """
+
+        log(f"Loading '{file}' into '{self.lmid}' ...", console=True)
 
         db_data = utils.read(file, host=self.host)
         for schema in db_data:
@@ -949,6 +955,8 @@ class Db:
 
                     self.execute(f"insert into {schema[0]}.{table[0]} ({struct_row}) values {ss};", rows)
 
+        log(f"Loaded '{file}'", console=True)
+
     def export(self, file_path=""):
         if not file_path: file_path = f"/home/hal/tmp/{self.lmid}.db.ast"
         log(f"Exported {self.lmid} database to {file_path}", console=True)
@@ -989,7 +997,7 @@ class Db:
 
     def disconnect(self):
         self.conn.close()
-        log(self.lmid + " database disconnected.")
+        log(self.lmid + " database disconnected")
 
 class NetUtils:
     def in_subnets(self):
@@ -1037,6 +1045,7 @@ class SSH:
     keygen = 'ssh-keygen -b 4096 -t ed25519 -a 100 -f {} -q -N ""'
 
     def create_ssh_key(self, name:'str', host:'str'=hal.host_lmid):
+        log(f"Creating SSH Key '{name}' ...", console=True)
         privkey = utils.ssh_dir + name
         if utils.isfile(privkey, host=host):
             log(f"SSH key already exists!", level=3, console=True)
@@ -1052,9 +1061,9 @@ class SSH:
         if utils.isfile(privkey, host=host):
             cmd("chmod 600 " + privkey, host=host)
             cmd("chmod 600 " + privkey + ".pub", host=host)
-            log("SSH key created!", console=True)
+            log(f"Created SSH Key '{name}'", console=True)
         else:
-            log(f"Couldn't generate SSH key to access {name}!", level=4, console=True)
+            log(f"Couldn't generate SSH Key '{name}'!", level=4, console=True)
 
 ssh = SSH()
 
@@ -1071,7 +1080,7 @@ class Gitlab:
 
         if not utils.isfile(token_file):
             log("Getting Gitlab REST API token ...")
-            print("Please enter Hal's Gitlab REST API token.")
+            print("Please enter Hal's Gitlab REST API token")
 
             token = getpass.getpass("Token: ")
             utils.write(token_file, token)
@@ -1214,6 +1223,7 @@ class HostUtils:
         hal.pools.get(host_dbid).create_host(env, alias, mem, cpus, disk)
 
     def preseed_host(self, hostname, net_id, ip, ssh_port, host=hal.host_lmid):
+        log(f"Preseeding '{hostname}' ...", console=True)
         # To do: preseed static ip
         arch = "amd" # "386"
         iso_dir = f"{utils.tmp_dir}debian-{utils.debian_version}/"
@@ -1293,7 +1303,7 @@ class HostUtils:
             log(f"Removing {iso_dir} ...", level=3)
             cmd("sudo rm -r " + iso_dir, host=host)
 
-        log(f"Preseeded ISO image for {hostname} stored at {tmp_iso}", console=True)
+        log(f"Preseeded ISO image for '{hostname}' stored at '{tmp_iso}'", console=True)
 
     def register_host(self, mode=None):
         # This host can only be a PM
@@ -1331,20 +1341,21 @@ class lmObj:
         self.name = self.alias if self.alias else self.lmid
 
     def set_alias(self, alias):
+        log(f"Setting alias '{alias}' to '{self.lmid}' ...", console=True)
         if hal.check_alias(alias):
             hal.lmobjs.pop(self.alias, None)
             hal.lmobjs[alias] = self.dbid
             self.alias = alias
 
             hal.db.execute("update lmobjs set alias=%s where id=%s;", (alias, self.dbid,))
-            log(f"Alias '{alias}' set to {self.lmid}.", console=True)
+            log(f"Alias '{alias}' set to {self.lmid}", console=True)
 
     def delete_alias(self):
+        log(f"Removing alias '{self.alias}' from '{self.lmid}'...", console=True)
         hal.lmobjs.pop(self.alias, None)
         self.alias = None
         hal.db.execute("update lmobjs set alias=%s where id=%s;", (None, self.dbid,))
-        log("Alias deleted.", console=True)
-        
+        log("Alias deleted", console=True)
 
 class Net(lmObj):
     def __init__(self, dbid):
@@ -1404,10 +1415,10 @@ class Net(lmObj):
                 pool = hal.pools.get(dhcp_id)
 
             pool.config_dhcp()
-            log(f"{pool.name} set as DHCP server for net {self.name}.", console=True)
+            log(f"'{pool.name}' set as DHCP server for net {self.name}", console=True)
 
         else:
-            log(f"Couldn't set a DHCP server for net {self.name}!", level=4, console=True)
+            log(f"Couldn't set a DHCP server for net' {self.name}'", level=4, console=True)
 
     def set_dns(self, host=None):
         pass
@@ -1443,7 +1454,7 @@ class HostServices:
             if action == "status":
                 out = cmd(f"sudo systemctl status {service}", catch=True)
                 if "active (running)" in out:
-                    log(f"{service} is active.", console=True)
+                    log(f"{service} is active", console=True)
                     return 1
 
                 elif "failed" in out:
@@ -1453,10 +1464,11 @@ class HostServices:
                 msg = messages.get(action)
                 log(f"{msg} {service} for '{self.name}' ...", console=True)
                 cmd(f"sudo systemctl {action} {service} ", host=self.lmid)
+                log(f"{msg[:-3]}ed {service} for '{self.name}'", console=True)
 
     # Nets
     def config_dhcp(self):
-        log(f"Configuring DHCP server on {self.name} ...", console=True)
+        log(f"Configuring DHCP server on '{self.name}' ...", console=True)
         query = "select a.lmid, b.lmobj, b.dns, b.domain, b.netmask, b.gateway, b.lease_start, b.lease_end from lmobjs a, nets b where a.id = b.lmobj and pm=%s;"
         params = self.dbid,
         nets = hal.db.execute(query, params)
@@ -1561,6 +1573,7 @@ class HostServices:
         self.send_file(hal.tpls_dir + "nftables/bogons-ipv4.tpl", "/etc/nft/bogons-ipv4.nft")
         self.send_file(hal.tpls_dir + "nftables/black-ipv4.tpl", "/etc/nft/black-ipv4.nft")
         self.manage_service("restart", "nftables")
+        log(f"Configured Firewall for '{self.name}'", console=True)
 
     def enable_firewall(self):
         self.manage_service("enable", "nftables")
@@ -1602,7 +1615,7 @@ class HostServices:
     # Postgres
     def create_pg_role(self, role:'str', password:'str'=None):
         # https://www.postgresql.org/docs/current/sql-createrole.html
-        log(f"Creating '{role}' role on '{self.name}' ...", console=True)
+        log(f"Creating '{role}' Postgres role on '{self.name}' ...", console=True)
         if not password:
             password = utils.new_pass(64)
 
@@ -1627,8 +1640,10 @@ class HostServices:
             utils.write(utils.tmp_dir + "db_pass.tmp", password)
             log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
 
+        log(f"Postgres role '{role}' created on '{self.name}'", console=True)
+
     def create_pg_db(self, db:'str'):
-        log(f"Creating '{db}' database on '{self.name}' ...", console=True)
+        log(f"Creating '{db}' Postgres database on '{self.name}' ...", console=True)
         db_query = utils.dbs.query.format(f"create database {db} owner {db} encoding 'utf-8';")
         output = cmd(db_query, catch=True, host=self.lmid)
         if "already exists" in output:
@@ -1639,6 +1654,8 @@ class HostServices:
             else: return
 
             cmd(db_query, catch=True, host=self.lmid)
+
+        log(f"Postgres database '{db}' created on '{self.name}'", console=True)
 
     def config_postgres(self):
         """
@@ -1687,6 +1704,8 @@ class HostServices:
             cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"), host=self.lmid)
             cmd(query.format("create database hal owner hal encoding 'utf-8';"), host=self.lmid)
 
+        log(f"Configured PostgreSQL for '{self.name}'", console=True)
+
     def reload_postgres(self):
         self.manage_service("reload", "postgresql")
 
@@ -1723,7 +1742,7 @@ class HostServices:
         if not utils.isfile("/home/hal/.ssh/", host=self.lmid):
             cmd("mkdir /home/hal/.ssh/", host=self.lmid)
 
-        log(f"Configuring SSH client for '{self.name}' ...", console=True)
+        log(f"Configuring SSH Client for '{self.name}' ...", console=True)
         hosts = []
 
         if self.dbid == hal.host_dbid:
@@ -1761,11 +1780,13 @@ class HostServices:
         utils.write("/home/hal/.ssh/config", hosts, tpl=True, host=self.lmid)
         self.update_hosts_file()
 
+        log(f"Configured SSH Client for '{self.name}'", console=True)
+
     def config_ssh_server(self):
         if self.ssh_port == -1:
-            log(f"'{self.name}' is not a SSH server!", level=4, console=True)
+            log(f"'{self.name}' is not a SSH Server!", level=4, console=True)
         else:
-            log(f"Configuring SSH server for '{self.name}' ...", console=True)
+            log(f"Configuring SSH Server for '{self.name}' ...", console=True)
             port = self.next_port(service=True)
             self.port = port
 
@@ -1779,6 +1800,8 @@ class HostServices:
             self.config_firewall()
             self.restart_ssh()
             hal.pools.get(hal.host_dbid).config_ssh_client()
+
+            log(f"Configured SSH Server for '{self.name}'", console=True)
 
     def create_ssh_key(self, for_gitlab:'bool'=False):
         log(f"Generating SSH key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}'. This may take a while ...", console=True)
@@ -1796,6 +1819,8 @@ class HostServices:
                 return
 
         cmd(ssh.keygen.format(privkey), host=host)
+
+        log(f"SSH Key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}' generated", console=True)
 
         if utils.isfile(privkey, host=host):
             cmd("chmod 600 " + privkey, host=host)
@@ -1821,8 +1846,11 @@ class HostServices:
 
         cmd(f"rm {privkey} {privkey}.pub", host=host)
 
+        log(f"Removed {'Gitlab ' if for_gitlab else ''}SSH key for host '{self.name}'", console=True)
+
     ## GPG
     def get_gpg_pubkey(self, email:'str'=None):
+        log(f"Getting GPG pubkey for {email} ...", console=True)
         if not email: email = self.email
         pubkey_path = utils.tmp_dir + "gpg_pubkey"
         output = cmd(f"gpg2 --export -a {self.get_gpg_key_id(email)} > {pubkey_path}", catch=True, host=self.lmid)
@@ -1849,13 +1877,15 @@ class HostServices:
 
     def create_gpg_key(self, email:'str'=None):
         if not email: email = self.email
-        log(f"Generating GPG key for '{email}'. This may take a while ...", console=True)
+        log(f"Generating GPG Key for '{email}'. This may take a while ...", console=True)
 
         key_config = utils.format_tpl("gpg-key.tpl", {
             "user": email.split('@')[0],
             "email": email
             })
         utils.write(utils.tmp_dir + "gpg_batch", key_config, host=self.lmid)
+
+        log(f"Generated GPG Key for '{email}'", console=True)
 
         cmd(f"gpg2 --batch --gen-key {utils.tmp_dir}gpg_batch", host=self.lmid)
         key_id = self.get_gpg_key_id(email)
@@ -1864,10 +1894,11 @@ class HostServices:
         return key_id
 
     def delete_gpg_key(self, email:'str'=None):
+        log(f"Removing GPG Key for '{email}' ...", level=3, console=True)
         if not email: email = self.email
         cmd(f"gpg2 --batch --delete-secret-keys {email}", host=self.lmid)
         cmd(f"gpg2 --batch --delete-keys {email}", host=self.lmid)
-        log(f"Deleted GPG key for {email}!", console=True)
+        log(f"Removed GPG key for '{email}'!", level=3, console=True)
 
 
 class Host(lmObj, HostServices):
@@ -1927,8 +1958,9 @@ class Host(lmObj, HostServices):
         return 0
 
     def clone_repo(self, path):
-        log(f"Cloning {path} Gitlab repository ...", console=True)
+        log(f"Cloning '{path}' Gitlab repository ...", console=True)
         cmd(f"git clone git@{gitlab.domain}:{gitlab.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
+        log(f"'{path}' cloned", console=True)
 
     # Web
     def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=("static",), langs:'list'=("en",), themes:'list'=("light",), default_lang:'str'="en", default_theme:'str'="light", has_animations:'bool'=False):
@@ -1965,8 +1997,9 @@ class Host(lmObj, HostServices):
             if yes: cmd(f"rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
             else: return
 
-        log("Generating DH params. This may take a while ...", console=True)
+        log(f"Generating DH params for '{self.name}'. This may take a while ...", console=True)
         cmd(f"openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096", host=self.lmid)
+        log(f"Generated DH params for '{self.name}'", console=True)
 
     # Hosts
     def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):
@@ -2000,11 +2033,11 @@ class Host(lmObj, HostServices):
             hal.db.execute(query, params)
             hal.pools.get(hal.host_dbid).config_ssh_client()
 
-            log(f"{lmid} VM created on {self.name}!", console=True)
+            log(f"'{lmid}' VM created on '{self.name}'", console=True)
             hal.create_pool(dbid)
 
         else:
-            log(f"Couldn't create {lmid} VM on {self.name}!", level=4, console=True)
+            log(f"Couldn't create '{lmid}' VM on '{self.name}'!", level=4, console=True)
 
     # Mount
     def is_mounted(self):
@@ -2017,14 +2050,14 @@ class Host(lmObj, HostServices):
             log("You can't mount the host!", level=4, console=True)
         else:
             if not utils.isfile(self.mnt_dir):
-                log(f"Creating mount point at {self.mnt_dir} ...")
+                log(f"Creating mount point at '{self.mnt_dir}' ...")
                 cmd("mkdir " + self.mnt_dir)
 
             if not self.is_mounted():
                 cmd(f"sshfs -p {self.ssh_port} -o allow_other,identityfile={utils.ssh_dir}{self.lmid} hal@{self.ip}:/home/hal {self.mnt_dir}")
-                log(f"{self.name} mounted at {utils.now()}", console=True)
+                log(f"'{self.name}' mounted at {utils.now()}", console=True)
             else:
-                log(f"{self.name} is already mounted!", console=True)
+                log(f"'{self.name}' is already mounted!", level=4, console=True)
 
     def unmount(self):
         if self.dbid == hal.host_dbid:
@@ -2032,9 +2065,9 @@ class Host(lmObj, HostServices):
         else:
             if self.is_mounted():
                 cmd(f"fusermount -u {self.mnt_dir}")
-                log(f"{self.name} unmounted at {utils.now()}", console=True)
+                log(f"'{self.name}' unmounted at {utils.now()}", console=True)
             else:
-                log(f"{self.name} is already unmounted!", console=True)
+                log(f"'{self.name}' is already unmounted!", level=4, console=True)
 
     # System
     def config_sysctl(self):
@@ -2044,11 +2077,13 @@ class Host(lmObj, HostServices):
             })
         utils.write("/etc/sysctl.conf", sysctl, tpl=True, host=self.lmid)
         cmd("sudo sysctl -p", host=self.lmid)
+        log(f"Configured sysctl for '{self.name}'", console=True)
 
     def config_grub(self):
         log(f"Configuring GRUB for '{self.name}' ...", console=True)
         self.send_file(hal.tpls_dir + "grub.tpl", "/etc/default/grub")
         cmd("sudo update-grub", host=self.lmid)
+        log(f"Configured GRUB for '{self.name}'", console=True)
 
     def config_motd(self):
         self.send_file(hal.tpls_dir + "motd.tpl", "/etc/motd")
@@ -2083,7 +2118,7 @@ class Host(lmObj, HostServices):
             hosts.append(web[1] + fill_spaces1 + web[2] + fill_spaces2 + "dev." + web[3])
 
 
-        log(f"Generating /etc/hosts for {self.name} ...", console=True)
+        log(f"Generating /etc/hosts for '{self.name}' ...", console=True)
         spaces = 4 * ' '
         hosts = [
             f"127.0.1.1{spaces}{self.lmid}.{utils.hosts.domain}{spaces*2}{self.lmid}"
@@ -2138,7 +2173,10 @@ class Host(lmObj, HostServices):
             })
         utils.write("/etc/hosts", hosts_file, host=self.lmid)
 
+        log(f"Generated /etc/hosts for '{self.name}'", console=True)
+
     def reach(self):
+        log(f"Trying to reach '{self.name}' ...", console=True)
         if self.dbid == hal.host_dbid:
             print("It's this machine, dumbass!")
         else:
@@ -2190,8 +2228,10 @@ class Host(lmObj, HostServices):
         cmd(f"{utils.projects_dir}venv/bin/pip install wheel", host=self.lmid)
         cmd(f"{utils.projects_dir}venv/bin/pip install {packages}", host=self.lmid)
 
+        log(f"Created virtual environment for '{self.name}'", console=True)
+
     def config_git(self):
-        log(f"Configuring Git for {self.name} ...", console=True)
+        log(f"Configuring Git for '{self.name}' ...", console=True)
 
         config = utils.format_tpl("gitconfig.tpl", {
             "user": self.lmid,
@@ -2212,6 +2252,8 @@ class Host(lmObj, HostServices):
 
         if not exists:
             gitlab.add_gpg_key(self.email, gpg_pubkey)
+
+        log(f"Configured Git for '{self.name}'", console=True)
 
     def setup(self):
         self.config_ssh_server()
@@ -2259,10 +2301,12 @@ class Host(lmObj, HostServices):
     def update(self):
         log(f"Updating '{self.name}' ...", console=True)
         cmd("apt update && apt upgrade -y", host=self.lmid)
+        log(f"Updated '{self.name}'", console=True)
 
     def reboot(self):
         log(f"Rebooting '{self.name}' ...", console=True)
         cmd("sudo systemctl reboot now", host=self.lmid)
+        log(f"Rebooted '{self.name}'", console=True)
 
     def get_name(self):
         log(self.name, console=True)
@@ -2301,11 +2345,12 @@ class Project(lmObj):
             return utils.read(token_file, host=self.dev_host)
 
     def save(self, message:'str'="Updated files"):
+        log(f"Saving '{self.name}' on Gitlab ...", console=True)
         git_cmd = f"git --git-dir={self.repo_dir}.git/ --work-tree={self.repo_dir} " + "{}"
         cmd(git_cmd.format(f"add {self.repo_dir}*"), host=self.dev_host)
         cmd(git_cmd.format(f"commit -m '{message}'"), host=self.dev_host)
         cmd(git_cmd.format("push"), host=self.dev_host)
-        log(f"Saved {self.name} on Gitlab ...", console=True)
+        log(f"Saved '{self.name}' on Gitlab", console=True)
 
 class WebUtils:
     methods = "get", "put", "post", "delete"
@@ -2521,6 +2566,8 @@ class Web(Project):
         self.default(yes=True)
         hal.pools.get(hal.host_dbid).update_hosts_file()
 
+        log(f"Built '{self.name}'", console=True)
+
     def create_db(self, env:'env'="dev"):
         host = getattr(self, env + "_host")
         host_id = getattr(self, env + "_host_id")
@@ -2534,7 +2581,7 @@ class Web(Project):
         if not yes:
             yes = utils.yes_no(f"Are you sure you want to format '{self.name}'?")
             if not yes:
-                log("Aborted.", console=True)
+                log("Aborted", console=True)
                 return
 
         log(f"Setting '{self.name}' to 'Hello World' ...", console=True)
@@ -2555,11 +2602,13 @@ class Web(Project):
         self.update_css()
         self.default_js(True)
 
+        log(f"Set '{self.name}' to 'Hello World'", console=True)
+
     def default_db(self, yes:'bool'=False):
         if not yes:
             yes = utils.yes_no(f"Are you sure you want to format '{self.name}' database?")
             if not yes:
-                log("Aborted.", console=True)
+                log("Aborted", console=True)
                 return
 
         host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
@@ -2597,7 +2646,7 @@ class Web(Project):
         if not yes:
             yes = utils.yes_no(f"Are you sure you want to format '{self.name}' HTML?")
             if not yes:
-                log("Aborted.", console=True)
+                log("Aborted", console=True)
                 return
 
         src_html = utils.src_dir + "assets/web/app/html/"
@@ -2610,14 +2659,18 @@ class Web(Project):
                 utils.copy(src_html, dest_html)
             else:
                 hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
+
+            log(f"Set '{self.name}' HTML to 'Hello World.'", console=True)
         else:
             # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
-            log(f"Updating structure HTML for '{self.name}' ...", console=True)
+            log(f"Setting '{self.name}' Global HTML to 'Hello World' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
             if self.dev_host_id == hal.host_dbid:
                 utils.copy(src_html + "*.yml", dest_html)
             else:
                 hal.pools.get(self.dev_host_id).send_file(dest_html + "*.yml", dest_html)
+
+            log(f"Set '{self.name}' Global HTML to 'Hello World'", console=True)
 
         self.update_html()
         self.restart()
@@ -2629,7 +2682,7 @@ class Web(Project):
         if not yes:
             yes = utils.yes_no(f"Are you sure you want to format {self.name} JS?")
             if not yes:
-                log("Aborted.", console=True)
+                log("Aborted", console=True)
                 return
 
         log(f"Setting '{self.name}' JS to 'Hello World' ...", console=True)
@@ -2643,6 +2696,8 @@ class Web(Project):
                 host=self.dev_host
                 )
 
+        log(f"Set '{self.name}' JS to 'Hello World'", console=True)
+
     def update_js(self):
         self.default_js(yes=True)
 
@@ -2651,7 +2706,7 @@ class Web(Project):
         return utils.yml2html(yml, lang, self.default_lang, self.global_html, self.dev_host)
 
     def update_global_html(self):
-        log(f"Updating global html for '{self.name}' ...", console=True)
+        log(f"Updating Global HTML for '{self.name}' ...", console=True)
 
         var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
@@ -2713,11 +2768,13 @@ class Web(Project):
 
             self.global_html[lang]["app-wrapper"] = "<!doctype html>" + self.global_html[lang]["app-wrapper"]
 
+        log(f"Updated Global HTML for '{self.name}'", console=True)
+
     def update_html(self, section:'str'= "", global_html:'bool'=False):
         """
             Command only for dev environment.
         """
-        log(f"Updating html for '{self.name}' ...", console=True)
+        log(f"Updating HTML for '{self.name}' ...", console=True)
 
         method_ids = dict(self.db.execute("select name, id from methods;"))
 
@@ -2815,6 +2872,7 @@ class Web(Project):
             solve_section(self.html_dir + section + '/', section, 0)
 
         self.restart()
+        log(f"Updated HTML for '{self.name}'", console=True)
 
     def update_py(self):
         """
@@ -2843,6 +2901,7 @@ class Web(Project):
             file_host = self.dev_host)
 
         self.restart()
+        log(f"Updated source code for '{self.name}'", console=True)
 
     def update_css(self):
         """
@@ -2897,6 +2956,8 @@ class Web(Project):
             self.update_global_html()
             self.update_html()
 
+        log(f"Updated CSS for '{self.name}'", console=True)
+
     def generate_ssl(self):
         if not utils.isfile(self.dev_ssl_dir, host=self.dev_host):
             cmd("mkdir " + self.dev_ssl_dir, host=self.dev_host)
@@ -2904,12 +2965,14 @@ class Web(Project):
         # Production certificates
         #log(f"Generating Let's Encrypt SSL certs for {self.dev_domain}. This may take a while ...", console=True)
 
-        log(f"Generating self-signed SSL certs for '{self.name}'. This may take a while ...", console=True)
+        log(f"Generating TLS certificates for '{self.name}'. This may take a while ...", console=True)
         cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {self.dev_ssl_dir}privkey.pem -out {self.dev_ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={hal.domain}/CN={self.dev_domain}"', host=self.dev_host)
 
         query = "update web.webs set ssl_last_gen=%s where lmobj=%s;"
         params = datetime.now(), self.dbid,
         hal.db.execute(query, params)
+
+        log(f"Generated TLS certificates for '{self.name}'", console=True)
 
     def config_uwsgi(self, env:'env'="dev"):
         log(f"Configuring uWSGI for '{self.name}' ({env}) ...", console=True)
@@ -2925,6 +2988,7 @@ class Web(Project):
         utils.write(self.app_dir + "uwsgi.ini", uwsgi_config, host=host)
 
         self.restart(env)
+        log(f"Configured uWSGI for '{self.name}' ({env})", console=True)
 
     def config_supervisor(self, env:'env'="dev"):
         log(f"Configuring Supervisor for '{self.name}' ({env}) ...", console=True)
@@ -2939,6 +3003,7 @@ class Web(Project):
         utils.write(f"/etc/supervisor/conf.d/{self.lmid}.conf", supervisor_config, host=host)
 
         hal.pools.get(host_id).restart_supervisor()
+        log(f"Configured Supervisor for '{self.name}' ({env})", console=True)
 
     def config_nginx(self, env:'env'="dev"):
         log(f"Configuring Nginx for '{self.name}' ({env}) ...", console=True)
@@ -2972,6 +3037,8 @@ class Web(Project):
         utils.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, host=host)
         hal.pools.get(host_id).restart_nginx()
 
+        log(f"Configured Nginx for '{self.name}' ({env})", console=True)
+
     def config(self, env:'env'="dev"):
         self.config_uwsgi(env)
         self.config_supervisor(env)
@@ -2983,6 +3050,7 @@ class Web(Project):
         # To do: Save log file
         cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;", host=host)
         cmd(f"sudo supervisorctl restart {self.lmid}", host=host)
+        log(f"Restarted '{self.name}' ({env})", console=True)
 
 class AppUtils:
     pass
@@ -3273,14 +3341,25 @@ class CLI:
 cli = CLI()
 
 class GUI:
+    colors = {
+        "blue": "#0000FF",
+        "green": "#008000",
+        "yellow": "#FFFF00",
+        "lred": "#FF3333",
+        "red": "#FF0000",
+        }
+
     def __init__(self):
         self.root = tk.Tk()
         self.style = ttk.Style(self.root)
         self.frames = {}
+        self.widgets = {}
+        self.panel_acts = {}
+        self.last_timer = None
 
         # Window geometry
-        self.w_width = 600
-        self.w_height = 400
+        self.w_width = 800
+        self.w_height = 600
 
         self.screen_width = 1920    # w.winfo_screenwidth()
         self.screen_height = 1080    # w.winfo_screenheight()
@@ -3298,138 +3377,251 @@ class GUI:
 
         # Style
         self.style.theme_use("clam")
+        self.build_interface()
 
-        # Structure
-        """
-        root
-            main
-                body
-                    command
-                    hosts
-                    webs
+    def build_interface(self):
+        def structure():
+            """
+            root
+                main
+                --- dashboard
+                        command
+                --- hosts
+                        panel
+                --- webs
+                        panel
                 status
-        """
-        self.create_obj("frame", "root", name="main", fill="both", expand=True, padx=16, pady=16)
-        self.create_obj("frame", "main", name="body", fill="both", expand=True)
-        self.create_obj("frame", "body", name="command", fill="x")
-        self.create_obj("frame", "body", name="hosts", fill="x", pady=8)
-        self.create_obj("frame", "main", name="status", fill="x")
+            """
+            self.create_obj("frame", "root",
+                name = "main",
+                notebook = True,
+                fill="both", expand=True, padx=16, pady=16
+                )
 
-        # Command input
-        self.create_obj("label", "command", text="Command:", side="left", ipady=2)
-        self.history_index = 0
-        self.command = tk.StringVar()
-        self.cmd_input = self.create_obj("input", "command", str_store=self.command, anchor="NW", side="left", padx=4, ipadx=8, ipady=2)
-        self.cmd_input.bind('<Return>', self.send_command)
-        self.cmd_input.bind('<Up>', self.history_up)
-        self.cmd_input.bind('<Down>', self.history_down)
-        self.cmd_input.focus()
+            self.create_obj("page", "main",
+                name = "dashboard",
+                title = "Dashboard",
+                fill="both", expand=True
+                )
 
-        # Hosts panel
-        self.create_obj("label", "hosts", text="Hosts", font=("Arial", 12), fill="x", pady=8)
-        hosts = [x[0] for x in hal.db.execute("select lmid from lmobjs where module=(select id from modules where name='Host');")]
+            self.create_obj("page", "main",
+                name = "hosts",
+                title = "Hosts",
+                fill="both", expand=True
+                )
 
-        self.host_acts = {
-            "nginx": ("config", "reload", "start", "stop", "restart"),
-            "hosts_file": ("update",),
-        }
-        xyz = hal.db.execute("select name, acts from command.objs where module=(select id from modules where name='Host');")
-        print(xyz)
-        self.host_acts = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in xyz}
-        print(self.host_acts)
+            self.create_obj("page", "main",
+                name = "webs",
+                title = "Webs",
+                fill="both", expand=True
+                )
 
-        self.host_opt = tk.StringVar()
-        self.obj_opt = tk.StringVar()
-        self.act_opt = tk.StringVar()
+            self.create_obj("page", "main",
+                name = "console",
+                title = "Console",
+                fill="both", expand=True
+                )
 
-        self.create_obj("option_menu", "hosts", str_store=self.host_opt, opts=hosts, side="left")
-        self.create_obj("option_menu", "hosts", str_store=self.obj_opt,
-            opts = sorted(utils.get_keys(self.host_acts)),
-            command = self.change_acts,
-            side = "left")
+            self.create_obj("frame", "dashboard", name="command", fill="x")
+            self.create_obj("frame", "root",
+                name="status",
+                fill="x", pady=16, padx=16
+                )
 
-        self.acts_menu = self.create_obj("option_menu", "hosts", str_store=self.act_opt,
-            opts = self.host_acts[sorted(utils.get_keys(self.host_acts))[0]],
-            side = "left")
+        def manual_cmd():
+            self.history_index = 0
+            self.create_obj("frame", "dashboard",
+                name="manual_cmd",
+                fill="x", pady=16)
 
-        self.create_obj("btn", "hosts", text="Process", command=self.send_host_cmd)
+            self.create_obj("label", "manual_cmd",
+                text="Manual Command",
+                fill="x", anchor="NW")
+            self.widgets["cmd_str"] = tk.StringVar()
 
-        # Status section
-        self.create_obj("btn", "status", text="Quit", command=self.quit, anchor="SE")
+            self.widgets["cmd_input"] = self.create_obj("input", "manual_cmd",
+                str_store = self.widgets["cmd_str"],
+                anchor = "NW", side="left", pady=8, ipadx=8, ipady=2
+                )
 
+            self.widgets["cmd_input"].bind('<Return>', lambda event: self.send_command("manual"))
+            self.widgets["cmd_input"].bind('<Up>', self.history_up)
+            self.widgets["cmd_input"].bind('<Down>', self.history_down)
+            self.widgets["cmd_input"].focus()
+
+        def panel(name):
+            self.create_obj("frame", name + "s", name=name, fill="x", pady=12)
+            self.create_obj("label", name,
+                text="Command",
+                fill="x", anchor="NW", pady=4)
+            lmids = [x[0] for x in hal.db.execute(f"select lmid from lmobjs where module=(select id from modules where name='{name.capitalize()}');")]
+
+            acts = hal.db.execute(f"select name, acts from command.objs where module=(select id from modules where name='{name.capitalize()}');")
+            self.panel_acts[name] = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in acts}
+
+            self.widgets[f"{name}_lmid"] = tk.StringVar()
+            self.widgets[f"{name}_obj"] = tk.StringVar()
+            self.widgets[f"{name}_act"] = tk.StringVar()
+
+            self.create_obj("option_menu", name,
+                str_store = self.widgets[f"{name}_lmid"],
+                opts = lmids,
+                side = "left", pady=4
+                )
+
+            self.create_obj("option_menu", name,
+                str_store = self.widgets[f"{name}_obj"],
+                opts = sorted(utils.get_keys(self.panel_acts[name])),
+                command = lambda event: self.change_acts(name),
+                side = "left", pady=4
+                )
+
+            self.widgets[f"{name}_acts"] = self.create_obj("option_menu", name,
+                str_store = self.widgets[f"{name}_act"],
+                opts = self.panel_acts[name][sorted(utils.get_keys(self.panel_acts[name]))[0]],
+                side = "left", pady=4
+                )
+
+            self.create_obj("btn", name,
+                text="Process",
+                command = lambda: self.send_command(name),
+                side = "left", padx=16, pady=4
+                )
+
+        def status():
+            self.widgets["status_lvl_str"] = self.create_obj("str", "status")
+            self.widgets["status_str"] = self.create_obj("str", "status")
+            self.widgets["status_lvl"] = self.create_obj("label", "status",
+                textvariable = self.widgets["status_lvl_str"],
+                ipadx = 4, side = "left", anchor="SW"
+                )
+            self.create_obj("label", "status",
+                textvariable=self.widgets["status_str"],
+                ipadx = 4, side = "left", anchor="SW"
+                )
+            self.create_obj("btn", "status", text="Quit", command=self.quit, anchor="SE")
+
+        structure()
+        manual_cmd()
+        for p in ("host", "web"):
+            panel(p)
+        status()
+
+
+    ## HISTORY
 
     def history_up(self, event):
         self.history_index -= 1
         if abs(self.history_index) <= len(cli.history):
-            self.command.set(cli.history[self.history_index])
-            self.cmd_input.icursor("end")
+            self.widgets["cmd_str"].set(cli.history[self.history_index])
+            self.widgets["cmd_input"].icursor("end")
         else:
             self.history_index += 1
 
     def history_down(self, event):
         self.history_index += 1
         if self.history_index < 0:
-            self.command.set(cli.history[self.history_index])
-            self.cmd_input.icursor("end")
+            self.widgets["cmd_str"].set(cli.history[self.history_index])
+            self.widgets["cmd_input"].icursor("end")
         elif self.history_index == 0:
-            self.command.set("")
+            self.widgets["cmd_str"].set("")
         else:
             self.history_index -= 1
 
-    def send_command(self, event):
-        cli.process(self.command.get())
-        self.command.set("")
-        self.history_index = 0
-
-    def send_host_cmd(self):
-        print(self.host_opt.get() + " " + self.act_opt.get() + " " + self.obj_opt.get())
-
     ## WIDGET UTILS ##
 
-    def create_obj(self, obj, frame, anchor=None, expand=False, fill=None, side=None, padx=0, pady=0, ipadx=0, ipady=0, **kwargs):
+    def create_obj(self, obj_name, frame, anchor=None, expand=False, fill=None, side=None, padx=0, pady=0, ipadx=0, ipady=0, **kwargs):
         if frame == "root": frame_obj = self.root
         else: frame_obj = self.frames[frame]
 
-        obj = getattr(self, "create_" + obj)(frame_obj, **kwargs)
+        obj = getattr(self, "create_" + obj_name)(frame_obj, **kwargs)
 
-        if anchor: anchor = getattr(tk, anchor.upper())
-        if side: side = getattr(tk, side.upper())
-        if fill: fill = getattr(tk, fill.upper())
+        if obj_name not in ("str",):
+            if anchor: anchor = getattr(tk, anchor.upper())
+            if side: side = getattr(tk, side.upper())
+            if fill: fill = getattr(tk, fill.upper())
 
-        obj.pack(anchor=anchor, expand=expand, fill=fill, side=side, padx=padx, pady=pady, ipadx=ipadx, ipady=ipady)
+            obj.pack(anchor=anchor, expand=expand, fill=fill, side=side, padx=padx, pady=pady, ipadx=ipadx, ipady=ipady)
+
+            if obj_name == "page":
+                frame_obj.add(self.frames[kwargs["name"] + "_page"], text=kwargs["title"])
+                self.create_obj("frame", kwargs["name"] + "_page",
+                    name = kwargs["name"],
+                    fill = "both", expand=True, padx=16
+                    )
 
         return obj
 
-    def change_acts(self, event):
-        self.acts_menu['menu'].delete(0, tk.END)
-        opts = sorted(self.host_acts[self.obj_opt.get()])
-        self.act_opt.set(opts[0])
-        for opt in opts:
-            self.acts_menu['menu'].add_command(label=opt, command=tk._setit(self.act_opt, opt))
+    def change_acts(self, t):
+        self.widgets[t + "_acts"]['menu'].delete(0, tk.END)
 
+        opts = sorted(self.panel_acts[t][self.widgets[t + "_obj"].get()])
+        self.widgets[t + "_act"].set(opts[0])
+
+        for opt in opts:
+            self.widgets[t + "_acts"]['menu'].add_command(
+                label = opt,
+                command = tk._setit(self.widgets[t + "_act"], opt))
+
+    def send_command(self, t):
+        if t == "manual":
+            cli.process(self.widgets["cmd_str"].get())
+            self.widgets["cmd_str"].set("")
+            self.history_index = 0
+
+        elif t in ("host", "web"):
+            name = self.widgets[t + "_lmid"].get()
+            act = self.widgets[t + "_act"].get()
+            obj = self.widgets[t + "_obj"].get()
+
+            if obj:
+                cli.process(' '.join([name, act, obj]))
+            else:
+                cli.process(' '.join([name, act]))
+
+    def reset_status(self):
+        if self.last_timer + timedelta(seconds=10) <= datetime.now():
+            self.widgets["status_lvl_str"].set("")
+            self.widgets["status_str"].set("")
+
+    def set_status(self, level, color, message):
+        self.widgets["status_lvl_str"].set(level)
+        self.widgets["status_lvl"].config(foreground = self.colors[color])
+        self.widgets["status_str"].set(message)
+
+        if not message.endswith("..."):
+            self.widgets["status_lvl"].after(10000, self.reset_status)
+            self.last_timer = datetime.now()
 
     ## WIDGETS ##
 
-    def create_label(self, frame, text="Label", font=()):
-        label = ttk.Label(frame, text=text, font=font)
-        return label
+    def create_str(self, frame):
+        return tk.StringVar(frame)
+
+    def create_label(self, frame, text="Label", textvariable=None, font=()):
+        return ttk.Label(frame, text=text, textvariable=textvariable, font=font)
 
     def create_input(self, frame, str_store=None):
-        field = ttk.Entry(frame, textvariable=str_store)
-        return field
+        return ttk.Entry(frame, textvariable=str_store)
 
     def create_btn(self, frame, text="Button", command=None):
-        btn = ttk.Button(frame, text=text, command=command)
-        return btn
+        return ttk.Button(frame, text=text, command=command)
 
     def create_option_menu(self, frame, str_store, opts, command=None):
-        option_menu = ttk.OptionMenu(frame, str_store, opts[0], *opts, command=command)
-        return option_menu
+        return ttk.OptionMenu(frame, str_store, opts[0], *opts, command=command)
 
     ## FRAMES ##
 
-    def create_frame(self, frame, name):
-        self.frames[name] = ttk.Frame(frame)
+    def create_page(self, frame, name, title):
+        self.frames[name + "_page"] = ttk.Frame(self.frames["main"])
+        return self.frames[name + "_page"]
+
+    def create_frame(self, frame, name, notebook=False):
+        if notebook:
+            self.frames[name] = ttk.Notebook(frame)
+            print(name)
+        else:
+            self.frames[name] = ttk.Frame(frame)
         return self.frames[name]
 
     def start(self):
@@ -3438,7 +3630,10 @@ class GUI:
     def quit(self):
         self.root.destroy()
 
+gui = None
+
 def main():
+    global gui
     os.environ.__setitem__('DISPLAY', 'unix:0.0')
     cl = sys.argv[1:]
     hal.start()

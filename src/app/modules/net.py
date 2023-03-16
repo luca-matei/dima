@@ -56,10 +56,10 @@ class Net(lmObj):
                 pool = hal.pools.get(dhcp_id)
 
             pool.config_dhcp()
-            log(f"{pool.name} set as DHCP server for net {self.name}.", console=True)
+            log(f"'{pool.name}' set as DHCP server for net {self.name}", console=True)
 
         else:
-            log(f"Couldn't set a DHCP server for net {self.name}!", level=4, console=True)
+            log(f"Couldn't set a DHCP server for net' {self.name}'", level=4, console=True)
 
     def set_dns(self, host=None):
         pass

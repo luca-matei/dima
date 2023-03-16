@@ -1,4 +1,3 @@
-
 class Project(lmObj):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
@@ -24,8 +23,9 @@ class Project(lmObj):
             return utils.read(token_file, host=self.dev_host)
 
     def save(self, message:'str'="Updated files"):
+        log(f"Saving '{self.name}' on Gitlab ...", console=True)
         git_cmd = f"git --git-dir={self.repo_dir}.git/ --work-tree={self.repo_dir} " + "{}"
         cmd(git_cmd.format(f"add {self.repo_dir}*"), host=self.dev_host)
         cmd(git_cmd.format(f"commit -m '{message}'"), host=self.dev_host)
         cmd(git_cmd.format("push"), host=self.dev_host)
-        log(f"Saved {self.name} on Gitlab ...", console=True)
+        log(f"Saved '{self.name}' on Gitlab", console=True)

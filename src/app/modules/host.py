@@ -20,7 +20,7 @@ class HostServices:
             if action == "status":
                 out = cmd(f"sudo systemctl status {service}", catch=True)
                 if "active (running)" in out:
-                    log(f"{service} is active.", console=True)
+                    log(f"{service} is active", console=True)
                     return 1
 
                 elif "failed" in out:
@@ -30,10 +30,11 @@ class HostServices:
                 msg = messages.get(action)
                 log(f"{msg} {service} for '{self.name}' ...", console=True)
                 cmd(f"sudo systemctl {action} {service} ", host=self.lmid)
+                log(f"{msg[:-3]}ed {service} for '{self.name}'", console=True)
 
     # Nets
     def config_dhcp(self):
-        log(f"Configuring DHCP server on {self.name} ...", console=True)
+        log(f"Configuring DHCP server on '{self.name}' ...", console=True)
         query = "select a.lmid, b.lmobj, b.dns, b.domain, b.netmask, b.gateway, b.lease_start, b.lease_end from lmobjs a, nets b where a.id = b.lmobj and pm=%s;"
         params = self.dbid,
         nets = hal.db.execute(query, params)
@@ -138,6 +139,7 @@ class HostServices:
         self.send_file(hal.tpls_dir + "nftables/bogons-ipv4.tpl", "/etc/nft/bogons-ipv4.nft")
         self.send_file(hal.tpls_dir + "nftables/black-ipv4.tpl", "/etc/nft/black-ipv4.nft")
         self.manage_service("restart", "nftables")
+        log(f"Configured Firewall for '{self.name}'", console=True)
 
     def enable_firewall(self):
         self.manage_service("enable", "nftables")
@@ -179,7 +181,7 @@ class HostServices:
     # Postgres
     def create_pg_role(self, role:'str', password:'str'=None):
         # https://www.postgresql.org/docs/current/sql-createrole.html
-        log(f"Creating '{role}' role on '{self.name}' ...", console=True)
+        log(f"Creating '{role}' Postgres role on '{self.name}' ...", console=True)
         if not password:
             password = utils.new_pass(64)
 
@@ -204,8 +206,10 @@ class HostServices:
             utils.write(utils.tmp_dir + "db_pass.tmp", password)
             log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
 
+        log(f"Postgres role '{role}' created on '{self.name}'", console=True)
+
     def create_pg_db(self, db:'str'):
-        log(f"Creating '{db}' database on '{self.name}' ...", console=True)
+        log(f"Creating '{db}' Postgres database on '{self.name}' ...", console=True)
         db_query = utils.dbs.query.format(f"create database {db} owner {db} encoding 'utf-8';")
         output = cmd(db_query, catch=True, host=self.lmid)
         if "already exists" in output:
@@ -216,6 +220,8 @@ class HostServices:
             else: return
 
             cmd(db_query, catch=True, host=self.lmid)
+
+        log(f"Postgres database '{db}' created on '{self.name}'", console=True)
 
     def config_postgres(self):
         """
@@ -264,6 +270,8 @@ class HostServices:
             cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"), host=self.lmid)
             cmd(query.format("create database hal owner hal encoding 'utf-8';"), host=self.lmid)
 
+        log(f"Configured PostgreSQL for '{self.name}'", console=True)
+
     def reload_postgres(self):
         self.manage_service("reload", "postgresql")
 
@@ -300,7 +308,7 @@ class HostServices:
         if not utils.isfile("/home/hal/.ssh/", host=self.lmid):
             cmd("mkdir /home/hal/.ssh/", host=self.lmid)
 
-        log(f"Configuring SSH client for '{self.name}' ...", console=True)
+        log(f"Configuring SSH Client for '{self.name}' ...", console=True)
         hosts = []
 
         if self.dbid == hal.host_dbid:
@@ -338,11 +346,13 @@ class HostServices:
         utils.write("/home/hal/.ssh/config", hosts, tpl=True, host=self.lmid)
         self.update_hosts_file()
 
+        log(f"Configured SSH Client for '{self.name}'", console=True)
+
     def config_ssh_server(self):
         if self.ssh_port == -1:
-            log(f"'{self.name}' is not a SSH server!", level=4, console=True)
+            log(f"'{self.name}' is not a SSH Server!", level=4, console=True)
         else:
-            log(f"Configuring SSH server for '{self.name}' ...", console=True)
+            log(f"Configuring SSH Server for '{self.name}' ...", console=True)
             port = self.next_port(service=True)
             self.port = port
 
@@ -356,6 +366,8 @@ class HostServices:
             self.config_firewall()
             self.restart_ssh()
             hal.pools.get(hal.host_dbid).config_ssh_client()
+
+            log(f"Configured SSH Server for '{self.name}'", console=True)
 
     def create_ssh_key(self, for_gitlab:'bool'=False):
         log(f"Generating SSH key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}'. This may take a while ...", console=True)
@@ -373,6 +385,8 @@ class HostServices:
                 return
 
         cmd(ssh.keygen.format(privkey), host=host)
+
+        log(f"SSH Key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}' generated", console=True)
 
         if utils.isfile(privkey, host=host):
             cmd("chmod 600 " + privkey, host=host)
@@ -398,8 +412,11 @@ class HostServices:
 
         cmd(f"rm {privkey} {privkey}.pub", host=host)
 
+        log(f"Removed {'Gitlab ' if for_gitlab else ''}SSH key for host '{self.name}'", console=True)
+
     ## GPG
     def get_gpg_pubkey(self, email:'str'=None):
+        log(f"Getting GPG pubkey for {email} ...", console=True)
         if not email: email = self.email
         pubkey_path = utils.tmp_dir + "gpg_pubkey"
         output = cmd(f"gpg2 --export -a {self.get_gpg_key_id(email)} > {pubkey_path}", catch=True, host=self.lmid)
@@ -426,13 +443,15 @@ class HostServices:
 
     def create_gpg_key(self, email:'str'=None):
         if not email: email = self.email
-        log(f"Generating GPG key for '{email}'. This may take a while ...", console=True)
+        log(f"Generating GPG Key for '{email}'. This may take a while ...", console=True)
 
         key_config = utils.format_tpl("gpg-key.tpl", {
             "user": email.split('@')[0],
             "email": email
             })
         utils.write(utils.tmp_dir + "gpg_batch", key_config, host=self.lmid)
+
+        log(f"Generated GPG Key for '{email}'", console=True)
 
         cmd(f"gpg2 --batch --gen-key {utils.tmp_dir}gpg_batch", host=self.lmid)
         key_id = self.get_gpg_key_id(email)
@@ -441,10 +460,11 @@ class HostServices:
         return key_id
 
     def delete_gpg_key(self, email:'str'=None):
+        log(f"Removing GPG Key for '{email}' ...", level=3, console=True)
         if not email: email = self.email
         cmd(f"gpg2 --batch --delete-secret-keys {email}", host=self.lmid)
         cmd(f"gpg2 --batch --delete-keys {email}", host=self.lmid)
-        log(f"Deleted GPG key for {email}!", console=True)
+        log(f"Removed GPG key for '{email}'!", level=3, console=True)
 
 
 class Host(lmObj, HostServices):
@@ -504,8 +524,9 @@ class Host(lmObj, HostServices):
         return 0
 
     def clone_repo(self, path):
-        log(f"Cloning {path} Gitlab repository ...", console=True)
+        log(f"Cloning '{path}' Gitlab repository ...", console=True)
         cmd(f"git clone git@{gitlab.domain}:{gitlab.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
+        log(f"'{path}' cloned", console=True)
 
     # Web
     def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=("static",), langs:'list'=("en",), themes:'list'=("light",), default_lang:'str'="en", default_theme:'str'="light", has_animations:'bool'=False):
@@ -542,8 +563,9 @@ class Host(lmObj, HostServices):
             if yes: cmd(f"rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
             else: return
 
-        log("Generating DH params. This may take a while ...", console=True)
+        log(f"Generating DH params for '{self.name}'. This may take a while ...", console=True)
         cmd(f"openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096", host=self.lmid)
+        log(f"Generated DH params for '{self.name}'", console=True)
 
     # Hosts
     def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):
@@ -577,11 +599,11 @@ class Host(lmObj, HostServices):
             hal.db.execute(query, params)
             hal.pools.get(hal.host_dbid).config_ssh_client()
 
-            log(f"{lmid} VM created on {self.name}!", console=True)
+            log(f"'{lmid}' VM created on '{self.name}'", console=True)
             hal.create_pool(dbid)
 
         else:
-            log(f"Couldn't create {lmid} VM on {self.name}!", level=4, console=True)
+            log(f"Couldn't create '{lmid}' VM on '{self.name}'!", level=4, console=True)
 
     # Mount
     def is_mounted(self):
@@ -594,14 +616,14 @@ class Host(lmObj, HostServices):
             log("You can't mount the host!", level=4, console=True)
         else:
             if not utils.isfile(self.mnt_dir):
-                log(f"Creating mount point at {self.mnt_dir} ...")
+                log(f"Creating mount point at '{self.mnt_dir}' ...")
                 cmd("mkdir " + self.mnt_dir)
 
             if not self.is_mounted():
                 cmd(f"sshfs -p {self.ssh_port} -o allow_other,identityfile={utils.ssh_dir}{self.lmid} hal@{self.ip}:/home/hal {self.mnt_dir}")
-                log(f"{self.name} mounted at {utils.now()}", console=True)
+                log(f"'{self.name}' mounted at {utils.now()}", console=True)
             else:
-                log(f"{self.name} is already mounted!", console=True)
+                log(f"'{self.name}' is already mounted!", level=4, console=True)
 
     def unmount(self):
         if self.dbid == hal.host_dbid:
@@ -609,9 +631,9 @@ class Host(lmObj, HostServices):
         else:
             if self.is_mounted():
                 cmd(f"fusermount -u {self.mnt_dir}")
-                log(f"{self.name} unmounted at {utils.now()}", console=True)
+                log(f"'{self.name}' unmounted at {utils.now()}", console=True)
             else:
-                log(f"{self.name} is already unmounted!", console=True)
+                log(f"'{self.name}' is already unmounted!", level=4, console=True)
 
     # System
     def config_sysctl(self):
@@ -621,11 +643,13 @@ class Host(lmObj, HostServices):
             })
         utils.write("/etc/sysctl.conf", sysctl, tpl=True, host=self.lmid)
         cmd("sudo sysctl -p", host=self.lmid)
+        log(f"Configured sysctl for '{self.name}'", console=True)
 
     def config_grub(self):
         log(f"Configuring GRUB for '{self.name}' ...", console=True)
         self.send_file(hal.tpls_dir + "grub.tpl", "/etc/default/grub")
         cmd("sudo update-grub", host=self.lmid)
+        log(f"Configured GRUB for '{self.name}'", console=True)
 
     def config_motd(self):
         self.send_file(hal.tpls_dir + "motd.tpl", "/etc/motd")
@@ -660,7 +684,7 @@ class Host(lmObj, HostServices):
             hosts.append(web[1] + fill_spaces1 + web[2] + fill_spaces2 + "dev." + web[3])
 
 
-        log(f"Generating /etc/hosts for {self.name} ...", console=True)
+        log(f"Generating /etc/hosts for '{self.name}' ...", console=True)
         spaces = 4 * ' '
         hosts = [
             f"127.0.1.1{spaces}{self.lmid}.{utils.hosts.domain}{spaces*2}{self.lmid}"
@@ -715,7 +739,10 @@ class Host(lmObj, HostServices):
             })
         utils.write("/etc/hosts", hosts_file, host=self.lmid)
 
+        log(f"Generated /etc/hosts for '{self.name}'", console=True)
+
     def reach(self):
+        log(f"Trying to reach '{self.name}' ...", console=True)
         if self.dbid == hal.host_dbid:
             print("It's this machine, dumbass!")
         else:
@@ -767,8 +794,10 @@ class Host(lmObj, HostServices):
         cmd(f"{utils.projects_dir}venv/bin/pip install wheel", host=self.lmid)
         cmd(f"{utils.projects_dir}venv/bin/pip install {packages}", host=self.lmid)
 
+        log(f"Created virtual environment for '{self.name}'", console=True)
+
     def config_git(self):
-        log(f"Configuring Git for {self.name} ...", console=True)
+        log(f"Configuring Git for '{self.name}' ...", console=True)
 
         config = utils.format_tpl("gitconfig.tpl", {
             "user": self.lmid,
@@ -789,6 +818,8 @@ class Host(lmObj, HostServices):
 
         if not exists:
             gitlab.add_gpg_key(self.email, gpg_pubkey)
+
+        log(f"Configured Git for '{self.name}'", console=True)
 
     def setup(self):
         self.config_ssh_server()
@@ -836,10 +867,12 @@ class Host(lmObj, HostServices):
     def update(self):
         log(f"Updating '{self.name}' ...", console=True)
         cmd("apt update && apt upgrade -y", host=self.lmid)
+        log(f"Updated '{self.name}'", console=True)
 
     def reboot(self):
         log(f"Rebooting '{self.name}' ...", console=True)
         cmd("sudo systemctl reboot now", host=self.lmid)
+        log(f"Rebooted '{self.name}'", console=True)
 
     def get_name(self):
         log(self.name, console=True)

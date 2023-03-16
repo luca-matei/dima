@@ -11,7 +11,7 @@ class Gitlab:
 
         if not utils.isfile(token_file):
             log("Getting Gitlab REST API token ...")
-            print("Please enter Hal's Gitlab REST API token.")
+            print("Please enter Hal's Gitlab REST API token")
 
             token = getpass.getpass("Token: ")
             utils.write(token_file, token)
