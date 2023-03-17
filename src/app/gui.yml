@@ -1,0 +1,249 @@
+notebook:
+    padx: 16
+    pady: [16, 0]
+    fill: "both"
+    expand: True
+
+    frame:
+        id: "dashboard_page"
+        title: "Dashboard"
+        padx: 16
+        pady: 16
+        fill: "both"
+        expand: True
+
+        frame:
+            id: "mcmd_field"
+            padx: 16
+            pady: 16
+            fill: "x"
+
+            label:
+                text: "Manual Command"
+                fill: "x"
+                anchor: "NW"
+
+            input:
+                id: "mcmd_input"
+                pady: [8, 0]
+                ipady: 2
+                ipadx: 8
+                anchor: "NW"
+                side: "left"
+                focus: True
+
+                binds:
+                    Return: "send_mcmd"
+                    Up: "history_up"
+                    Down: "history_down"
+
+                text_var:
+                    id: "mcmd_input_str"
+                    value: ''
+
+    frame:
+        id: "hosts_page"
+        title: "Hosts"
+        padx: 16
+        pady: 16
+        fill: "both"
+        expand: True
+
+        frame:
+            id: "host_details"
+
+            frame:
+                fill: "x"
+                expand: True
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        text: "Network"
+                        anchor: "W"
+
+                    label:
+                        anchor: "E"
+                        text_var:
+                            id: "host_net_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        text: "MAC Address"
+                        anchor: "W"
+
+                    label:
+                        anchor: "E"
+                        text_var:
+                            id: "host_mac_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        text: "IP Address"
+                        anchor: "W"
+
+                    label:
+                        anchor: "E"
+                        text_var:
+                            id: "host_ip_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        text: "Environment"
+                        anchor: "W"
+
+                    label:
+                        anchor: "E"
+                        text_var:
+                            id: "host_env_str"
+                            value: ''
+
+            frame:
+                fill: "x"
+                expand: True
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        text: "SSH Port"
+                        anchor: "W"
+
+                    label:
+                        anchor: "E"
+                        text_var:
+                            id: "host_ssh_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        text: "PostgreSQL Port"
+                        anchor: "W"
+
+                    label:
+                        anchor: "E"
+                        text_var:
+                            id: "host_pg_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        text: "Physical Machine"
+                        anchor: "W"
+
+                    label:
+                        anchor: "E"
+                        text_var:
+                            id: "host_pm_str"
+                            value: ''
+
+        frame:
+            id: "host_ctrl_panel"
+            fill: "x"
+            pady: 12
+
+            label:
+                text: "Command"
+                fill: "x"
+                anchor: "NW"
+
+            frame:
+                pady: 4
+                fill: "x"
+
+                dropdown:
+                    id: "host_lmid_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "host_lmid_str"
+                        value: ''
+
+                    command: "set_host_details"
+
+                dropdown:
+                    id: "host_obj_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "host_obj_str"
+                        value: ''
+
+                    command: "set_host_acts"
+
+                dropdown:
+                    id: "host_act_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "host_act_str"
+                        value: ''
+
+                    command: "set_host_args"
+
+                button:
+                    text: "Process"
+                    command: "send_host_cmd"
+                    padx: 16
+
+
+    frame:
+        id: "webs_page"
+        title: "Webs"
+        padx: 16
+        pady: 16
+        fill: "both"
+        expand: True
+
+    frame:
+        id: "console_page"
+        title: "Console"
+        padx: 16
+        pady: 16
+        fill: "both"
+        expand: True
+
+frame:
+    id: "status_footer"
+    fill: "x"
+    padx: 16
+    pady: [0, 16]
+
+    frame:
+        id: "status_field"
+        label:
+            id: "status_lvl"
+            text_var:
+                id: "status_lvl_str"
+                value: ''
+        label:
+            id: "status_msg"
+            text_var:
+                id: "status_msg_str"
+                value: ''
+
+    frame:
+        button:
+            text: "quit"
+            command: "quit"

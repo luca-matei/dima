@@ -4,10 +4,10 @@ def main():
     cl = sys.argv[1:]
     hal.start()
 
+    cli.load_history()
     if cl:
         cli.process(' '.join(cl))
     else:
-        cli.load_history()
         gui = GUI()
         gui.start()
 
