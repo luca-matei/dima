@@ -1,6 +1,7 @@
 def main():
     global gui
-    os.environ.__setitem__('DISPLAY', 'unix:0.0')
+    #print(os.environ.get("DISPLAY"))
+    #os.environ.__setitem__('DISPLAY', '127.0.0.1:0.0')
     cl = sys.argv[1:]
     hal.start()
 

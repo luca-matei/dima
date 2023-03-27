@@ -7,8 +7,6 @@ notebook:
     frame:
         id: "dashboard_page"
         title: "Dashboard"
-        padx: 16
-        pady: 16
         fill: "both"
         expand: True
 
@@ -32,7 +30,7 @@ notebook:
                 side: "left"
                 focus: True
 
-                binds:
+                bind:
                     Return: "send_mcmd"
                     Up: "history_up"
                     Down: "history_down"
@@ -44,28 +42,49 @@ notebook:
     frame:
         id: "hosts_page"
         title: "Hosts"
-        padx: 16
-        pady: 16
         fill: "both"
         expand: True
 
         frame:
             id: "host_details"
+            fill: "x"
+            padx: 16
+            pady: 16
 
             frame:
-                fill: "x"
+                fill: "both"
                 expand: True
+                padx: [0, 8]
+                side: "left"
 
                 frame:
                     pady: 4
                     fill: "x"
 
                     label:
-                        text: "Network"
-                        anchor: "W"
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "LMID"
 
                     label:
-                        anchor: "E"
+                        side: "left"
+                        text_var:
+                            id: "host_id_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Network"
+
+                    label:
+                        side: "left"
                         text_var:
                             id: "host_net_str"
                             value: ''
@@ -75,11 +94,13 @@ notebook:
                     fill: "x"
 
                     label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
                         text: "MAC Address"
-                        anchor: "W"
 
                     label:
-                        anchor: "E"
+                        side: "left"
                         text_var:
                             id: "host_mac_str"
                             value: ''
@@ -89,11 +110,13 @@ notebook:
                     fill: "x"
 
                     label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
                         text: "IP Address"
-                        anchor: "W"
 
                     label:
-                        anchor: "E"
+                        side: "left"
                         text_var:
                             id: "host_ip_str"
                             value: ''
@@ -103,29 +126,51 @@ notebook:
                     fill: "x"
 
                     label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
                         text: "Environment"
-                        anchor: "W"
 
                     label:
-                        anchor: "E"
+                        side: "left"
                         text_var:
                             id: "host_env_str"
                             value: ''
 
             frame:
-                fill: "x"
+                fill: "both"
                 expand: True
+                padx: [8, 0]
+                side: "right"
 
                 frame:
                     pady: 4
                     fill: "x"
 
                     label:
-                        text: "SSH Port"
-                        anchor: "W"
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Alias"
 
                     label:
-                        anchor: "E"
+                        side: "left"
+                        text_var:
+                            id: "host_alias_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "SSH Port"
+
+                    label:
+                        side: "left"
                         text_var:
                             id: "host_ssh_str"
                             value: ''
@@ -135,11 +180,13 @@ notebook:
                     fill: "x"
 
                     label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
                         text: "PostgreSQL Port"
-                        anchor: "W"
 
                     label:
-                        anchor: "E"
+                        side: "left"
                         text_var:
                             id: "host_pg_str"
                             value: ''
@@ -149,11 +196,13 @@ notebook:
                     fill: "x"
 
                     label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
                         text: "Physical Machine"
-                        anchor: "W"
 
                     label:
-                        anchor: "E"
+                        side: "left"
                         text_var:
                             id: "host_pm_str"
                             value: ''
@@ -161,6 +210,7 @@ notebook:
         frame:
             id: "host_ctrl_panel"
             fill: "x"
+            padx: 16
             pady: 12
 
             label:
@@ -179,8 +229,7 @@ notebook:
                     text_var:
                         id: "host_lmid_str"
                         value: ''
-
-                    command: "set_host_details"
+                        trace: "set_host_details"
 
                 dropdown:
                     id: "host_obj_menu"
@@ -189,8 +238,7 @@ notebook:
                     text_var:
                         id: "host_obj_str"
                         value: ''
-
-                    command: "set_host_acts"
+                        trace: "set_host_acts"
 
                 dropdown:
                     id: "host_act_menu"
@@ -199,28 +247,23 @@ notebook:
                     text_var:
                         id: "host_act_str"
                         value: ''
-
-                    command: "set_host_args"
+                        trace: "set_host_args"
 
                 button:
                     text: "Process"
                     command: "send_host_cmd"
                     padx: 16
-
+                    side: "left"
 
     frame:
         id: "webs_page"
         title: "Webs"
-        padx: 16
-        pady: 16
         fill: "both"
         expand: True
 
     frame:
         id: "console_page"
         title: "Console"
-        padx: 16
-        pady: 16
         fill: "both"
         expand: True
 
@@ -234,16 +277,24 @@ frame:
         id: "status_field"
         label:
             id: "status_lvl"
+            side: "left"
+            anchor: "SW"
+
             text_var:
                 id: "status_lvl_str"
                 value: ''
         label:
             id: "status_msg"
+            side: "left"
+            anchor: "SW"
+
             text_var:
                 id: "status_msg_str"
                 value: ''
 
     frame:
+        side: "right"
         button:
-            text: "quit"
+            anchor: "SE"
+            text: "Quit"
             command: "quit"

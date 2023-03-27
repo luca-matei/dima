@@ -21,6 +21,8 @@ class Install:
 
         if self.opts['is_main']:
             self.place_hal()
+            cmd("xhost")
+            cmd("xhost +SI:localuser:hal")
             print()
 
         if self.opts['has_db']:

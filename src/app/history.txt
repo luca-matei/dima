@@ -16,3 +16,8 @@ lm7 update css
 lm1 save
 lm4 config git
 lm7 update global_html
+lm4 check
+lm8 restart nginx
+lm4 restart nginx
+lm6 config grub
+lm1 save

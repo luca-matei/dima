@@ -14,6 +14,7 @@ class GUI:
         self.lmids = {}
         self.panel_acts = {}
         self.last_timer = None
+        self.history_index = 0
 
         # Window geometry
         self.w_width = 800
@@ -44,9 +45,8 @@ class GUI:
             self.panel_acts[p] = self.panel_acts[p] = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in acts}
 
         self.build_interface()
-        for drop in ("lmid", "obj", "act"):
-            self.set_dropdown(f"host_{drop}_menu")
-        self.set_host_details()
+        self.set_dropdown(f"host_lmid_menu")
+        self.set_dropdown(f"host_obj_menu")
 
 
     ## INTERFACE
@@ -54,9 +54,11 @@ class GUI:
     def create_notebook(self, frame, **kwargs):
         return ttk.Notebook(frame)
 
-    def create_dropdown(self, frame, text_var={'id': "tmp", "value": ''}, opts=[''], command=None, **kwargs):
-        text_obj = self.create_text_var(frame, text_var['id'], text_var['value'])
-        return ttk.OptionMenu(frame, text_obj, opts[0], *opts, command=command)
+    def create_dropdown(self, frame, text_var=None, opts=[''], command=None, **kwargs):
+        text_obj = self.widgets.get(text_var)
+        menu = ttk.OptionMenu(frame, text_obj, opts[0], *opts, command = command)
+
+        return menu
 
     def create_text_var(self, frame, name='', value='', **kwargs):
         string_var = tk.StringVar(frame)
@@ -65,24 +67,20 @@ class GUI:
         return string_var
 
     def create_label(self, frame, text="Label", text_var=None, font=(), **kwargs):
-        text_obj = None
-        if text_var:
-            text_obj = self.create_text_var(frame, text_var['id'], text_var['value'])
-
+        text_obj = self.widgets.get(text_var)
         return ttk.Label(frame, text=text, textvariable=text_obj, font=font)
 
     def create_input(self, frame, text_var=None, **kwargs):
-        text_obj = None
-        if text_var:
-            text_obj = self.create_text_var(frame, text_var['id'], text_var['value'])
-
+        text_obj = self.widgets.get(text_var)
         return ttk.Entry(frame, textvariable=text_obj)
 
     def create_button(self, frame, text="Button", command=None, **kwargs):
         return ttk.Button(frame, text=text, command=command)
 
-    def create_frame(self, frame, **kwargs):
-        return ttk.Frame(frame)
+    def create_frame(self, frame, bg=None, **kwargs):
+        style = ttk.Style()
+        style.configure(f"{bg}.TFrame", background = bg)
+        return ttk.Frame(frame, style=f"{bg}.TFrame")
 
     def build_interface(self):
         widget_names = "notebook", "frame", "label", "button", "dropdown", "input",
@@ -112,7 +110,16 @@ class GUI:
                     props["command"] = getattr(self, prop[1])
 
                 elif prop[0] == "text_var":
-                    props["text_var"] = dict(prop[1])
+                    text_props = dict(prop[1])
+                    props["text_var"] = text_props.get("id")
+                    text_obj = getattr(self, "create_text_var")(
+                        parent_frame,
+                        name = text_props.get("id", ""),
+                        value = text_props.get("value", "")
+                        )
+
+                    if text_props.get("trace"):
+                        text_obj.trace("w", getattr(self, text_props["trace"]))
 
                 else:
                     props[prop[0]] = prop[1]
@@ -128,10 +135,10 @@ class GUI:
             try:
                 # Add page to screen
                 if parent_frame.widgetName == "ttk::notebook":
-                    parent_frame.add(frame, text=props["title"])
+                    parent_frame.add(obj, text=props["title"])
 
-            except:
-                pass
+            except Exception as e:
+                print(e)
 
             # Bind keypresses
             if props.get("bind"):
@@ -151,7 +158,7 @@ class GUI:
 
     ## DASHBOARD
 
-    def send_mcmd(self):
+    def send_mcmd(self, *args):
         cli.process(self.widgets["mcmd_input_str"].get())
         self.widgets["mcmd_input_str"].set("")
         self.history_index = 0
@@ -159,19 +166,24 @@ class GUI:
 
     ## HOSTS
 
-    def set_host_details(self):
+    def set_host_details(self, *args):
         lmid = self.widgets["host_lmid_str"].get()
-        pool = hal.pools[hal.lmobjs[lmid]]
+        if lmid:
+            pool = hal.pools[hal.lmobjs[lmid]]
+        else:
+            pool = hal.pools[hal.host_dbid]
 
-        self.widgets["host_net_str"] = hal.lmobjs[pool.net_id][0]
-        self.widgets["host_mac_str"] = pool.mac.upper()
-        self.widgets["host_ip_str"] = pool.ip
-        self.widgets["host_env_str"] = pool.env
-        self.widgets["host_ssh_str"] = pool.ssh_port if pool.ssh_port != -1 else "None"
-        self.widgets["host_pg_str"] = pool.pg_port if pool.pg_port != -1 else "None"
-        self.widgets["host_pm_str"] = hal.lmobjs.get(pool.pm_id, ["None"])[0]
+        self.widgets["host_id_str"].set(pool.lmid)
+        self.widgets["host_net_str"].set(hal.lmobjs[pool.net_id][0])
+        self.widgets["host_mac_str"].set(pool.mac.upper())
+        self.widgets["host_ip_str"].set(pool.ip)
+        self.widgets["host_env_str"].set(pool.env)
+        self.widgets["host_alias_str"].set(pool.alias if pool.alias else "NaN")
+        self.widgets["host_ssh_str"].set(pool.ssh_port if pool.ssh_port != -1 else "NaN")
+        self.widgets["host_pg_str"].set(pool.pg_port if pool.pg_port != -1 else "NaN")
+        self.widgets["host_pm_str"].set(hal.lmobjs.get(pool.pm_id, ["NaN"])[0])
 
-    def send_host_cmd(self):
+    def send_host_cmd(self, *args):
         name = self.widgets["host_lmid_str"].get()
         act = self.widgets["host_act_str"].get()
         obj = self.widgets["host_obj_str"].get()
@@ -182,13 +194,6 @@ class GUI:
             cli.process(' '.join([name, act]))
 
     # Dropdowns
-    def add_dropdown_opts(self, drop_name, opts):
-        for opt in opts:
-            self.widgets[drop_name]["menu"].add_command(
-                label = opt,
-                command = tk._setit(self.widgets[drop_name], opt)
-                )
-
     def set_dropdown(self, drop_name):
         self.widgets[drop_name]['menu'].delete(0, tk.END)
 
@@ -201,19 +206,30 @@ class GUI:
             opts = sorted(
                 self.panel_acts["host"][self.widgets["host_obj_str"].get()])
 
-        self.widgets[drop_name[:-4] + "str"].set(opts[0])
-        self.add_dropdown_opts(drop_name, opts)
+        drop_var = drop_name[:-4] + "str"
+        self.widgets[drop_var].set(opts[0])
 
-    def set_host_lmids(self):
+        for opt in opts:
+            self.widgets[drop_name]["menu"].add_command(
+                label = opt,
+                command = tk._setit(self.widgets[drop_var], opt)
+                )
+
+        if len(opts) == 1:
+            self.widgets[drop_name].configure(state="disabled")
+        else:
+            self.widgets[drop_name].configure(state="normal")
+
+    def set_host_lmids(self, *args):
         self.set_dropdown("host_lmid_menu")
 
-    def set_host_objs(self):
+    def set_host_objs(self, *args):
         self.set_dropdown("host_obj_menu")
 
-    def set_host_acts(self):
+    def set_host_acts(self, *args):
         self.set_dropdown("host_act_menu")
 
-    def set_host_args(self):
+    def set_host_args(self, *args):
         pass
 
 
