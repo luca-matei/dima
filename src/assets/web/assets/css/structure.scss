@@ -63,6 +63,8 @@ $gutter-sizes: (
 .lmbox {
     width: 100%;
     margin: auto;
+    padding-left: 30px;
+    padding-right: 30px;
 }
 
 .lmbox-max {
@@ -72,12 +74,21 @@ $gutter-sizes: (
 
 /* Displays */
 
-.lmd-flex {display: flex;}
+.lmd-flex {display: flex; flex-flow: row wrap;}
 .lmd-row-wrap {flex-flow: row wrap;}
 .lmd-row-nowrap {flex-flow: row nowrap;}
 .lmd-column-wrap {flex-flow: column wrap;}
 .lmd-column-nowrap {flex-flow: column nowrap;}
 
+/* Alignment */
+.lma-align-items-start {@extend .lmd-flex; align-items: flex-start;}
+.lma-align-items-end {@extend .lmd-flex; align-items: flex-end;}
+.lma-align-items-center {@extend .lmd-flex; align-items: center;}
+.lma-justify-content-start {@extend .lmd-flex; justify-content: flex-start;}
+.lma-justify-content-end {@extend .lmd-flex; justify-content: flex-end;}
+.lma-justify-content-center {@extend .lmd-flex; justify-content: center;}
+.lma-justify-content-space-between {@extend .lmd-flex; justify-content: space-between;}
+.lma-justify-content-space-around {@extend .lmd-flex; justify-content: space-around;}
 
 /* Related Media */
 

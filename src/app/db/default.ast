@@ -158,7 +158,6 @@
         ("Host", "file", ("has", "send", "retrieve",)),
         ("Host", "dir_tree", ("build",)),
         ("Host", "venv", ("build",)),
-        ("Host", "name", ("get",)),
         ("Host", "hosts_file", ("update",)),
         ("Host", "resources", ("update",)),
         ("Host", "motd", ("config",)),

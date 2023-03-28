@@ -130,7 +130,8 @@ body {
         align-items: center;
         max-height: 100vh;
         overflow: auto;
-        padding: 4px;
+        padding-top: 8px;
+        padding-bottom: 8px;
 
         input {display: none;}
         &>span {flex: 100%;}

@@ -40,15 +40,7 @@ class CLI:
         if obj: method = getattr(module, act + '_' + obj)
         else: method = getattr(module, act)
 
-        param_pos = []  # Parameter positionals
-        params = dict(inspect.signature(method).parameters)
-        for p in utils.get_keys(params):
-            param = params[p]
-            params[p] = [param.annotation, param.default]
-            if param.default == inspect._empty:
-                param_pos.append(param.name)
-
-        param_pos.sort()
+        param_pos, params = utils.get_method_params(method)
 
         ## Organize given arguments
 

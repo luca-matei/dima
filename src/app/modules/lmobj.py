@@ -5,7 +5,7 @@ class lmObj:
         self.alias = hal.lmobjs[dbid][2]
         self.name = self.alias if self.alias else self.lmid
 
-    def set_alias(self, alias):
+    def set_alias(self, alias:'str'):
         log(f"Setting alias '{alias}' to '{self.lmid}' ...", console=True)
         if hal.check_alias(alias):
             hal.lmobjs.pop(self.alias, None)

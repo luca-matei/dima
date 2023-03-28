@@ -188,10 +188,8 @@ class HostServices:
         role_query = utils.dbs.query.format(f"create role {role} with login password '{password}';")
         output = cmd(role_query, catch=True, host=self.lmid)
         if "already exists" in output:
-            log(f"'{role}' role already exists on '{self.name}'!", console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(utils.dbs.query.format(f"drop database if exists {role}; drop role if exists {role};"), host=self.lmid)
+            if utils.yes_no(f"'{role}' role already exists on '{self.name}'! Purge it?"):
+                cmd(utils.dbs.query.format(f"drop database if exists {role}; drop role if exists {role};"), host=self.lmid)
             else: return
 
             cmd(role_query, host=self.lmid)
@@ -213,10 +211,8 @@ class HostServices:
         db_query = utils.dbs.query.format(f"create database {db} owner {db} encoding 'utf-8';")
         output = cmd(db_query, catch=True, host=self.lmid)
         if "already exists" in output:
-            log(f"'{db}' database already exists on '{self.name}'!", console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(utils.dbs.query.format(f"drop database {db};"), host=self.lmid)
+            if utils.yes_no(f"'{db}' database already exists on '{self.name}'! Purge it?"):
+                cmd(utils.dbs.query.format(f"drop database {db};"), host=self.lmid)
             else: return
 
             cmd(db_query, catch=True, host=self.lmid)
@@ -376,9 +372,7 @@ class HostServices:
         privkey = utils.ssh_dir + self.lmid + ("-gitlab" if for_gitlab else '')
 
         if utils.isfile(privkey, host=host):
-            log(f"SSH key already exists!", level=3, console=True)
-            yes = utils.yes_no("Overwrite it?")
-            if yes:
+            if utils.yes_no("SSH key already exists! Overwrite it?"):
                 cmd(f"mv {privkey} {privkey}.old", host=host)
                 cmd(f"mv {privkey}.pub {privkey}.pub.old", host=host)
             else:
@@ -433,9 +427,7 @@ class HostServices:
         key_id = cmd(f"gpg2 --list-keys --keyid-format LONG {email}", catch=True, host=self.lmid)
 
         if "No public key" in key_id:
-            log(f"Couldn't find GPG key for '{email}'!", level=4, console=True)
-            yes = utils.yes_no("Create one?")
-            if yes:
+            if utils.yes_no(f"Couldn't find GPG key for '{email}'! Create one?"):
                 return self.create_gpg_key(email)
             return 0
         else:
@@ -557,11 +549,10 @@ class Host(lmObj, HostServices):
 
     def generate_dh(self):
         if utils.isfile(utils.ssl_dir + "dhparam.pem", host=self.lmid):
-            log("DH parameters are already in place!", level=3, console=True)
-            yes = utils.yes_no("Purge them?")
-
-            if yes: cmd(f"rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
-            else: return
+            if utils.yes_no("DH parameters are already in place! Purge them?"):
+                cmd(f"rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
+            else:
+                return
 
         log(f"Generating DH params for '{self.name}'. This may take a while ...", console=True)
         cmd(f"openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096", host=self.lmid)
@@ -780,11 +771,10 @@ class Host(lmObj, HostServices):
 
     def build_venv(self):
         if utils.isfile(f"{utils.projects_dir}venv/", host=self.lmid):
-            log(f"There's already a virtual environment on '{self.name}'!", level=3, console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(f"rm -r {utils.projects_dir}venv/", host=self.lmid)
-            else: return
+            if utils.yes_no(f"There's already a virtual environment on '{self.name}'! Purge it?"):
+                cmd(f"rm -r {utils.projects_dir}venv/", host=self.lmid)
+            else:
+                return
 
         log(f"Creating virtual environment for '{self.name}' ...", console=True)
         cmd(f"python3 -m venv {utils.projects_dir}venv", host=self.lmid)
@@ -873,9 +863,6 @@ class Host(lmObj, HostServices):
         log(f"Rebooting '{self.name}' ...", console=True)
         cmd("sudo systemctl reboot now", host=self.lmid)
         log(f"Rebooted '{self.name}'", console=True)
-
-    def get_name(self):
-        log(self.name, console=True)
 
     def check(self):
         pass

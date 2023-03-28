@@ -1,6 +1,7 @@
 import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress, crypt
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox as tk_messagebox
 from datetime import datetime, timedelta
 
 class Utils:
@@ -221,7 +222,7 @@ class Utils:
             reps_escaped = map(re.escape, reps_sorted)
             pattern = re.compile("|".join(reps_escaped))
 
-            return pattern.sub(lambda match: reps[match.group(0)], text)
+            return pattern.sub(lambda match: str(reps[match.group(0)]), text)
         else:
             return text
 
@@ -231,17 +232,22 @@ class Utils:
         reps = {"%" + k.upper() + "%": v for k, v in keys.items()}
         return self.replace_multiple(tpl, reps)
 
-    def yes_no(self, question):
+    def yes_no(self, question=""):
         # To do: implement number of tries (see select_opt())
         resp = ""
         yes = "y", "yes", "1",
         no = "n", "no", "0",
 
-        while resp not in yes + no:
-            resp = input(f"{question} y(es) / n(o): ")
+        log(question, level=3, console=True)
 
-        if resp in yes: return 1
-        elif resp in no: return 0
+        if gui:
+            return tk.messagebox.askyesno(title="Confirmation", message=question)
+        else:
+            while resp not in yes + no:
+                resp = input(f"{question} y(es) / n(o): ")
+
+            if resp in yes: return 1
+            elif resp in no: return 0
 
     def select_opt(self, opts):
         index = 1
@@ -299,6 +305,17 @@ class Utils:
             # It's a file
             elif not self.isfile(node, host=host):
                 cmd(f"touch {node}", host=host)
+
+    def get_method_params(self, method):
+        param_pos = []  # Parameter positionals
+        params = dict(inspect.signature(method).parameters)
+        for p in utils.get_keys(params):
+            param = params[p]
+            params[p] = [param.annotation, param.default]
+            if param.default == inspect._empty:
+                param_pos.append(param.name)
+
+        return sorted(param_pos), params
 
     def md2html(self, md):
         return markdown.markdown(md, extensions=["extra"])

@@ -1,6 +1,7 @@
 import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress, crypt
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox as tk_messagebox
 from datetime import datetime, timedelta
 
 class Utils:
@@ -221,7 +222,7 @@ class Utils:
             reps_escaped = map(re.escape, reps_sorted)
             pattern = re.compile("|".join(reps_escaped))
 
-            return pattern.sub(lambda match: reps[match.group(0)], text)
+            return pattern.sub(lambda match: str(reps[match.group(0)]), text)
         else:
             return text
 
@@ -231,17 +232,22 @@ class Utils:
         reps = {"%" + k.upper() + "%": v for k, v in keys.items()}
         return self.replace_multiple(tpl, reps)
 
-    def yes_no(self, question):
+    def yes_no(self, question=""):
         # To do: implement number of tries (see select_opt())
         resp = ""
         yes = "y", "yes", "1",
         no = "n", "no", "0",
 
-        while resp not in yes + no:
-            resp = input(f"{question} y(es) / n(o): ")
+        log(question, level=3, console=True)
 
-        if resp in yes: return 1
-        elif resp in no: return 0
+        if gui:
+            return tk.messagebox.askyesno(title="Confirmation", message=question)
+        else:
+            while resp not in yes + no:
+                resp = input(f"{question} y(es) / n(o): ")
+
+            if resp in yes: return 1
+            elif resp in no: return 0
 
     def select_opt(self, opts):
         index = 1
@@ -299,6 +305,17 @@ class Utils:
             # It's a file
             elif not self.isfile(node, host=host):
                 cmd(f"touch {node}", host=host)
+
+    def get_method_params(self, method):
+        param_pos = []  # Parameter positionals
+        params = dict(inspect.signature(method).parameters)
+        for p in utils.get_keys(params):
+            param = params[p]
+            params[p] = [param.annotation, param.default]
+            if param.default == inspect._empty:
+                param_pos.append(param.name)
+
+        return sorted(param_pos), params
 
     def md2html(self, md):
         return markdown.markdown(md, extensions=["extra"])
@@ -1048,9 +1065,7 @@ class SSH:
         log(f"Creating SSH Key '{name}' ...", console=True)
         privkey = utils.ssh_dir + name
         if utils.isfile(privkey, host=host):
-            log(f"SSH key already exists!", level=3, console=True)
-            yes = utils.yes_no("Overwrite it?")
-            if yes:
+            if utils.yes_no("SSH key already exists! Overwrite it?"):
                 cmd(f"mv {privkey} {privkey}.old", host=host)
                 cmd(f"mv {privkey}.pub {privkey}.pub.old", host=host)
             else:
@@ -1340,7 +1355,7 @@ class lmObj:
         self.alias = hal.lmobjs[dbid][2]
         self.name = self.alias if self.alias else self.lmid
 
-    def set_alias(self, alias):
+    def set_alias(self, alias:'str'):
         log(f"Setting alias '{alias}' to '{self.lmid}' ...", console=True)
         if hal.check_alias(alias):
             hal.lmobjs.pop(self.alias, None)
@@ -1622,10 +1637,8 @@ class HostServices:
         role_query = utils.dbs.query.format(f"create role {role} with login password '{password}';")
         output = cmd(role_query, catch=True, host=self.lmid)
         if "already exists" in output:
-            log(f"'{role}' role already exists on '{self.name}'!", console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(utils.dbs.query.format(f"drop database if exists {role}; drop role if exists {role};"), host=self.lmid)
+            if utils.yes_no(f"'{role}' role already exists on '{self.name}'! Purge it?"):
+                cmd(utils.dbs.query.format(f"drop database if exists {role}; drop role if exists {role};"), host=self.lmid)
             else: return
 
             cmd(role_query, host=self.lmid)
@@ -1647,10 +1660,8 @@ class HostServices:
         db_query = utils.dbs.query.format(f"create database {db} owner {db} encoding 'utf-8';")
         output = cmd(db_query, catch=True, host=self.lmid)
         if "already exists" in output:
-            log(f"'{db}' database already exists on '{self.name}'!", console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(utils.dbs.query.format(f"drop database {db};"), host=self.lmid)
+            if utils.yes_no(f"'{db}' database already exists on '{self.name}'! Purge it?"):
+                cmd(utils.dbs.query.format(f"drop database {db};"), host=self.lmid)
             else: return
 
             cmd(db_query, catch=True, host=self.lmid)
@@ -1810,9 +1821,7 @@ class HostServices:
         privkey = utils.ssh_dir + self.lmid + ("-gitlab" if for_gitlab else '')
 
         if utils.isfile(privkey, host=host):
-            log(f"SSH key already exists!", level=3, console=True)
-            yes = utils.yes_no("Overwrite it?")
-            if yes:
+            if utils.yes_no("SSH key already exists! Overwrite it?"):
                 cmd(f"mv {privkey} {privkey}.old", host=host)
                 cmd(f"mv {privkey}.pub {privkey}.pub.old", host=host)
             else:
@@ -1867,9 +1876,7 @@ class HostServices:
         key_id = cmd(f"gpg2 --list-keys --keyid-format LONG {email}", catch=True, host=self.lmid)
 
         if "No public key" in key_id:
-            log(f"Couldn't find GPG key for '{email}'!", level=4, console=True)
-            yes = utils.yes_no("Create one?")
-            if yes:
+            if utils.yes_no(f"Couldn't find GPG key for '{email}'! Create one?"):
                 return self.create_gpg_key(email)
             return 0
         else:
@@ -1991,11 +1998,10 @@ class Host(lmObj, HostServices):
 
     def generate_dh(self):
         if utils.isfile(utils.ssl_dir + "dhparam.pem", host=self.lmid):
-            log("DH parameters are already in place!", level=3, console=True)
-            yes = utils.yes_no("Purge them?")
-
-            if yes: cmd(f"rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
-            else: return
+            if utils.yes_no("DH parameters are already in place! Purge them?"):
+                cmd(f"rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
+            else:
+                return
 
         log(f"Generating DH params for '{self.name}'. This may take a while ...", console=True)
         cmd(f"openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096", host=self.lmid)
@@ -2214,11 +2220,10 @@ class Host(lmObj, HostServices):
 
     def build_venv(self):
         if utils.isfile(f"{utils.projects_dir}venv/", host=self.lmid):
-            log(f"There's already a virtual environment on '{self.name}'!", level=3, console=True)
-            yes = utils.yes_no("Purge it?")
-
-            if yes: cmd(f"rm -r {utils.projects_dir}venv/", host=self.lmid)
-            else: return
+            if utils.yes_no(f"There's already a virtual environment on '{self.name}'! Purge it?"):
+                cmd(f"rm -r {utils.projects_dir}venv/", host=self.lmid)
+            else:
+                return
 
         log(f"Creating virtual environment for '{self.name}' ...", console=True)
         cmd(f"python3 -m venv {utils.projects_dir}venv", host=self.lmid)
@@ -2307,9 +2312,6 @@ class Host(lmObj, HostServices):
         log(f"Rebooting '{self.name}' ...", console=True)
         cmd("sudo systemctl reboot now", host=self.lmid)
         log(f"Rebooted '{self.name}'", console=True)
-
-    def get_name(self):
-        log(self.name, console=True)
 
     def check(self):
         pass
@@ -2579,8 +2581,7 @@ class Web(Project):
             Command only for dev environment.
         """
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format '{self.name}'?")
-            if not yes:
+            if not utils.yes_no(f"Are you sure you want to format '{self.name}'?"):
                 log("Aborted", console=True)
                 return
 
@@ -2606,8 +2607,7 @@ class Web(Project):
 
     def default_db(self, yes:'bool'=False):
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format '{self.name}' database?")
-            if not yes:
+            if not utils.yes_no(f"Are you sure you want to format '{self.name}' database?"):
                 log("Aborted", console=True)
                 return
 
@@ -2644,8 +2644,7 @@ class Web(Project):
             Command only for dev environment.
         """
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format '{self.name}' HTML?")
-            if not yes:
+            if not utils.yes_no(f"Are you sure you want to format '{self.name}' HTML?"):
                 log("Aborted", console=True)
                 return
 
@@ -2680,8 +2679,7 @@ class Web(Project):
             Command only for dev environment.
         """
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format {self.name} JS?")
-            if not yes:
+            if not utils.yes_no(f"Are you sure you want to format {self.name} JS?"):
                 log("Aborted", console=True)
                 return
 
@@ -2708,6 +2706,7 @@ class Web(Project):
     def update_global_html(self):
         log(f"Updating Global HTML for '{self.name}' ...", console=True)
 
+        self.global_html = {}
         var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
 
@@ -2763,10 +2762,23 @@ class Web(Project):
             params = "guest-drop", self.langs[lang], guest_drop_html,
             self.db.execute(query, params)
 
-            for h in ("app-wrapper", "app-header", "app-footer", "cookies-notice", "hide-all", "top-button"):
-                self.global_html[lang][h] = self.yml2html(h + ".yml", lang)
+            app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
+                "copyright_year": datetime.now().year,
+                "copyright_name": '.'.join(self.domain.split(".")[-2:]),
+                })
 
-            self.global_html[lang]["app-wrapper"] = "<!doctype html>" + self.global_html[lang]["app-wrapper"]
+            self.global_html[lang]["app-wrapper"] = "<!doctype html>" + utils.format_tpl(self.yml2html("app-wrapper.yml", lang), {
+                "lang": lang,
+                "default_theme": str(self.default_theme_id),
+                "alt": ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in langs if l != lang]),
+                "name": self.name,
+                "hide_all": self.yml2html("hide-all.yml", lang),
+                "app_header": self.yml2html("app-header.yml", lang),
+                "domain": self.domain,
+                "app_footer": app_footer,
+                "top_button": self.yml2html("top-button.yml", lang),
+                "cookies_notice": self.yml2html("cookies-notice.yml", lang),
+                })
 
         log(f"Updated Global HTML for '{self.name}'", console=True)
 
@@ -2829,27 +2841,14 @@ class Web(Project):
                     description = meta["description"].get(lang, meta["description"][self.default_lang])
                     og_url = ""
                     og_image = ""
-                    alt = ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in langs if l != lang])
 
                     html = utils.format_tpl(self.global_html[lang]["app-wrapper"], {
-                        "lang": lang,
-                        "default_theme": str(self.default_theme_id),
-                        "alt": alt,
-                        "name": self.name,
                         "title": title,
                         "description": description,
                         "og_url": og_url,
                         "og_image": og_image,
-                        "hide_all": self.global_html[lang]["hide-all"],
-                        "app_header": self.global_html[lang]["app-header"],
-                        "domain": self.domain,
                         "aside": "",
                         "body": body,
-                        "app_footer": self.global_html[lang]["app-footer"],
-                        "copyright_year": datetime.now().year,
-                        "copyright_name": '.'.join(self.domain.split(".")[-2:]),
-                        "top_button": self.global_html[lang]["top-button"],
-                        "cookies_notice": self.global_html[lang]["cookies-notice"],
                         })
 
                     # Replace reusable components
@@ -3112,15 +3111,7 @@ class CLI:
         if obj: method = getattr(module, act + '_' + obj)
         else: method = getattr(module, act)
 
-        param_pos = []  # Parameter positionals
-        params = dict(inspect.signature(method).parameters)
-        for p in utils.get_keys(params):
-            param = params[p]
-            params[p] = [param.annotation, param.default]
-            if param.default == inspect._empty:
-                param_pos.append(param.name)
-
-        param_pos.sort()
+        param_pos, params = utils.get_method_params(method)
 
         ## Organize given arguments
 
@@ -3387,8 +3378,9 @@ class GUI:
             self.panel_acts[p] = self.panel_acts[p] = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in acts}
 
         self.build_interface()
-        self.set_dropdown(f"host_lmid_menu")
-        self.set_dropdown(f"host_obj_menu")
+        for m in ("host", "web"):
+            self.set_dropdown(f"{m}_lmid_menu")
+            self.set_dropdown(f"{m}_obj_menu")
 
 
     ## INTERFACE
@@ -3505,48 +3497,19 @@ class GUI:
         self.widgets["mcmd_input_str"].set("")
         self.history_index = 0
 
-
-    ## HOSTS
-
-    def set_host_details(self, *args):
-        lmid = self.widgets["host_lmid_str"].get()
-        if lmid:
-            pool = hal.pools[hal.lmobjs[lmid]]
-        else:
-            pool = hal.pools[hal.host_dbid]
-
-        self.widgets["host_id_str"].set(pool.lmid)
-        self.widgets["host_net_str"].set(hal.lmobjs[pool.net_id][0])
-        self.widgets["host_mac_str"].set(pool.mac.upper())
-        self.widgets["host_ip_str"].set(pool.ip)
-        self.widgets["host_env_str"].set(pool.env)
-        self.widgets["host_alias_str"].set(pool.alias if pool.alias else "NaN")
-        self.widgets["host_ssh_str"].set(pool.ssh_port if pool.ssh_port != -1 else "NaN")
-        self.widgets["host_pg_str"].set(pool.pg_port if pool.pg_port != -1 else "NaN")
-        self.widgets["host_pm_str"].set(hal.lmobjs.get(pool.pm_id, ["NaN"])[0])
-
-    def send_host_cmd(self, *args):
-        name = self.widgets["host_lmid_str"].get()
-        act = self.widgets["host_act_str"].get()
-        obj = self.widgets["host_obj_str"].get()
-
-        if obj:
-            cli.process(' '.join([name, act, obj]))
-        else:
-            cli.process(' '.join([name, act]))
-
-    # Dropdowns
     def set_dropdown(self, drop_name):
         self.widgets[drop_name]['menu'].delete(0, tk.END)
+        module = drop_name.split("_")[0]
 
-        if drop_name == "host_lmid_menu":
-            opts = sorted([x[0] for x in self.lmids["host"]])
-            #opts = sorted([x[0] + (f" ({x[1]})" if x[1] else '') for x in self.lmids["host"]])
-        elif drop_name == "host_obj_menu":
-            opts = sorted(utils.get_keys(self.panel_acts["host"]))
-        elif drop_name == "host_act_menu":
-            opts = sorted(
-                self.panel_acts["host"][self.widgets["host_obj_str"].get()])
+        if "lmid" in drop_name:
+            opts = [x[0] for x in self.lmids[module]]
+            #opts = [x[0] + (f" ({x[1]})" if x[1] else '') for x in self.lmids["host"]]
+        elif "obj" in drop_name:
+            opts = utils.get_keys(self.panel_acts[module])
+        elif "act" in drop_name:
+            opts = self.panel_acts[module][self.widgets[module + "_obj_str"].get()]
+
+        opts = sorted(opts)
 
         drop_var = drop_name[:-4] + "str"
         self.widgets[drop_var].set(opts[0])
@@ -3562,6 +3525,81 @@ class GUI:
         else:
             self.widgets[drop_name].configure(state="normal")
 
+    def set_args(self, module):
+        lmid = self.widgets[module + "_lmid_str"].get()
+        obj = self.widgets[module + "_obj_str"].get()
+        act = self.widgets[module + "_act_str"].get()
+
+        if obj: method = getattr(hal.pools[hal.lmobjs[lmid]], act + '_' + obj)
+        else: method = getattr(hal.pools[hal.lmobjs[lmid]], act)
+
+        param_pos, params = utils.get_method_params(method)
+
+        print(param_pos, params)
+        tmp = module + "_args_panel_tmp"
+        self.widgets[tmp].destroy()
+        self.widgets[tmp] = self.create_frame(self.widgets[module + "_args_panel"])
+        self.widgets[tmp].pack(fill=tk.X, expand=True)
+
+        tmp = self.widgets[tmp]
+
+        widgets = {}
+        for p, v in params.items():
+            if p in param_pos:
+                continue
+            else:
+                label = self.create_label(tmp, text = p.capitalize() + (" *" if p in param_pos else ""))
+                label.pack(side=tk.LEFT, padx=[0, 4])
+
+                if v[0] == "str":
+                    widgets[p + "_var"] = tk.StringVar(tmp)
+                    widgets[p] = ttk.Entry(tmp, textvariable = widgets[p + "_var"])
+
+                    if v[1] and v[1] != inspect._empty:
+                        widgets[p + "_var"].set(v[1])
+
+                elif v[0] == "bool":
+                    widgets[p + "_var"] = tk.IntVar(tmp)
+                    widgets[p] = ttk.Checkbutton(tmp, variable=widgets[p + "_var"])
+
+                widgets[p].pack(side=tk.LEFT, padx=[0, 8])
+
+
+    def send_cmd(self, module):
+        name = self.widgets[f"{module}_lmid_str"].get()
+        act = self.widgets[f"{module}_act_str"].get()
+        obj = self.widgets[f"{module}_obj_str"].get()
+
+        if obj:
+            cli.process(' '.join([name, act, obj]))
+        else:
+            cli.process(' '.join([name, act]))
+
+
+    ## HOSTS
+
+    def set_host_details(self, *args):
+        lmid = self.widgets["host_lmid_str"].get()
+        if lmid:
+            pool = hal.pools[hal.lmobjs[lmid]]
+        else:
+            pool = hal.pools[hal.host_dbid]
+
+        self.widgets["host_id_str"].set(pool.lmid)
+        self.widgets["host_net_str"].set(hal.lmobjs[pool.net_id][0])
+        self.widgets["host_mac_str"].set(pool.mac.upper())
+        self.widgets["host_ip_str"].set(pool.ip)
+        self.widgets["host_env_str"].set(pool.env)
+
+        self.widgets["host_alias_str"].set(pool.alias if pool.alias else "NaN")
+        self.widgets["host_ssh_str"].set(pool.ssh_port if pool.ssh_port != -1 else "NaN")
+        self.widgets["host_pg_str"].set(pool.pg_port if pool.pg_port != -1 else "NaN")
+        self.widgets["host_pm_str"].set(hal.lmobjs.get(pool.pm_id, ["NaN"])[0])
+
+    def send_host_cmd(self, *args):
+        self.send_cmd("host")
+
+    # Dropdowns
     def set_host_lmids(self, *args):
         self.set_dropdown("host_lmid_menu")
 
@@ -3572,8 +3610,40 @@ class GUI:
         self.set_dropdown("host_act_menu")
 
     def set_host_args(self, *args):
-        pass
+        self.set_args("host")
 
+
+    ## WEBS
+
+    def set_web_details(self, *args):
+        lmid = self.widgets["web_lmid_str"].get()
+        pool = hal.pools[hal.lmobjs[lmid]]
+
+        self.widgets["web_id_str"].set(pool.lmid)
+        self.widgets["web_domain_str"].set(pool.domain)
+        self.widgets["web_dlang_str"].set(pool.default_lang)
+        self.widgets["web_dtheme_str"].set(pool.default_theme)
+
+        self.widgets["web_alias_str"].set(pool.alias)
+        self.widgets["web_port_str"].set(pool.port)
+        self.widgets["web_langs_str"].set(', '.join([utils.projects.langs[l] for l in pool.lang_ids]))
+        self.widgets["web_themes_str"].set(', '.join(pool.themes))
+
+    def send_web_cmd(self, *args):
+        self.send_cmd("web")
+
+    # Dropdowns
+    def set_web_lmids(self, *args):
+        self.set_dropdown("web_lmid_menu")
+
+    def set_web_objs(self, *args):
+        self.set_dropdown("web_obj_menu")
+
+    def set_web_acts(self, *args):
+        self.set_dropdown("web_act_menu")
+
+    def set_web_args(self, *args):
+        self.set_args("web")
 
     ## HISTORY
 
@@ -3625,8 +3695,6 @@ gui = None
 
 def main():
     global gui
-    #print(os.environ.get("DISPLAY"))
-    #os.environ.__setitem__('DISPLAY', '127.0.0.1:0.0')
     cl = sys.argv[1:]
     hal.start()
 

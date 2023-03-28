@@ -95,8 +95,7 @@ class Web(Project):
             Command only for dev environment.
         """
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format '{self.name}'?")
-            if not yes:
+            if not utils.yes_no(f"Are you sure you want to format '{self.name}'?"):
                 log("Aborted", console=True)
                 return
 
@@ -122,8 +121,7 @@ class Web(Project):
 
     def default_db(self, yes:'bool'=False):
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format '{self.name}' database?")
-            if not yes:
+            if not utils.yes_no(f"Are you sure you want to format '{self.name}' database?"):
                 log("Aborted", console=True)
                 return
 
@@ -160,8 +158,7 @@ class Web(Project):
             Command only for dev environment.
         """
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format '{self.name}' HTML?")
-            if not yes:
+            if not utils.yes_no(f"Are you sure you want to format '{self.name}' HTML?"):
                 log("Aborted", console=True)
                 return
 
@@ -196,8 +193,7 @@ class Web(Project):
             Command only for dev environment.
         """
         if not yes:
-            yes = utils.yes_no(f"Are you sure you want to format {self.name} JS?")
-            if not yes:
+            if not utils.yes_no(f"Are you sure you want to format {self.name} JS?"):
                 log("Aborted", console=True)
                 return
 
@@ -224,6 +220,7 @@ class Web(Project):
     def update_global_html(self):
         log(f"Updating Global HTML for '{self.name}' ...", console=True)
 
+        self.global_html = {}
         var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
 
@@ -279,10 +276,23 @@ class Web(Project):
             params = "guest-drop", self.langs[lang], guest_drop_html,
             self.db.execute(query, params)
 
-            for h in ("app-wrapper", "app-header", "app-footer", "cookies-notice", "hide-all", "top-button"):
-                self.global_html[lang][h] = self.yml2html(h + ".yml", lang)
+            app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
+                "copyright_year": datetime.now().year,
+                "copyright_name": '.'.join(self.domain.split(".")[-2:]),
+                })
 
-            self.global_html[lang]["app-wrapper"] = "<!doctype html>" + self.global_html[lang]["app-wrapper"]
+            self.global_html[lang]["app-wrapper"] = "<!doctype html>" + utils.format_tpl(self.yml2html("app-wrapper.yml", lang), {
+                "lang": lang,
+                "default_theme": str(self.default_theme_id),
+                "alt": ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in langs if l != lang]),
+                "name": self.name,
+                "hide_all": self.yml2html("hide-all.yml", lang),
+                "app_header": self.yml2html("app-header.yml", lang),
+                "domain": self.domain,
+                "app_footer": app_footer,
+                "top_button": self.yml2html("top-button.yml", lang),
+                "cookies_notice": self.yml2html("cookies-notice.yml", lang),
+                })
 
         log(f"Updated Global HTML for '{self.name}'", console=True)
 
@@ -345,27 +355,14 @@ class Web(Project):
                     description = meta["description"].get(lang, meta["description"][self.default_lang])
                     og_url = ""
                     og_image = ""
-                    alt = ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in langs if l != lang])
 
                     html = utils.format_tpl(self.global_html[lang]["app-wrapper"], {
-                        "lang": lang,
-                        "default_theme": str(self.default_theme_id),
-                        "alt": alt,
-                        "name": self.name,
                         "title": title,
                         "description": description,
                         "og_url": og_url,
                         "og_image": og_image,
-                        "hide_all": self.global_html[lang]["hide-all"],
-                        "app_header": self.global_html[lang]["app-header"],
-                        "domain": self.domain,
                         "aside": "",
                         "body": body,
-                        "app_footer": self.global_html[lang]["app-footer"],
-                        "copyright_year": datetime.now().year,
-                        "copyright_name": '.'.join(self.domain.split(".")[-2:]),
-                        "top_button": self.global_html[lang]["top-button"],
-                        "cookies_notice": self.global_html[lang]["cookies-notice"],
                         })
 
                     # Replace reusable components

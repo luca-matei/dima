@@ -5,9 +5,7 @@ class SSH:
         log(f"Creating SSH Key '{name}' ...", console=True)
         privkey = utils.ssh_dir + name
         if utils.isfile(privkey, host=host):
-            log(f"SSH key already exists!", level=3, console=True)
-            yes = utils.yes_no("Overwrite it?")
-            if yes:
+            if utils.yes_no("SSH key already exists! Overwrite it?"):
                 cmd(f"mv {privkey} {privkey}.old", host=host)
                 cmd(f"mv {privkey}.pub {privkey}.pub.old", host=host)
             else:

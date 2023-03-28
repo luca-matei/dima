@@ -45,8 +45,9 @@ class GUI:
             self.panel_acts[p] = self.panel_acts[p] = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in acts}
 
         self.build_interface()
-        self.set_dropdown(f"host_lmid_menu")
-        self.set_dropdown(f"host_obj_menu")
+        for m in ("host", "web"):
+            self.set_dropdown(f"{m}_lmid_menu")
+            self.set_dropdown(f"{m}_obj_menu")
 
 
     ## INTERFACE
@@ -163,48 +164,19 @@ class GUI:
         self.widgets["mcmd_input_str"].set("")
         self.history_index = 0
 
-
-    ## HOSTS
-
-    def set_host_details(self, *args):
-        lmid = self.widgets["host_lmid_str"].get()
-        if lmid:
-            pool = hal.pools[hal.lmobjs[lmid]]
-        else:
-            pool = hal.pools[hal.host_dbid]
-
-        self.widgets["host_id_str"].set(pool.lmid)
-        self.widgets["host_net_str"].set(hal.lmobjs[pool.net_id][0])
-        self.widgets["host_mac_str"].set(pool.mac.upper())
-        self.widgets["host_ip_str"].set(pool.ip)
-        self.widgets["host_env_str"].set(pool.env)
-        self.widgets["host_alias_str"].set(pool.alias if pool.alias else "NaN")
-        self.widgets["host_ssh_str"].set(pool.ssh_port if pool.ssh_port != -1 else "NaN")
-        self.widgets["host_pg_str"].set(pool.pg_port if pool.pg_port != -1 else "NaN")
-        self.widgets["host_pm_str"].set(hal.lmobjs.get(pool.pm_id, ["NaN"])[0])
-
-    def send_host_cmd(self, *args):
-        name = self.widgets["host_lmid_str"].get()
-        act = self.widgets["host_act_str"].get()
-        obj = self.widgets["host_obj_str"].get()
-
-        if obj:
-            cli.process(' '.join([name, act, obj]))
-        else:
-            cli.process(' '.join([name, act]))
-
-    # Dropdowns
     def set_dropdown(self, drop_name):
         self.widgets[drop_name]['menu'].delete(0, tk.END)
+        module = drop_name.split("_")[0]
 
-        if drop_name == "host_lmid_menu":
-            opts = sorted([x[0] for x in self.lmids["host"]])
-            #opts = sorted([x[0] + (f" ({x[1]})" if x[1] else '') for x in self.lmids["host"]])
-        elif drop_name == "host_obj_menu":
-            opts = sorted(utils.get_keys(self.panel_acts["host"]))
-        elif drop_name == "host_act_menu":
-            opts = sorted(
-                self.panel_acts["host"][self.widgets["host_obj_str"].get()])
+        if "lmid" in drop_name:
+            opts = [x[0] for x in self.lmids[module]]
+            #opts = [x[0] + (f" ({x[1]})" if x[1] else '') for x in self.lmids["host"]]
+        elif "obj" in drop_name:
+            opts = utils.get_keys(self.panel_acts[module])
+        elif "act" in drop_name:
+            opts = self.panel_acts[module][self.widgets[module + "_obj_str"].get()]
+
+        opts = sorted(opts)
 
         drop_var = drop_name[:-4] + "str"
         self.widgets[drop_var].set(opts[0])
@@ -220,6 +192,81 @@ class GUI:
         else:
             self.widgets[drop_name].configure(state="normal")
 
+    def set_args(self, module):
+        lmid = self.widgets[module + "_lmid_str"].get()
+        obj = self.widgets[module + "_obj_str"].get()
+        act = self.widgets[module + "_act_str"].get()
+
+        if obj: method = getattr(hal.pools[hal.lmobjs[lmid]], act + '_' + obj)
+        else: method = getattr(hal.pools[hal.lmobjs[lmid]], act)
+
+        param_pos, params = utils.get_method_params(method)
+
+        print(param_pos, params)
+        tmp = module + "_args_panel_tmp"
+        self.widgets[tmp].destroy()
+        self.widgets[tmp] = self.create_frame(self.widgets[module + "_args_panel"])
+        self.widgets[tmp].pack(fill=tk.X, expand=True)
+
+        tmp = self.widgets[tmp]
+
+        widgets = {}
+        for p, v in params.items():
+            if p in param_pos:
+                continue
+            else:
+                label = self.create_label(tmp, text = p.capitalize() + (" *" if p in param_pos else ""))
+                label.pack(side=tk.LEFT, padx=[0, 4])
+
+                if v[0] == "str":
+                    widgets[p + "_var"] = tk.StringVar(tmp)
+                    widgets[p] = ttk.Entry(tmp, textvariable = widgets[p + "_var"])
+
+                    if v[1] and v[1] != inspect._empty:
+                        widgets[p + "_var"].set(v[1])
+
+                elif v[0] == "bool":
+                    widgets[p + "_var"] = tk.IntVar(tmp)
+                    widgets[p] = ttk.Checkbutton(tmp, variable=widgets[p + "_var"])
+
+                widgets[p].pack(side=tk.LEFT, padx=[0, 8])
+
+
+    def send_cmd(self, module):
+        name = self.widgets[f"{module}_lmid_str"].get()
+        act = self.widgets[f"{module}_act_str"].get()
+        obj = self.widgets[f"{module}_obj_str"].get()
+
+        if obj:
+            cli.process(' '.join([name, act, obj]))
+        else:
+            cli.process(' '.join([name, act]))
+
+
+    ## HOSTS
+
+    def set_host_details(self, *args):
+        lmid = self.widgets["host_lmid_str"].get()
+        if lmid:
+            pool = hal.pools[hal.lmobjs[lmid]]
+        else:
+            pool = hal.pools[hal.host_dbid]
+
+        self.widgets["host_id_str"].set(pool.lmid)
+        self.widgets["host_net_str"].set(hal.lmobjs[pool.net_id][0])
+        self.widgets["host_mac_str"].set(pool.mac.upper())
+        self.widgets["host_ip_str"].set(pool.ip)
+        self.widgets["host_env_str"].set(pool.env)
+
+        self.widgets["host_alias_str"].set(pool.alias if pool.alias else "NaN")
+        self.widgets["host_ssh_str"].set(pool.ssh_port if pool.ssh_port != -1 else "NaN")
+        self.widgets["host_pg_str"].set(pool.pg_port if pool.pg_port != -1 else "NaN")
+        self.widgets["host_pm_str"].set(hal.lmobjs.get(pool.pm_id, ["NaN"])[0])
+
+    def send_host_cmd(self, *args):
+        self.send_cmd("host")
+
+    # Dropdowns
     def set_host_lmids(self, *args):
         self.set_dropdown("host_lmid_menu")
 
@@ -230,8 +277,40 @@ class GUI:
         self.set_dropdown("host_act_menu")
 
     def set_host_args(self, *args):
-        pass
+        self.set_args("host")
 
+
+    ## WEBS
+
+    def set_web_details(self, *args):
+        lmid = self.widgets["web_lmid_str"].get()
+        pool = hal.pools[hal.lmobjs[lmid]]
+
+        self.widgets["web_id_str"].set(pool.lmid)
+        self.widgets["web_domain_str"].set(pool.domain)
+        self.widgets["web_dlang_str"].set(pool.default_lang)
+        self.widgets["web_dtheme_str"].set(pool.default_theme)
+
+        self.widgets["web_alias_str"].set(pool.alias)
+        self.widgets["web_port_str"].set(pool.port)
+        self.widgets["web_langs_str"].set(', '.join([utils.projects.langs[l] for l in pool.lang_ids]))
+        self.widgets["web_themes_str"].set(', '.join(pool.themes))
+
+    def send_web_cmd(self, *args):
+        self.send_cmd("web")
+
+    # Dropdowns
+    def set_web_lmids(self, *args):
+        self.set_dropdown("web_lmid_menu")
+
+    def set_web_objs(self, *args):
+        self.set_dropdown("web_obj_menu")
+
+    def set_web_acts(self, *args):
+        self.set_dropdown("web_act_menu")
+
+    def set_web_args(self, *args):
+        self.set_args("web")
 
     ## HISTORY
 

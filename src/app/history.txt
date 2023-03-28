@@ -21,3 +21,10 @@ lm8 restart nginx
 lm4 restart nginx
 lm6 config grub
 lm1 save
+lm7 config nginx
+lm4 generate dh
+lm6 mount
+lm7 update html
+lm7 update global_html
+lm7 update css
+lm1 save

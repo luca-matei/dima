@@ -65,7 +65,7 @@ notebook:
                         side: "left"
                         fill: "x"
                         expand: True
-                        text: "LMID"
+                        text: "ID"
 
                     label:
                         side: "left"
@@ -255,11 +255,227 @@ notebook:
                     padx: 16
                     side: "left"
 
+            frame:
+                id: "host_args_panel"
+                pady: 4
+                fill: "x"
+                expand: True
+
+                frame:
+                    id: "host_args_panel_tmp"
+                    fill: "x"
+                    expand: True
+
     frame:
         id: "webs_page"
         title: "Webs"
         fill: "both"
         expand: True
+
+        frame:
+            id: "web_details"
+            fill: "x"
+            padx: 16
+            pady: 16
+
+            frame:
+                fill: "both"
+                expand: True
+                padx: [0, 8]
+                side: "left"
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "ID"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_id_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Domain"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_domain_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Default language"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_dlang_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Default theme"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_dtheme_str"
+                            value: ''
+
+            frame:
+                fill: "both"
+                expand: True
+                padx: [8, 0]
+                side: "right"
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Alias"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_alias_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Port"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_port_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Languages"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_langs_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Themes"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_themes_str"
+                            value: ''
+
+        frame:
+            id: "web_ctrl_panel"
+            fill: "x"
+            padx: 16
+            pady: 12
+
+            label:
+                text: "Command"
+                fill: "x"
+                anchor: "NW"
+
+            frame:
+                pady: 4
+                fill: "x"
+
+                dropdown:
+                    id: "web_lmid_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "web_lmid_str"
+                        value: ''
+                        trace: "set_web_details"
+
+                dropdown:
+                    id: "web_obj_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "web_obj_str"
+                        value: ''
+                        trace: "set_web_acts"
+
+                dropdown:
+                    id: "web_act_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "web_act_str"
+                        value: ''
+                        trace: "set_web_args"
+
+                button:
+                    text: "Process"
+                    command: "send_web_cmd"
+                    padx: 16
+                    side: "left"
+
+            frame:
+                id: "web_args_panel"
+                pady: 4
+                fill: "x"
+                expand: True
+
+                frame:
+                    id: "web_args_panel_tmp"
+                    fill: "x"
+                    expand: True
 
     frame:
         id: "console_page"
