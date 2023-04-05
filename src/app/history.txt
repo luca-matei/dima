@@ -32,3 +32,10 @@ lm7 save
 lm7 update html
 lm7 update css
 lm1 save
+lm6 mount
+lm7 update html
+lm7 update global_html
+lm7 update css
+lm6 mount
+lm7 update py
+lm1 save

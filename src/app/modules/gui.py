@@ -203,34 +203,38 @@ class GUI:
         param_pos, params = utils.get_method_params(method)
 
         print(param_pos, params)
-        tmp = module + "_args_panel_tmp"
-        self.widgets[tmp].destroy()
-        self.widgets[tmp] = self.create_frame(self.widgets[module + "_args_panel"])
-        self.widgets[tmp].pack(fill=tk.X, expand=True)
+        frame = module + "_args_panel_tmp"
+        self.widgets[frame].destroy()
+        self.widgets[frame] = self.create_frame(self.widgets[module + "_args_panel"])
+        self.widgets[frame].pack(fill=tk.X, expand=True)
 
-        tmp = self.widgets[tmp]
+        frame = self.widgets[frame]
 
         widgets = {}
         for p, v in params.items():
             if p in param_pos:
                 continue
             else:
-                label = self.create_label(tmp, text = p.capitalize() + (" *" if p in param_pos else ""))
+                label = self.create_label(frame, text = p.capitalize() + (" *" if p in param_pos else ""))
                 label.pack(side=tk.LEFT, padx=[0, 4])
 
                 if v[0] == "str":
-                    widgets[p + "_var"] = tk.StringVar(tmp)
-                    widgets[p] = ttk.Entry(tmp, textvariable = widgets[p + "_var"])
+                    widgets[p + "_var"] = tk.StringVar(frame)
+                    widgets[p] = ttk.Entry(frame, textvariable = widgets[p + "_var"])
 
                     if v[1] and v[1] != inspect._empty:
                         widgets[p + "_var"].set(v[1])
 
                 elif v[0] == "bool":
-                    widgets[p + "_var"] = tk.IntVar(tmp)
-                    widgets[p] = ttk.Checkbutton(tmp, variable=widgets[p + "_var"])
+                    widgets[p + "_var"] = tk.IntVar(frame)
+                    widgets[p] = ttk.Checkbutton(frame, variable=widgets[p + "_var"])
+
+                elif v[0] == "env":
+                    widgets[p + "_var"] = tk.StringVar(frame)
+                    opts = [k for k, v in utils.hosts.envs.items() if isinstance(k, str)]
+                    widgets[p] = ttk.OptionMenu(frame, widgets[p + "_var"], v[1], *opts)
 
                 widgets[p].pack(side=tk.LEFT, padx=[0, 8])
-
 
     def send_cmd(self, module):
         name = self.widgets[f"{module}_lmid_str"].get()
@@ -286,13 +290,21 @@ class GUI:
         lmid = self.widgets["web_lmid_str"].get()
         pool = hal.pools[hal.lmobjs[lmid]]
 
+        try: dssl_date = utils.format_date(pool.dev_ssl_due, "%d %b %Y")
+        except: dssl_date = "NaN"
+
+        try: pssl_date = utils.format_date(pool.prod_ssl_due, "%d %b %Y")
+        except: pssl_date = "NaN"
+
         self.widgets["web_id_str"].set(pool.lmid)
-        self.widgets["web_domain_str"].set(pool.domain)
+        self.widgets["web_ddomain_str"].set(f"{pool.dev_domain}:{pool.dev_port}")
+        self.widgets["web_pdomain_str"].set(f"{pool.prod_domain}:{pool.prod_port}")
         self.widgets["web_dlang_str"].set(pool.default_lang)
         self.widgets["web_dtheme_str"].set(pool.default_theme)
 
         self.widgets["web_alias_str"].set(pool.alias)
-        self.widgets["web_port_str"].set(pool.port)
+        self.widgets["web_dssl_str"].set(dssl_date)
+        self.widgets["web_pssl_str"].set(pssl_date)
         self.widgets["web_langs_str"].set(', '.join([utils.projects.langs[l] for l in pool.lang_ids]))
         self.widgets["web_themes_str"].set(', '.join(pool.themes))
 

@@ -1,15 +1,14 @@
 class Web(Project):
     def __init__(self, dbid):
-        ## Double '#' is for production
         Project.__init__(self, dbid)
 
-        query = "select a.name, b.port, b.modules, b.langs, b.themes, b.default_lang, b.default_theme, b.has_animations from domains a, web.webs b where b.domain=a.id and b.lmobj=%s;"
+        query = "select a.name, b.dev_port, b.prod_port, b.dev_ssl_due, b.prod_ssl_due, b.prod_state, b.modules, b.langs, b.themes, b.default_lang, b.default_theme, b.has_animations from domains a, web.webs b where b.domain=a.id and b.lmobj=%s;"
         params = dbid,
-        self.domain, self.port, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = hal.db.execute(query, params)[0]
+        self.prod_domain, self.dev_port, self.prod_port, self.dev_ssl_due, self.prod_ssl_due, self.prod_state, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = hal.db.execute(query, params)[0]
 
         self.global_html = {}
         self.css_classes = {}
-        self.dev_domain = "dev." + self.domain
+        self.dev_domain = "dev." + self.prod_domain
         self.modules = {}
         for m_id in self.module_ids:
             m_name = utils.webs.modules[m_id]
@@ -26,139 +25,174 @@ class Web(Project):
         self.default_lang = utils.projects.langs[self.default_lang_id]
         self.default_theme = utils.projects.themes[self.default_theme_id]
 
-        self.ssl_dir = utils.ssl_dir + self.domain + '/'
+        self.prod_ssl_dir = utils.ssl_dir + self.prod_domain + '/'
         self.dev_ssl_dir = utils.ssl_dir + self.dev_domain + '/'
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
 
-        # Assign a process port
-        if not self.port:
-            self.port = hal.pools.get(self.dev_host_id).next_port()
-            query = "update web.webs set port=%s where lmobj=%s;"
-            params = self.port, self.dbid,
-            hal.db.execute(query, params)
-            self.config()
-
-        if not utils.isfile(self.log_file, host=self.dev_host):
-            cmd(f"touch {self.log_file}", host=self.dev_host)
-            cmd(f"sudo chown www-data:www-data {self.log_file}", host=self.dev_host)
-
-        if not utils.isfile(self.app_dir + "db/db_pass", host=self.dev_host):
-            self.build()
-
         self.db = Db(self.lmid, self.dbid, self.dev_host)
+        self.prod_db = Db(self.lmid, self.dbid, self.prod_host)
 
-        # Fix for other projects
-        if False:
-            if self.lmid == "lm7":
-                self.update_global_html()
-                if False:
-                    self.update_css()  # Bcs I'm not saving the translates
+        self.check()
 
-    def build(self):
+    def env_var(self, env, name):
+        if name == "db" and env == "dev":
+            return getattr(self, name)
+        else:
+            return getattr(self, env + "_" + name)
+
+    def check(self):
+        for env in ("dev", "prod"):
+            port = self.env_var(env, "port")
+            host_id = self.env_var(env, "host_id")
+            host = self.env_var(env, "host")
+            domain = self.env_var(env, "domain")
+
+            # Assign a process port
+            if not port:
+                setattr(self, env + "_port", hal.pools.get(host_id).next_port())
+                port = self.env_var(env, "port")
+
+                query = f"update web.webs set {env}_port=%s where lmobj=%s;"
+                params = port, self.dbid,
+                hal.db.execute(query, params)
+
+                log(f"Assigned {env} port {port} to '{domain}'", console=True)
+                self.config(env)
+
+            # Create log files
+            if not utils.isfile(self.log_file, host=host):
+                cmd(f"touch {self.log_file}", host=host)
+                cmd(f"sudo chown www-data:www-data {self.log_file}", host=host)
+
+            if not utils.isfile(self.app_dir + "db/db_pass", host=host):
+                self.build(env)
+
+    def yml2html(self, yml, lang):
+        if yml.endswith(".yml"): yml = self.html_dir + yml
+        return utils.yml2html(yml, lang, self.default_lang, self.global_html, self.dev_host)
+
+    def build(self, env:'env'="dev"):
         """
-            Command only for dev environment.
+            Command used when creating the web, when the structure has changed or when parts are missing.
         """
-        log(f"Building '{self.name}' ...", console=True)
+        domain = self.env_var(env, "domain")
+        host = self.env_var(env, "host")
+        host_id = self.env_var(env, "host_id")
+
+        log(f"Building '{domain}' ...", console=True)
+
         dir_tree = (
-            "docs/",
             "src/",
-                "src/app/",
-                    "src/app/db/",
-                    "src/app/html/",
-                "src/assets/",
-                    "src/assets/icons/",
-                    "src/assets/fonts/",
-                    "src/assets/img/",
-                    "src/assets/css/",
-                    "src/assets/js/",
-            "LICENSE",
-            "README.md",
+            "src/app/",
+                "src/app/db/",
+            "src/assets/",
+                "src/assets/icons/",
+                "src/assets/fonts/",
+                "src/assets/img/",
+                "src/assets/css/",
+                "src/assets/js/",
             )
 
-        utils.create_dir_tree(dir_tree, root=self.repo_dir, host=self.dev_host)
-        self.create_db()
-        self.generate_ssl()
-        self.default(yes=True)
-        hal.pools.get(hal.host_dbid).update_hosts_file()
+        if env == "dev":
+            dir_tree.extend((
+                "docs/",
+                "src/app/html/",
+                "LICENSE",
+                "README.md",
+            ))
 
-        log(f"Built '{self.name}'", console=True)
+        utils.create_dir_tree(dir_tree, root=self.repo_dir, host=host)
+        self.generate_ssl(env)
+        self.default(confirm=True)
 
-    def create_db(self, env:'env'="dev"):
-        host = getattr(self, env + "_host")
-        host_id = getattr(self, env + "_host_id")
-        hal.pools.get(host_id).create_pg_role(self.lmid)
-        hal.pools.get(host_id).create_pg_db(self.lmid)
+        log(f"Built '{domain}'", console=True)
 
-    def default(self, yes:'bool'=False):
+    def default(self, env:'env'="dev", confirm:'bool'=False):
         """
-            Command only for dev environment.
+            Format files to Hello World
         """
-        if not yes:
-            if not utils.yes_no(f"Are you sure you want to format '{self.name}'?"):
+
+        host = self.env_var(env, "host")
+        host_id = self.env_var(env, "host_id")
+        domain = self.env_var(env, "domain")
+
+        if not confirm:
+            if not utils.confirm(f"Are you sure you want to format '{domain}'?"):
                 log("Aborted", console=True)
                 return
 
-        log(f"Setting '{self.name}' to 'Hello World' ...", console=True)
+        log(f"Setting '{domain}' to 'Hello World' ...", console=True)
 
         settings = {
             "lmid": self.lmid,
-            "domain": self.domain,
             "log_level": 2,
             "default_lang": self.default_lang,
             "default_theme": self.default_theme,
             }
 
-        utils.write(self.app_dir + "settings.ast", settings, host=self.dev_host)
-        self.default_db(yes=True)
-        self.update_py()
-        self.default_html(yes=True, hello=True)
-        self.config()
-        self.update_css()
-        self.default_js(True)
+        utils.write(self.app_dir + "settings.ast", settings, host=host)
+        self.default_db(env, confirm=True)
+        self.config(env)
+        self.update_py(env)
+        self.update_css(env)
+        self.update_js(env)
+        if env == "dev":
+            self.default_html(confirm=True, hello=True)
 
-        log(f"Set '{self.name}' to 'Hello World'", console=True)
+        hal.pools(host_id).restart_supervisor()
+        hal.pools(host_id).restart_nginx()
 
-    def default_db(self, yes:'bool'=False):
-        if not yes:
-            if not utils.yes_no(f"Are you sure you want to format '{self.name}' database?"):
+        log(f"Set '{domain}' to 'Hello World'", console=True)
+
+    def default_db(self, env:"dev"="dev", confirm:'bool'=False):
+        host_id = self.env_var(env, "host_id")
+        domain = self.env_var(env, "domain")
+        db = self.env_var(env, "db")
+
+        if not confirm:
+            if not utils.confirm(f"Are you sure you want to format '{domain}' database?"):
                 log("Aborted", console=True)
                 return
+
+        log(f"Formatting '{domain}' database ...", console=True)
 
         host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
         remote_struct_file = self.app_dir + "db/struct.ast"
         host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
         remote_default_file = self.app_dir + "db/default.ast"
 
-        if self.dev_host_id == hal.host_dbid:
+        if host_id == hal.host_dbid:
             utils.copy(host_struct_file, remote_struct_file)
             utils.copy(host_default_file, remote_default_file)
         else:
-            hal.pools.get(self.dev_host_id).send_file(host_struct_file, remote_struct_file)
-            hal.pools.get(self.dev_host_id).send_file(host_default_file, remote_default_file)
+            hal.pools.get(host_id).send_file(host_struct_file, remote_struct_file)
+            hal.pools.get(host_id).send_file(host_default_file, remote_default_file)
 
-        self.db.rebuild()
+        db.rebuild()
 
         query = f"insert into methods (name) values {', '.join(['(%s)' for m in utils.webs.methods])};"
         params = utils.webs.methods
-        self.db.execute(query, params)
+        db.execute(query, params)
 
         langs = [v for k, v in self.langs.items() if type(v)==str]
         query = f"insert into langs (code) values {', '.join(['(%s)' for l in langs])};"
         params = langs
-        self.db.execute(query, params)
+        db.execute(query, params)
 
         modules = [v for k, v in self.modules.items() if type(v)==str]
         query = f"insert into modules (name) values {', '.join(['(%s)' for m in modules])};"
         params = modules
-        self.db.execute(query, params)
+        db.execute(query, params)
 
-    def default_html(self, yes:'bool'=False, hello:'bool'=False):
+        log(f"Formatted '{domain}' database ...", console=True)
+
+    def default_html(self, confirm:'bool'=False, hello:'bool'=False):
         """
             Command only for dev environment.
         """
-        if not yes:
-            if not utils.yes_no(f"Are you sure you want to format '{self.name}' HTML?"):
+        if not confirm:
+            if not utils.confirm(f"Are you sure you want to format '{self.dev_domain}' HTML?"):
                 log("Aborted", console=True)
                 return
 
@@ -166,59 +200,50 @@ class Web(Project):
         dest_html = self.app_dir + "html/"
 
         if hello:
-            log(f"Setting '{self.name}' HTML to 'Hello World' ...", console=True)
+            log(f"Setting '{self.dev_domain}' HTML to 'Hello World' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
             if self.dev_host_id == hal.host_dbid:
                 utils.copy(src_html, dest_html)
             else:
                 hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
 
-            log(f"Set '{self.name}' HTML to 'Hello World.'", console=True)
+            log(f"Set '{self.dev_domain}' HTML to 'Hello World.'", console=True)
+
         else:
             # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
-            log(f"Setting '{self.name}' Global HTML to 'Hello World' ...", console=True)
+            log(f"Setting '{self.dev_domain}' Global HTML to 'Hello World' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
             if self.dev_host_id == hal.host_dbid:
                 utils.copy(src_html + "*.yml", dest_html)
             else:
                 hal.pools.get(self.dev_host_id).send_file(dest_html + "*.yml", dest_html)
 
-            log(f"Set '{self.name}' Global HTML to 'Hello World'", console=True)
+            log(f"Set '{self.dev_domain}' Global HTML to 'Hello World'", console=True)
 
-        self.update_html()
-        self.restart()
+        self.update_html(global_html=True)
 
-    def default_js(self, yes:'bool'=False):
-        """
-            Command only for dev environment.
-        """
-        if not yes:
-            if not utils.yes_no(f"Are you sure you want to format {self.name} JS?"):
-                log("Aborted", console=True)
-                return
+    def update_js(self, env:"env"="dev"):
+        # To do: add manual files
+        host = self.env_var(env, "host")
+        domain = self.env_var(env, "domain")
+        log(f"Updating JS for '{domain}' ...", console=True)
 
-        log(f"Setting '{self.name}' JS to 'Hello World' ...", console=True)
-
-        cmd(f"rm {self.repo_dir}src/assets/js/*.js", host=self.dev_host)
+        cmd(f"rm {self.repo_dir}src/assets/js/*.js", host=host)
         src_js_dir = utils.src_dir + "assets/web/assets/js/"
         for script in utils.get_files(src_js_dir):
             utils.write(
                 self.repo_dir + "src/assets/js/" + script,
                 utils.replace_multiple(utils.read(src_js_dir + script), self.css_classes),
-                host=self.dev_host
+                host=host
                 )
 
-        log(f"Set '{self.name}' JS to 'Hello World'", console=True)
+        log(f"Updated JS for '{domain}'", console=True)
 
-    def update_js(self):
-        self.default_js(yes=True)
+    def update_global_html(self, env:"env"="dev"):
+        domain = self.env_var(env, "domain")
+        db = self.env_var(env, "db")
 
-    def yml2html(self, yml, lang):
-        if yml.endswith(".yml"): yml = self.html_dir + yml
-        return utils.yml2html(yml, lang, self.default_lang, self.global_html, self.dev_host)
-
-    def update_global_html(self):
-        log(f"Updating Global HTML for '{self.name}' ...", console=True)
+        log(f"Updating Global HTML for '{domain}' ...", console=True)
 
         self.global_html = {}
         var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
@@ -236,7 +261,7 @@ class Web(Project):
             # Save logged user dropdown
             user_drop_html = utils.replace_multiple(self.yml2html("user-drop.yml", lang), self.css_classes)
             params = "user-drop", self.langs[lang], user_drop_html
-            self.db.execute(query, params)
+            db.execute(query, params)
 
             # Choose language selector
             if len(langs) == 1:
@@ -274,11 +299,15 @@ class Web(Project):
                 })
             guest_drop_html = utils.replace_multiple(guest_drop_html, self.css_classes)
             params = "guest-drop", self.langs[lang], guest_drop_html,
-            self.db.execute(query, params)
+            db.execute(query, params)
+
+            app_header = utils.format_tpl(self.yml2html("app-header.yml", lang), {
+                "domain": domain,
+                })
 
             app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
                 "copyright_year": datetime.now().year,
-                "copyright_name": '.'.join(self.domain.split(".")[-2:]),
+                "copyright_name": '.'.join(self.prod_domain.split(".")[-2:]),
                 })
 
             self.global_html[lang]["app-wrapper"] = "<!doctype html>" + utils.format_tpl(self.yml2html("app-wrapper.yml", lang), {
@@ -287,39 +316,39 @@ class Web(Project):
                 "alt": ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in langs if l != lang]),
                 "name": self.name,
                 "hide_all": self.yml2html("hide-all.yml", lang),
-                "app_header": self.yml2html("app-header.yml", lang),
-                "domain": self.domain,
+                "app_header": app_header,
+                "domain": self.prod_domain,
                 "app_footer": app_footer,
                 "top_button": self.yml2html("top-button.yml", lang),
                 "cookies_notice": self.yml2html("cookies-notice.yml", lang),
                 })
 
-        log(f"Updated Global HTML for '{self.name}'", console=True)
+        log(f"Updated Global HTML for '{domain}'", console=True)
 
-    def update_html(self, section:'str'= "", global_html:'bool'=False):
-        """
-            Command only for dev environment.
-        """
-        log(f"Updating HTML for '{self.name}' ...", console=True)
+    def update_html(self, env:"env"="dev", section:'str'= "", global_html:'bool'=False):
+        domain = self.env_var(env, "domain")
+        db = self.env_var(env, "db")
 
-        method_ids = dict(self.db.execute("select name, id from methods;"))
+        log(f"Updating HTML for '{domain}' ...", console=True)
+
+        if global_html or not self.global_html:
+            db.format_table("fractions")
+            self.update_global_html()
+
+        method_ids = dict(db.execute("select name, id from methods;"))
 
         # Erase current html
-        self.db.format_table("sections")
-        self.db.format_table("pages")
+        db.format_table("sections")
+        db.format_table("pages")
 
         section_dirs = utils.get_dirs(self.html_dir, self.dev_host)
         section_dirs.remove("_fractions")
-
-        if global_html:
-            self.db.format_table("fractions")
-            self.update_global_html()
 
         langs = [v for k, v in self.langs.items() if type(v)==str]
         def solve_section(section_dir, section_name, parent_id):
             query = "insert into sections (name, parent) values (%s, %s) returning id;"
             params = section_name, parent_id
-            section_id = self.db.execute(query, params)[0][0]
+            section_id = db.execute(query, params)[0][0]
 
             pages = utils.get_files(section_dir + "*.yml", host=self.dev_host)
             for page in pages:
@@ -376,7 +405,7 @@ class Web(Project):
 
                     query = "insert into pages (name, module, section, method, lang, first, html) values (%s, %s, %s, %s, %s, %s, %s);"
                     params = name, self.modules[meta["module"]], section_id, method_ids[method], self.langs[lang], first, html,
-                    self.db.execute(query, params)
+                    db.execute(query, params)
 
             for section in utils.get_dirs(section_dir, self.dev_host):
                 solve_section(section_dir + section + '/', section, section_id)
@@ -385,14 +414,14 @@ class Web(Project):
             solve_section(self.html_dir + section + '/', section, 0)
 
         self.restart()
-        log(f"Updated HTML for '{self.name}'", console=True)
+        log(f"Updated HTML for '{domain}'", console=True)
 
-    def update_py(self):
-        """
-            Command only for dev environment.
-        """
+    def update_py(self, env:"env"="dev", restart:'bool'=False):
+        host = self.env_var(env, "host")
+        domain = self.env_var(env, "domain")
+
         # Joins .py files from main host and sends the result on the remote host
-        log(f"Updating source code for '{self.name}' ...", console=True)
+        log(f"Updating source code for '{domain}' ...", console=True)
         utils.join_modules((
             "utils/utils.py",
             "app.py",
@@ -411,45 +440,49 @@ class Web(Project):
             ),
             module_path = utils.src_dir + "assets/web/app/modules/",
             file_path = self.app_dir + "app.py",
-            file_host = self.dev_host)
+            file_host = host)
 
-        self.restart()
-        log(f"Updated source code for '{self.name}'", console=True)
+        if restart: self.restart(env)
+        log(f"Updated source code for '{domain}'", console=True)
 
-    def update_css(self):
+    def update_css(self, env:"env"="dev"):
         """
             Command only for dev environment.
             Joins CSS files from main host and sends the result on the remote host
         """
-        log(f"Updating CSS for '{self.name}' ...", console=True)
+
+        host = self.env_var(env, "host")
+        domain = self.env_var(env, "domain")
 
         def rename_classes():
             for i in range(len(classes)):
                 yield ''.join(random.SystemRandom().choice(string.ascii_letters) for _ in range(8))
 
-        scss_file = utils.tmp_dir + "css.scss"
-        utils.join_modules((
-            "palettes.scss",
-            "document.scss",
-            "structure.scss",
-            "text.scss",
-            "spacing.scss",
-            "objects.scss",
-            "forms.scss",
-            "animations.scss",
-            "media.scss",
-            ),
-            module_path = utils.src_dir + "assets/web/assets/css/",
-            file_path = scss_file)
+        log(f"Updating CSS for '{domain}' ...", console=True)
+
+        scss = utils.join_modules(
+            ("palettes.scss",
+                "document.scss",
+                "structure.scss",
+                "text.scss",
+                "spacing.scss",
+                "objects.scss",
+                "forms.scss",
+                "animations.scss",
+                "media.scss",
+                ),
+            module_path = utils.src_dir + "assets/web/assets/css/"
+            )
 
         try:
-            css = sass.compile(string=utils.read(scss_file), output_style='compressed')
+            css = sass.compile(string=scss, output_style='compressed')
         except Exception as e:
             log("Couldn't compile Sass! Exception:\n\n" + e, level=4, console=True)
             return
 
-        self.css_classes = {}
-        if False:  # For production
+        # Protect CSS
+        if env == "prod":
+            self.css_classes = {}
             classes = re.findall("[#\.][_a-zA-Z]+[_a-zA-Z0-9-]*[:\w\s]*\{", css)
             new_classes = rename_classes()
 
@@ -458,41 +491,49 @@ class Web(Project):
                     c_name = c.split(' ')[0].split(":")[0][1:].replace("{", "")
                     self.css_classes[c_name] = next(new_classes)
 
-        utils.write(
-            self.repo_dir + "src/assets/css/app.css",
-            utils.replace_multiple(css, self.css_classes),
-            host=self.dev_host
-            )
+            utils.write(
+                self.repo_dir + "src/assets/css/app.css",
+                utils.replace_multiple(css, self.css_classes),
+                host=host
+                )
 
-        if False:
-            self.update_js()
-            self.update_global_html()
-            self.update_html()
+            self.update_js(env)
+            self.update_html(env, global_html=True)
 
-        log(f"Updated CSS for '{self.name}'", console=True)
+        else:
+            utils.write(self.repo_dir + "src/assets/css/app.css", css, host=host)
 
-    def generate_ssl(self):
-        if not utils.isfile(self.dev_ssl_dir, host=self.dev_host):
-            cmd("mkdir " + self.dev_ssl_dir, host=self.dev_host)
+        log(f"Updated CSS for '{domain}'", console=True)
+
+    def generate_ssl(self, env:'env'="dev"):
+        host = self.env_var(env, "host")
+        ssl_dir = self.env_var(env, "ssl_dir")
+        domain = self.env_var(env, "domain")
+
+        if not utils.isfile(ssl_dir, host=host):
+            cmd("mkdir " + ssl_dir, host=host)
 
         # Production certificates
         #log(f"Generating Let's Encrypt SSL certs for {self.dev_domain}. This may take a while ...", console=True)
 
-        log(f"Generating TLS certificates for '{self.name}'. This may take a while ...", console=True)
-        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {self.dev_ssl_dir}privkey.pem -out {self.dev_ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={hal.domain}/CN={self.dev_domain}"', host=self.dev_host)
+        log(f"Generating SSL certificates for '{domain}'. This may take a while ...", console=True)
+        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={hal.domain}/CN={domain}"', host=host)
 
-        query = "update web.webs set ssl_last_gen=%s where lmobj=%s;"
-        params = datetime.now(), self.dbid,
+        query = f"update web.webs set {env}_ssl_due=%s where lmobj=%s;"
+        params = datetime.now() + datetime.timedelta(3*365/12-3), self.dbid,
         hal.db.execute(query, params)
 
-        log(f"Generated TLS certificates for '{self.name}'", console=True)
+        log(f"Generated SSL certificates for '{domain}'", console=True)
 
-    def config_uwsgi(self, env:'env'="dev"):
-        log(f"Configuring uWSGI for '{self.name}' ({env}) ...", console=True)
-        host = getattr(self, env + "_host")
+    def config_uwsgi(self, env:'env'="dev", restart:'bool'=False):
+        host = self.env_var(env, "host")
+        domain = self.env_var(env, "domain")
+        port = self.env_var(env, "port")
+
+        log(f"Configuring uWSGI for '{domain}' ...", console=True)
 
         uwsgi_config = utils.format_tpl("web/app/uwsgi.tpl", {
-            "port": str(self.port),
+            "port": str(port),
             "app_dir": self.app_dir,
             "projects_dir": utils.projects_dir,
             "lmid": self.lmid,
@@ -500,14 +541,15 @@ class Web(Project):
             })
         utils.write(self.app_dir + "uwsgi.ini", uwsgi_config, host=host)
 
-        self.restart(env)
-        log(f"Configured uWSGI for '{self.name}' ({env})", console=True)
+        if restart: self.restart(env)
+        log(f"Configured uWSGI for '{domain}'", console=True)
 
-    def config_supervisor(self, env:'env'="dev"):
-        log(f"Configuring Supervisor for '{self.name}' ({env}) ...", console=True)
-        host = getattr(self, env + "_host")
-        host_id = getattr(self, env + "_host_id")
+    def config_supervisor(self, env:'env'="dev", restart:'bool'=False):
+        host = self.env_var(env, "host")
+        host_id = self.env_var(env, "host_id")
+        domain = self.env_var(env, "domain")
 
+        log(f"Configuring Supervisor for '{domain}' ...", console=True)
         supervisor_config = utils.format_tpl("web/app/supervisor.tpl", {
             "lmid": self.lmid,
             "projects_dir": utils.projects_dir,
@@ -515,24 +557,21 @@ class Web(Project):
             })
         utils.write(f"/etc/supervisor/conf.d/{self.lmid}.conf", supervisor_config, host=host)
 
-        hal.pools.get(host_id).restart_supervisor()
-        log(f"Configured Supervisor for '{self.name}' ({env})", console=True)
+        if restart: hal.pools.get(host_id).restart_supervisor()
+        log(f"Configured Supervisor for '{domain}'", console=True)
 
-    def config_nginx(self, env:'env'="dev"):
-        log(f"Configuring Nginx for '{self.name}' ({env}) ...", console=True)
-        host = getattr(self, env + "_host")
-        host_id = getattr(self, env + "_host_id")
+    def config_nginx(self, env:'env'="dev", restart:'bool'=False):
+        host = self.env_var(env, "host")
+        host_id = self.env_var(env, "host_id")
+        domain = self.env_var(env, "domain")
+        ssl_dir = self.env_var(env, "ssl_dir")
+        port = self.env_var(env, "port")
 
-        if env == "dev":
-            domain = self.dev_domain
-            ssl_dir = self.dev_ssl_dir
-        else:
-            domain = self.domain
-            ssl_dir = self.ssl_dir
+        log(f"Configuring Nginx for '{domain}' ...", console=True)
 
         manual = self.app_dir + "manual/nginx.tpl"
-        if utils.isfile(manual, host=host, quiet=True):
-            tpl = utils.read(manual, host=host)
+        if utils.isfile(manual, host=self.dev_host, quiet=True):
+            tpl = utils.read(manual, host=self.dev_host)
         else:
             tpl = "web/app/nginx.tpl"
 
@@ -540,17 +579,17 @@ class Web(Project):
             "domain": domain,
             "ssl_dir": ssl_dir,
             "hal_ssl_dir": utils.ssl_dir,
-            "ocsp": "off", # Check environment, 'on' for production
+            "ocsp": "off" if env == "đev" else "on",
             "projects_dir": utils.projects_dir,
             "res_dir": utils.res_dir,
             "repo_dir": self.repo_dir,
-            "port": self.port,
+            "port": port,
             "lmid": self.lmid
             })
         utils.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, host=host)
-        hal.pools.get(host_id).restart_nginx()
 
-        log(f"Configured Nginx for '{self.name}' ({env})", console=True)
+        if restart: hal.pools.get(host_id).restart_nginx()
+        log(f"Configured Nginx for '{domain}'", console=True)
 
     def config(self, env:'env'="dev"):
         self.config_uwsgi(env)
@@ -558,9 +597,18 @@ class Web(Project):
         self.config_nginx(env)
 
     def restart(self, env:'env'="dev"):
-        log(f"Restarting '{self.name}' ({env}) ...", console=True)
-        host = getattr(self, env + "_host")
+        host = self.env_var(env, "host")
+        domain = self.env_var(env, "domain")
+
+        log(f"Restarting '{domain}' ...", console=True)
         # To do: Save log file
         cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;", host=host)
         cmd(f"sudo supervisorctl restart {self.lmid}", host=host)
-        log(f"Restarted '{self.name}' ({env})", console=True)
+        log(f"Restarted '{domain}'", console=True)
+
+    def change_state(self, new_state:'int', confirm:'bool'=False):
+        if utils.isfile(self.repo_dir, host=self.prod_host):
+            if not confirm:
+                if not utils.confirm(f"Are you sure you want to overwrite current '{domain}' published state?"):
+                    log("Aborted", console=True)
+                    return

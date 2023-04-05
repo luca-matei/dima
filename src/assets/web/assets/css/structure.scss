@@ -23,11 +23,13 @@ $col-sizes: (
 
     margin-left: calc(-0.5 * var(--lmg-x));
     margin-right: calc(-0.5 * var(--lmg-x));
+    margin-top: calc(-1 * var(--lmg-y));
 }
 
 .lmrow > * {
     padding-left: calc(0.5 * var(--lmg-x));
     padding-right: calc(0.5 * var(--lmg-x));
+    margin-top: var(--lmg-y);
 }
 
 .lmcol {flex: 1 0 0%;}

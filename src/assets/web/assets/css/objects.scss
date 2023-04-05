@@ -169,6 +169,12 @@
     &.lmactive {background-color: var(--ts-2);}
 }
 
+.lmtpl-grid-fixed {
+    .lmtpl-card {
+        height: 100%;
+    }
+}
+
 .lmtpl-card {
     background-color: var(--bg-2);
     border-radius: $bd-r;
@@ -310,14 +316,6 @@
         vertical-align: middle;
         color: $v;
         background-color: rgba($v, 0.16);
-    }
-}
-
-.lmtpl-cards-bg2 {
-    &>div {
-        padding: 14px 26px;
-        background-color: var(--bg-2);
-        border-radius: $bd-r;
     }
 }
 

@@ -1,11 +1,11 @@
 $gold-1: #e69500;
 $silver-1: #9A9A9A;
 $blue-1: #53a2e3;
-$blue-2-hex: #95C6EE;
+$blue-2: #95C6EE;
 $green-1: #2ecc71;
 $green-2: #55d98c;
 $orange-1: #f4ad49;
-$purple-hex: #6757e2;
+$purple: #6757e2;
 $red-1: #ef4658;
 $red-2: #f1725d;
 $sh-1: 0 0 2px 2px rgba(0, 0, 0, 0.12);
@@ -114,7 +114,7 @@ a.lmred:hover {
 .lmtpl-a-blue {
     color: $blue-1;
     font-weight: bold;
-    &:hover {color: $blue-2-hex;}
+    &:hover {color: $blue-2;}
 }
 
 /* Backgrounds */

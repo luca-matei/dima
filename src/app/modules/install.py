@@ -98,13 +98,13 @@ class Install:
             cmd("adduser --system --group --gecos '' hal", catch=True)
             cmd(f"echo hal:{utils.new_pass(64)} | chpasswd")
         else:
-            if not utils.yes_no("User 'hal' already exists! Use it?"):
+            if not utils.confirm("User 'hal' already exists! Use it?"):
                 self.abort("Can't use user 'hal'!")
 
     def add_to_group(self):
         users = ', '.join([x.split(':')[-1] for x in cmd("sudo -u hal getent group hal", catch=True).split('\n')])
         if users:
-            if not utils.yes_no(f"Users already in Hal's group: {users} Add another one?"):
+            if not utils.confirm(f"Users already in Hal's group: {users} Add another one?"):
                 return
 
         user = ""
@@ -138,7 +138,7 @@ class Install:
 
     def create_env(self):
         if os.path.isdir(f"{utils.projects_dir}venv/"):
-            if utils.yes_no("There's already a Virtual Env! Purge it?"):
+            if utils.confirm("There's already a Virtual Env! Purge it?"):
                 cmd(f"sudo -u hal rm -r {utils.projects_dir}venv/")
             else:
                 return
@@ -165,7 +165,7 @@ class Install:
     def place_hal(self):
         # To do: download lm1-versions, lm2, lm2-versions
         if os.path.isdir(utils.projects_dir + self.lmid):
-            if utils.yes_no("Hal already is in the right place! Purge it?"):
+            if utils.confirm("Hal already is in the right place! Purge it?"):
                 cmd(f"sudo -u hal rm -r {utils.projects_dir + self.lmid}")
             else:
                 return

@@ -3,8 +3,24 @@ class Db:
         self.lmid = lmid
         self.dbid = dbid
         self.host = host
-        self.db_dir = utils.projects_dir + self.lmid + "/src/app/db/"
+        self.db_dir = utils.projects_dir + lmid + "/src/app/db/"
+        port_file = utils.projects_dir + "pg_port.txt"
 
+        if self.lmid == hal.app_lmid:
+            self.dev_host = hal.host_lmid
+            host_id = hal.host_dbid
+        else:
+            self.dev_host = hal.lmobjs.get(hal.db.execute("select dev_host from project.projects where lmobj=%s;", (dbid,))[0][0])[0]
+            host_id = hal.lmobjs.get(host)
+
+            if not utils.read(port_file, host=host):
+                hal.pools.get(host_id).config_postgres()
+
+            if not cmd(utils.dbs.query.format(f"select 1 from pg_database where datname='{lmid}';"), catch=True, host=host):
+                hal.pools.get(host_id).create_pg_role(self.lmid)
+                hal.pools.get(host_id).create_pg_db(self.lmid)
+
+        self.port = int(utils.read(port_file, host=host))
         self.connect()
 
         # Check if database is empty
@@ -14,13 +30,12 @@ class Db:
     def connect(self):
         try:
             if self.host and self.host != hal.host_lmid:
-                host = hal.pools.get(hal.lmobjs.get(self.host)).ip
+                ip = hal.pools.get(hal.lmobjs.get(self.host)).ip
             else:
-                host = "127.0.0.1"
+                ip = "127.0.0.1"
             password = utils.read(self.db_dir + "db_pass", host=self.host)
-            port = int(utils.read(utils.projects_dir + "pg_port.txt", host=self.host))
 
-            self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={host} password={password} port={port}")
+            self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={ip} password={password} port={self.port}")
 
         except Exception as e:
             log(e, level=4)
@@ -51,8 +66,8 @@ class Db:
         log(f"'{self.lmid}' database erased", console=True)
 
     def build(self):
-        log(f"Building '{self.lmid}' database ...", console=True)
-        struct = utils.read(self.db_dir + "struct.ast", host=self.host)
+        log(f"Building '{self.lmid}' database on '{self.dev_host}' ...", console=True)
+        struct = utils.read(self.db_dir + "struct.ast", host=self.dev_host)
         default_file = self.db_dir + "default.ast"
 
         for group in struct:
@@ -70,10 +85,9 @@ class Db:
                 self.execute(f"create table {group[0]} ({','.join(group[1])});")
 
         self.load(default_file)
-        log(f"'{self.lmid}' database built", console=True)
+        log(f"'{self.lmid}' database built on '{self.dev_host}'", console=True)
 
     def load(self, file):
-        # Web apps load data differently bcs they have .html files
         """
         INSERT into scratch (name, rep_id, term_id)
         SELECT 'aaa'
@@ -88,7 +102,7 @@ class Db:
 
         log(f"Loading '{file}' into '{self.lmid}' ...", console=True)
 
-        db_data = utils.read(file, host=self.host)
+        db_data = utils.read(file, host=self.dev_host)
         for schema in db_data:
             for table in schema[1]:
                 struct_row = ', '.join(table[1][0])    # Db structure row

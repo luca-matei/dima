@@ -43,23 +43,23 @@ $text-sizes: (
 /* Links */
 
 p a {
-    padding-bottom: 6px;
+    padding-bottom: 4px;
     &::after {
         content: '';
         display: block;
-        height: 2px;
+        height: 1px;
         width: calc(100% - 16px);
         position: absolute;
         bottom: 0;
         left: 0;
-        background-color: var(--txt-1);
+        background-color: $blue-1;
         transition: width $tr-t, left $tr-t;
     }
 
     &:hover::after {
         left: 0;
         width: 100%;
-        background-color: var(--txt-2);
+        background-color: $blue-2;
     }
 
 }
@@ -124,3 +124,8 @@ h1::after {
 }
 
 ul {font-size: 1.1rem;}
+
+.fa-at {
+    font-size: 0.8rem;
+    margin: 0 1px;
+}

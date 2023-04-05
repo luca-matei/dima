@@ -60,8 +60,11 @@ class Utils:
     def reverse_dict(self, d):
         return {y:x for x, y in d.items()}
 
-    def now(self):
+    def format_date(self, date, fmt):
         # https://miro.medium.com/max/2138/1*O7E2cZsFohFNj_oGEe-dYg.png
+        return date.strftime(fmt)
+
+    def now(self):
         return datetime.now().strftime("%d %b, %H:%M:%S")
 
     def read(self, path, lines=False, host=None, quiet=False):
@@ -74,9 +77,9 @@ class Utils:
         if f"cat: {path}: No such file or directory" in contents:
             if not quiet:
                 try:
-                    log(f"'{path}' doesn't exist!", level=4, console=True)
+                    log(f"'{path}' doesn't exist on '{host}'!", level=4, console=True)
                 except:
-                    print(f"Error: '{path}' doesn't exist!")
+                    print(f"Error: '{path}' doesn't exist on '{host}'!")
 
             if lines: return []
             else: return ""
@@ -212,8 +215,7 @@ class Utils:
         elif "No such file or directory" in response:
             if not quiet:
                 log(f"'{path}' doesn't exist!", level=3, console=True)
-            return 0
-        return 1
+        return 0
 
     def replace_multiple(self, text:'str', reps:'dict'):
         if reps:
@@ -232,7 +234,7 @@ class Utils:
         reps = {"%" + k.upper() + "%": v for k, v in keys.items()}
         return self.replace_multiple(tpl, reps)
 
-    def yes_no(self, question=""):
+    def confirm(self, question=""):
         # To do: implement number of tries (see select_opt())
         resp = ""
         yes = "y", "yes", "1",
@@ -287,9 +289,13 @@ class Utils:
             files = files.split(" ")
         return [f.split('/')[-1] for f in files]
 
-    def join_modules(self, modules, module_path, file_path, module_host=None, file_host=None):
-        mammoth = [self.read(module_path + m, host=module_host) for m in modules]
-        self.write(file_path, "\n\n".join(mammoth), host=file_host)
+    def join_modules(self, modules, module_path, file_path=None, module_host=None, file_host=None):
+        mammoth = "\n\n".join([self.read(module_path + m, host=module_host) for m in modules])
+
+        if file_path:
+            self.write(file_path, mammoth, host=file_host)
+        else:
+            return mammoth
 
     def create_dir_tree(self, dir_tree, root="", host=None):
         if root and not self.isfile(root, host=host):
@@ -353,7 +359,10 @@ class Utils:
                         else:
                             text = prop[1]
 
-                        text = text.replace("\\", "<br>")
+                        text = utils.replace_multiple(text, {
+                            "\\": "<br>",
+                            "@": "<i class='fa fa-at'></i>"
+                            })
 
                     else:
                         attrs.append(list(prop))

@@ -308,12 +308,28 @@ notebook:
                         side: "left"
                         fill: "x"
                         expand: True
-                        text: "Domain"
+                        text: "Dev Domain"
 
                     label:
                         side: "left"
                         text_var:
-                            id: "web_domain_str"
+                            id: "web_ddomain_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Prod Domain"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_pdomain_str"
                             value: ''
 
                 frame:
@@ -378,12 +394,28 @@ notebook:
                         side: "left"
                         fill: "x"
                         expand: True
-                        text: "Port"
+                        text: "Dev SSL Certs Due"
 
                     label:
                         side: "left"
                         text_var:
-                            id: "web_port_str"
+                            id: "web_dssl_str"
+                            value: ''
+
+                frame:
+                    pady: 4
+                    fill: "x"
+
+                    label:
+                        side: "left"
+                        fill: "x"
+                        expand: True
+                        text: "Prod SSL Certs Due"
+
+                    label:
+                        side: "left"
+                        text_var:
+                            id: "web_pssl_str"
                             value: ''
 
                 frame:

@@ -188,7 +188,7 @@ class HostServices:
         role_query = utils.dbs.query.format(f"create role {role} with login password '{password}';")
         output = cmd(role_query, catch=True, host=self.lmid)
         if "already exists" in output:
-            if utils.yes_no(f"'{role}' role already exists on '{self.name}'! Purge it?"):
+            if utils.confirm(f"'{role}' role already exists on '{self.name}'! Purge it?"):
                 cmd(utils.dbs.query.format(f"drop database if exists {role}; drop role if exists {role};"), host=self.lmid)
             else: return
 
@@ -211,7 +211,7 @@ class HostServices:
         db_query = utils.dbs.query.format(f"create database {db} owner {db} encoding 'utf-8';")
         output = cmd(db_query, catch=True, host=self.lmid)
         if "already exists" in output:
-            if utils.yes_no(f"'{db}' database already exists on '{self.name}'! Purge it?"):
+            if utils.confirm(f"'{db}' database already exists on '{self.name}'! Purge it?"):
                 cmd(utils.dbs.query.format(f"drop database {db};"), host=self.lmid)
             else: return
 
@@ -227,7 +227,7 @@ class HostServices:
         """
 
         log(f"Configuring PostgreSQL for '{self.name}' ...", console=True)
-        port = self.next_port()
+        port = self.next_port(service=True)
 
         pg_dir = f"/etc/postgresql/{self.pg_version}/main/"
         config_file = pg_dir + "postgresql.conf"
@@ -254,14 +254,16 @@ class HostServices:
         utils.write(hba_file, hba, owner="postgres", tpl=True, host=self.lmid)
 
         # Update ports in Hal projects and in db
-        utils.write(utils.dbs.port_file, str(port), tpl=True, host=self.lmid)
+        utils.write(utils.dbs.port_file, str(port), host=self.lmid)
         hal.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
+        log(f"Assigned Postgres port {port} to '{self.name}'", console=True)
 
         self.pg_port = port
         self.manage_service("restart", "postgresql")
 
         query = utils.dbs.query.replace("hal", "postgres")
-        has_db = cmd(query.format(f"select 1 from pg_database where datname='hal';"), catch=True)
+        has_db = cmd(query.format(f"select 1 from pg_database where datname='hal';"), catch=True, host=self.lmid)
+
         if not has_db:
             cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"), host=self.lmid)
             cmd(query.format("create database hal owner hal encoding 'utf-8';"), host=self.lmid)
@@ -372,7 +374,7 @@ class HostServices:
         privkey = utils.ssh_dir + self.lmid + ("-gitlab" if for_gitlab else '')
 
         if utils.isfile(privkey, host=host):
-            if utils.yes_no("SSH key already exists! Overwrite it?"):
+            if utils.confirm("SSH key already exists! Overwrite it?"):
                 cmd(f"mv {privkey} {privkey}.old", host=host)
                 cmd(f"mv {privkey}.pub {privkey}.pub.old", host=host)
             else:
@@ -427,7 +429,7 @@ class HostServices:
         key_id = cmd(f"gpg2 --list-keys --keyid-format LONG {email}", catch=True, host=self.lmid)
 
         if "No public key" in key_id:
-            if utils.yes_no(f"Couldn't find GPG key for '{email}'! Create one?"):
+            if utils.confirm(f"Couldn't find GPG key for '{email}'! Create one?"):
                 return self.create_gpg_key(email)
             return 0
         else:
@@ -481,7 +483,7 @@ class Host(lmObj, HostServices):
         else:
             min, max = 16384, 32768
             used = []
-            for ports in hal.db.execute("select a.port, b.port from web.webs a, project.apps b;"):
+            for ports in hal.db.execute("select a.dev_port, a.prod_port, b.port from web.webs a, project.apps b;"):
                 used.extend(ports)
 
         port = random.randint(min, max)
@@ -515,7 +517,7 @@ class Host(lmObj, HostServices):
 
         return 0
 
-    def clone_repo(self, path):
+    def clone_repo(self, path:'str'):
         log(f"Cloning '{path}' Gitlab repository ...", console=True)
         cmd(f"git clone git@{gitlab.domain}:{gitlab.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
         log(f"'{path}' cloned", console=True)
@@ -537,19 +539,20 @@ class Host(lmObj, HostServices):
             lang_ids = [x for x in [utils.projects.langs.get(l, 0) for l in langs] if x]
             theme_ids = [x for x in [utils.projects.themes.get(t, 0) for t in themes] if x]
 
-            query = "insert into web.webs (lmobj, domain, port, ssl_last_gen, modules, langs, themes, default_lang, default_theme, has_animations) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
-            params = hal.lmobjs[lmid], domain, self.next_port(), None, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], has_animations,
+            query = "insert into web.webs (lmobj, domain, dev_port, prod_port, dev_ssl_due, prod_ssl_due, prod_state, modules, langs, themes, default_lang, default_theme, has_animations) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
+            params = hal.lmobjs[lmid], domain, self.next_port(), self.next_port(), None, None, 0, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], has_animations,
 
             if hal.db.execute(query, params)[0][0]:
                 log(f"{name if name else (alias if alias else lmid)} web app created!", console=True)
                 hal.create_pool(dbid)
+                self.update_hosts_file()
                 return 1
 
         log(f"Couldn't create web app '{lmid}'!", level=4, console=True)
 
     def generate_dh(self):
         if utils.isfile(utils.ssl_dir + "dhparam.pem", host=self.lmid):
-            if utils.yes_no("DH parameters are already in place! Purge them?"):
+            if utils.confirm("DH parameters are already in place! Purge them?"):
                 cmd(f"rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
             else:
                 return
@@ -732,8 +735,8 @@ class Host(lmObj, HostServices):
 
         log(f"Generated /etc/hosts for '{self.name}'", console=True)
 
-    def reach(self):
-        log(f"Trying to reach '{self.name}' ...", console=True)
+    def ping(self):
+        log(f"Trying to ping '{self.name}' ...", console=True)
         if self.dbid == hal.host_dbid:
             print("It's this machine, dumbass!")
         else:
@@ -771,7 +774,7 @@ class Host(lmObj, HostServices):
 
     def build_venv(self):
         if utils.isfile(f"{utils.projects_dir}venv/", host=self.lmid):
-            if utils.yes_no(f"There's already a virtual environment on '{self.name}'! Purge it?"):
+            if utils.confirm(f"There's already a virtual environment on '{self.name}'! Purge it?"):
                 cmd(f"rm -r {utils.projects_dir}venv/", host=self.lmid)
             else:
                 return
