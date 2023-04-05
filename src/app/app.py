@@ -2652,8 +2652,8 @@ class Web(Project):
         if env == "dev":
             self.default_html(confirm=True, hello=True)
 
-        hal.pools(host_id).restart_supervisor()
-        hal.pools(host_id).restart_nginx()
+        hal.pools.get(host_id).restart_supervisor()
+        hal.pools.get(host_id).restart_nginx()
 
         log(f"Set '{domain}' to 'Hello World'", console=True)
 
@@ -2839,6 +2839,10 @@ class Web(Project):
         log(f"Updated Global HTML for '{domain}'", console=True)
 
     def update_html(self, env:"env"="dev", section:'str'= "", global_html:'bool'=False):
+        if env == "prod" and not self.css_classes:
+            self.update_css(env)
+            return
+
         domain = self.env_var(env, "domain")
         db = self.env_var(env, "db")
 
@@ -2846,7 +2850,7 @@ class Web(Project):
 
         if global_html or not self.global_html:
             db.format_table("fractions")
-            self.update_global_html()
+            self.update_global_html(env)
 
         method_ids = dict(db.execute("select name, id from methods;"))
 
@@ -2926,7 +2930,7 @@ class Web(Project):
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
 
-        self.restart()
+        self.restart(env)
         log(f"Updated HTML for '{domain}'", console=True)
 
     def update_py(self, env:"env"="dev", restart:'bool'=False):

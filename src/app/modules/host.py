@@ -649,12 +649,14 @@ class Host(lmObj, HostServices):
         self.send_file(hal.tpls_dir + "motd.tpl", "/etc/motd")
 
     def update_resources(self):
+        log(f"Updating resources for '{self.name}' ...", console=True)
         if self.dbid != hal.host_dbid:
             cmd(f"rm -r {utils.res_dir}web/", host=self.lmid)
             self.send_file(utils.res_dir + "web/", utils.res_dir + "web/")
         else:
             # Download resources
             pass
+        log(f"Updated resources for '{self.name}'", console=True)
 
     def update_hosts_file(self):
         def append_web(web):

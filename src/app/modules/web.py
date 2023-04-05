@@ -140,8 +140,8 @@ class Web(Project):
         if env == "dev":
             self.default_html(confirm=True, hello=True)
 
-        hal.pools(host_id).restart_supervisor()
-        hal.pools(host_id).restart_nginx()
+        hal.pools.get(host_id).restart_supervisor()
+        hal.pools.get(host_id).restart_nginx()
 
         log(f"Set '{domain}' to 'Hello World'", console=True)
 
@@ -327,6 +327,10 @@ class Web(Project):
         log(f"Updated Global HTML for '{domain}'", console=True)
 
     def update_html(self, env:"env"="dev", section:'str'= "", global_html:'bool'=False):
+        if env == "prod" and not self.css_classes:
+            self.update_css(env)
+            return
+
         domain = self.env_var(env, "domain")
         db = self.env_var(env, "db")
 
@@ -334,7 +338,7 @@ class Web(Project):
 
         if global_html or not self.global_html:
             db.format_table("fractions")
-            self.update_global_html()
+            self.update_global_html(env)
 
         method_ids = dict(db.execute("select name, id from methods;"))
 
@@ -414,7 +418,7 @@ class Web(Project):
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
 
-        self.restart()
+        self.restart(env)
         log(f"Updated HTML for '{domain}'", console=True)
 
     def update_py(self, env:"env"="dev", restart:'bool'=False):
@@ -546,6 +550,13 @@ class Web(Project):
         log(f"Configured uWSGI for '{domain}'", console=True)
 
     def config_supervisor(self, env:'env'="dev", restart:'bool'=False):
+        supervisor_file = f"/etc/supervisor/conf.d/{self.lmid}.conf"
+        if env == "prod" and self.prod_state == 0:
+            if utils.isfile(supervisor_file, host=self.prod_host):
+                cmd(f"sudo rm {supervisor_file}", host=self.prod_host)
+            else:
+                log(f"Production state is set to 0. Change state to make the web app available to the internet.", level=4, console=True)
+
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
@@ -556,12 +567,21 @@ class Web(Project):
             "projects_dir": utils.projects_dir,
             "app_dir": self.app_dir,
             })
-        utils.write(f"/etc/supervisor/conf.d/{self.lmid}.conf", supervisor_config, host=host)
+        utils.write(supervisor_file, supervisor_config, host=host)
 
         if restart: hal.pools.get(host_id).restart_supervisor()
         log(f"Configured Supervisor for '{domain}'", console=True)
 
     def config_nginx(self, env:'env'="dev", restart:'bool'=False):
+        nginx_file = "/etc/nginx/sites-enabled/{self.lmid}"
+        if env == "prod" and self.prod_state == 0:
+            if utils.isfile(nginx_file, host=self.prod_host):
+                cmd(f"sudo rm {nginx_file}", host=self.prod_host)
+            else:
+                log(f"Production state is set to 0. Change state to make the web app available to the internet.", level=4, console=True)
+
+            return
+
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
@@ -587,7 +607,7 @@ class Web(Project):
             "port": port,
             "lmid": self.lmid
             })
-        utils.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, host=host)
+        utils.write(nginx_file, nginx_config, host=host)
 
         if restart: hal.pools.get(host_id).restart_nginx()
         log(f"Configured Nginx for '{domain}'", console=True)
@@ -598,6 +618,10 @@ class Web(Project):
         self.config_nginx(env, restart)
 
     def restart(self, env:'env'="dev"):
+        if env == "prod" and self.prod_state == 0:
+            log("No web app is running on production!", level=4, console=True)
+            return
+
         host = self.env_var(env, "host")
         domain = self.env_var(env, "domain")
 
@@ -610,6 +634,9 @@ class Web(Project):
     def change_state(self, new_state:'int', confirm:'bool'=False):
         if utils.isfile(self.repo_dir, host=self.prod_host):
             if not confirm:
-                if not utils.confirm(f"Are you sure you want to overwrite current '{domain}' published state?"):
+                if not utils.confirm(f"Are you sure you want to change current production state for '{self.prod_domain}'?"):
                     log("Aborted", console=True)
                     return
+
+        self.prod_state = new_state
+        self.config("prod", True)

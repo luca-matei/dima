@@ -53,3 +53,10 @@ lm8 mount
 lm7 config 
 lm7 save --message="Updated files"
 lm1 save
+lm7 default --env=prod --confirm=1
+lm8 restart nginx 
+lm8 restart supervisor 
+lm8 config nginx 
+lm7 update html --env=prod --section= --global_html=1
+lm8 update resources 
+lm1 save
