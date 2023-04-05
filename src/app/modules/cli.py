@@ -165,6 +165,7 @@ class CLI:
 
             lmobj, act, obj = command[:3]
             act_id = self.acts.get(act, 0)
+            if obj.startswith("-"): obj = ''
 
             if not act_id:
                 return self.invalid(a=act)
@@ -173,7 +174,7 @@ class CLI:
             module_id = hal.lmobjs[lmobj_id][1]      # Get Host module id
             obj_id = self.objs[module_id].get(obj, 0)    # Get nginx object id
 
-            if obj_id == 0:    # It can be ''
+            if not obj_id:
                 return self.invalid(o=obj)
 
             # Get command object details
@@ -184,7 +185,7 @@ class CLI:
                 return self.invalid(a=act, o=lmobj)
 
             # Solve arguments
-            try: args = command[3:]
+            try: args = command[3:] if obj else command[2:]
             except: args = []
 
             params = self.process_args(hal.pools[lmobj_id], act, obj, args)
@@ -204,6 +205,7 @@ class CLI:
 
             act, obj = command[:2]
             act_id = self.acts.get(act, 0)
+            if obj.startswith("-"): obj = ''
 
             if not act_id:
                 return self.invalid(ao=act)
@@ -231,7 +233,7 @@ class CLI:
                 return self.invalid(a=act, o=obj)
 
             # Solve parameters
-            try: args = command[3:]
+            try: args = command[3:] if obj else command[2:]
             except: args = []
 
             if obj == '':

@@ -2657,7 +2657,7 @@ class Web(Project):
 
         log(f"Set '{domain}' to 'Hello World'", console=True)
 
-    def default_db(self, env:"dev"="dev", confirm:'bool'=False):
+    def default_db(self, env:"env"="dev", confirm:'bool'=False):
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
         db = self.env_var(env, "db")
@@ -2771,7 +2771,8 @@ class Web(Project):
                 self.global_html[lang][var_file[:-4]] = self.yml2html("_fractions/" + var_file, lang)
 
             # Save logged user dropdown
-            user_drop_html = utils.replace_multiple(self.yml2html("user-drop.yml", lang), self.css_classes)
+            css_classes = self.css_classes if env == "prod" else {}
+            user_drop_html = utils.replace_multiple(self.yml2html("user-drop.yml", lang), css_classes)
             params = "user-drop", self.langs[lang], user_drop_html
             db.execute(query, params)
 
@@ -2809,7 +2810,7 @@ class Web(Project):
                 "lang_selector": lang_selector,
                 "theme_selector": theme_selector,
                 })
-            guest_drop_html = utils.replace_multiple(guest_drop_html, self.css_classes)
+            guest_drop_html = utils.replace_multiple(guest_drop_html, css_classes)
             params = "guest-drop", self.langs[lang], guest_drop_html,
             db.execute(query, params)
 
@@ -3103,10 +3104,10 @@ class Web(Project):
         if restart: hal.pools.get(host_id).restart_nginx()
         log(f"Configured Nginx for '{domain}'", console=True)
 
-    def config(self, env:'env'="dev"):
-        self.config_uwsgi(env)
-        self.config_supervisor(env)
-        self.config_nginx(env)
+    def config(self, env:'env'="dev", restart:'bool'=False):
+        self.config_uwsgi(env, restart)
+        self.config_supervisor(env, restart)
+        self.config_nginx(env, restart)
 
     def restart(self, env:'env'="dev"):
         host = self.env_var(env, "host")
@@ -3310,6 +3311,7 @@ class CLI:
 
             lmobj, act, obj = command[:3]
             act_id = self.acts.get(act, 0)
+            if obj.startswith("-"): obj = ''
 
             if not act_id:
                 return self.invalid(a=act)
@@ -3318,7 +3320,7 @@ class CLI:
             module_id = hal.lmobjs[lmobj_id][1]      # Get Host module id
             obj_id = self.objs[module_id].get(obj, 0)    # Get nginx object id
 
-            if obj_id == 0:    # It can be ''
+            if not obj_id:
                 return self.invalid(o=obj)
 
             # Get command object details
@@ -3329,7 +3331,7 @@ class CLI:
                 return self.invalid(a=act, o=lmobj)
 
             # Solve arguments
-            try: args = command[3:]
+            try: args = command[3:] if obj else command[2:]
             except: args = []
 
             params = self.process_args(hal.pools[lmobj_id], act, obj, args)
@@ -3349,6 +3351,7 @@ class CLI:
 
             act, obj = command[:2]
             act_id = self.acts.get(act, 0)
+            if obj.startswith("-"): obj = ''
 
             if not act_id:
                 return self.invalid(ao=act)
@@ -3376,7 +3379,7 @@ class CLI:
                 return self.invalid(a=act, o=obj)
 
             # Solve parameters
-            try: args = command[3:]
+            try: args = command[3:] if obj else command[2:]
             except: args = []
 
             if obj == '':
@@ -3420,6 +3423,8 @@ class GUI:
         self.widgets = {}
         self.lmids = {}
         self.panel_acts = {}
+        self.cmd_args = {}
+        self.arg_widgets = {}
         self.last_timer = None
         self.history_index = 0
 
@@ -3600,6 +3605,7 @@ class GUI:
             self.widgets[drop_name].configure(state="normal")
 
     def set_args(self, module):
+        self.cmd_args = {}
         lmid = self.widgets[module + "_lmid_str"].get()
         obj = self.widgets[module + "_obj_str"].get()
         act = self.widgets[module + "_act_str"].get()
@@ -3608,9 +3614,8 @@ class GUI:
         else: method = getattr(hal.pools[hal.lmobjs[lmid]], act)
 
         param_pos, params = utils.get_method_params(method)
-
-        print(param_pos, params)
         frame = module + "_args_panel_tmp"
+
         self.widgets[frame].destroy()
         self.widgets[frame] = self.create_frame(self.widgets[module + "_args_panel"])
         self.widgets[frame].pack(fill=tk.X, expand=True)
@@ -3619,6 +3624,7 @@ class GUI:
 
         widgets = {}
         for p, v in params.items():
+            self.cmd_args[p] = "NaN"
             if p in param_pos:
                 continue
             else:
@@ -3643,16 +3649,27 @@ class GUI:
 
                 widgets[p].pack(side=tk.LEFT, padx=[0, 8])
 
+        self.arg_widgets = widgets
+
     def send_cmd(self, module):
         name = self.widgets[f"{module}_lmid_str"].get()
         act = self.widgets[f"{module}_act_str"].get()
         obj = self.widgets[f"{module}_obj_str"].get()
+        args = []
+
+        for arg in self.cmd_args:
+            value = self.arg_widgets[arg + "_var"].get()
+            if " " in str(value): value = '"' + value + '"'
+            args.append(f"--{arg}={value}")
+
+        args = ' '.join(args)
 
         if obj:
-            cli.process(' '.join([name, act, obj]))
+            command = ' '.join([name, act, obj, args])
+            cli.process(command)
         else:
-            cli.process(' '.join([name, act]))
-
+            command = ' '.join([name, act, args])
+            cli.process(command)
 
     ## HOSTS
 

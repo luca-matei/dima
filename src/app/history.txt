@@ -39,3 +39,17 @@ lm7 update css
 lm6 mount
 lm7 update py
 lm1 save
+lm2 check
+lm7 update py --env=prod --restart=0
+lm7 update css --env=prod
+lm7 default db --env=prod --confirm=1
+lm7 config --env=prod
+lm7 config --env=dev --restart=0
+lm7 config --env=dev --restart=1
+lm7 update html --env=dev --section= --global_html=1
+lm7 update html --env=prod --section= --global_html=1
+lm7 config --env=prod --restart=1
+lm8 mount 
+lm7 config 
+lm7 save --message="Updated files"
+lm1 save

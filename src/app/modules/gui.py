@@ -13,6 +13,8 @@ class GUI:
         self.widgets = {}
         self.lmids = {}
         self.panel_acts = {}
+        self.cmd_args = {}
+        self.arg_widgets = {}
         self.last_timer = None
         self.history_index = 0
 
@@ -193,6 +195,7 @@ class GUI:
             self.widgets[drop_name].configure(state="normal")
 
     def set_args(self, module):
+        self.cmd_args = {}
         lmid = self.widgets[module + "_lmid_str"].get()
         obj = self.widgets[module + "_obj_str"].get()
         act = self.widgets[module + "_act_str"].get()
@@ -201,9 +204,8 @@ class GUI:
         else: method = getattr(hal.pools[hal.lmobjs[lmid]], act)
 
         param_pos, params = utils.get_method_params(method)
-
-        print(param_pos, params)
         frame = module + "_args_panel_tmp"
+
         self.widgets[frame].destroy()
         self.widgets[frame] = self.create_frame(self.widgets[module + "_args_panel"])
         self.widgets[frame].pack(fill=tk.X, expand=True)
@@ -212,6 +214,7 @@ class GUI:
 
         widgets = {}
         for p, v in params.items():
+            self.cmd_args[p] = "NaN"
             if p in param_pos:
                 continue
             else:
@@ -236,16 +239,27 @@ class GUI:
 
                 widgets[p].pack(side=tk.LEFT, padx=[0, 8])
 
+        self.arg_widgets = widgets
+
     def send_cmd(self, module):
         name = self.widgets[f"{module}_lmid_str"].get()
         act = self.widgets[f"{module}_act_str"].get()
         obj = self.widgets[f"{module}_obj_str"].get()
+        args = []
+
+        for arg in self.cmd_args:
+            value = self.arg_widgets[arg + "_var"].get()
+            if " " in str(value): value = '"' + value + '"'
+            args.append(f"--{arg}={value}")
+
+        args = ' '.join(args)
 
         if obj:
-            cli.process(' '.join([name, act, obj]))
+            command = ' '.join([name, act, obj, args])
+            cli.process(command)
         else:
-            cli.process(' '.join([name, act]))
-
+            command = ' '.join([name, act, args])
+            cli.process(command)
 
     ## HOSTS
 
