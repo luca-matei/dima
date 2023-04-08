@@ -861,7 +861,7 @@ class Host(lmObj, HostServices):
 
     def update(self):
         log(f"Updating '{self.name}' ...", console=True)
-        cmd("apt update && apt upgrade -y", host=self.lmid)
+        cmd("sudo apt update && sudo apt upgrade -y", host=self.lmid)
         log(f"Updated '{self.name}'", console=True)
 
     def reboot(self):

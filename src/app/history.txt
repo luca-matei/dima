@@ -60,3 +60,11 @@ lm8 config nginx
 lm7 update html --env=prod --section= --global_html=1
 lm8 update resources 
 lm1 save
+lm8 update 
+lm6 update 
+lm6 mount 
+lm7 update html --env=dev --section= --global_html=1
+lm7 update html --env=dev --section= --global_html=0
+lm7 update css --env=dev
+lm7 save --message="Updated files"
+lm1 save

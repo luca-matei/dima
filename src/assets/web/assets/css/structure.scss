@@ -32,6 +32,11 @@ $col-sizes: (
     margin-top: var(--lmg-y);
 }
 
+.lmcolumn {
+    display: flex;
+    flex-flow: column nowrap;
+}
+
 .lmcol {flex: 1 0 0%;}
 @each $id, $size in $col-sizes {
     .lmcol-#{$id} {flex: 0 1 #{$size};}

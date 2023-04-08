@@ -2121,12 +2121,14 @@ class Host(lmObj, HostServices):
         self.send_file(hal.tpls_dir + "motd.tpl", "/etc/motd")
 
     def update_resources(self):
+        log(f"Updating resources for '{self.name}' ...", console=True)
         if self.dbid != hal.host_dbid:
             cmd(f"rm -r {utils.res_dir}web/", host=self.lmid)
             self.send_file(utils.res_dir + "web/", utils.res_dir + "web/")
         else:
             # Download resources
             pass
+        log(f"Updated resources for '{self.name}'", console=True)
 
     def update_hosts_file(self):
         def append_web(web):
@@ -2331,7 +2333,7 @@ class Host(lmObj, HostServices):
 
     def update(self):
         log(f"Updating '{self.name}' ...", console=True)
-        cmd("apt update && apt upgrade -y", host=self.lmid)
+        cmd("sudo apt update && sudo apt upgrade -y", host=self.lmid)
         log(f"Updated '{self.name}'", console=True)
 
     def reboot(self):
@@ -3062,6 +3064,13 @@ class Web(Project):
         log(f"Configured uWSGI for '{domain}'", console=True)
 
     def config_supervisor(self, env:'env'="dev", restart:'bool'=False):
+        supervisor_file = f"/etc/supervisor/conf.d/{self.lmid}.conf"
+        if env == "prod" and self.prod_state == 0:
+            if utils.isfile(supervisor_file, host=self.prod_host):
+                cmd(f"sudo rm {supervisor_file}", host=self.prod_host)
+            else:
+                log(f"Production state is set to 0. Change state to make the web app available to the internet.", level=4, console=True)
+
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
@@ -3072,12 +3081,21 @@ class Web(Project):
             "projects_dir": utils.projects_dir,
             "app_dir": self.app_dir,
             })
-        utils.write(f"/etc/supervisor/conf.d/{self.lmid}.conf", supervisor_config, host=host)
+        utils.write(supervisor_file, supervisor_config, host=host)
 
         if restart: hal.pools.get(host_id).restart_supervisor()
         log(f"Configured Supervisor for '{domain}'", console=True)
 
     def config_nginx(self, env:'env'="dev", restart:'bool'=False):
+        nginx_file = "/etc/nginx/sites-enabled/{self.lmid}"
+        if env == "prod" and self.prod_state == 0:
+            if utils.isfile(nginx_file, host=self.prod_host):
+                cmd(f"sudo rm {nginx_file}", host=self.prod_host)
+            else:
+                log(f"Production state is set to 0. Change state to make the web app available to the internet.", level=4, console=True)
+
+            return
+
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
@@ -3103,7 +3121,7 @@ class Web(Project):
             "port": port,
             "lmid": self.lmid
             })
-        utils.write(f"/etc/nginx/sites-enabled/{self.lmid}", nginx_config, host=host)
+        utils.write(nginx_file, nginx_config, host=host)
 
         if restart: hal.pools.get(host_id).restart_nginx()
         log(f"Configured Nginx for '{domain}'", console=True)
@@ -3114,6 +3132,10 @@ class Web(Project):
         self.config_nginx(env, restart)
 
     def restart(self, env:'env'="dev"):
+        if env == "prod" and self.prod_state == 0:
+            log("No web app is running on production!", level=4, console=True)
+            return
+
         host = self.env_var(env, "host")
         domain = self.env_var(env, "domain")
 
@@ -3126,9 +3148,12 @@ class Web(Project):
     def change_state(self, new_state:'int', confirm:'bool'=False):
         if utils.isfile(self.repo_dir, host=self.prod_host):
             if not confirm:
-                if not utils.confirm(f"Are you sure you want to overwrite current '{domain}' published state?"):
+                if not utils.confirm(f"Are you sure you want to change current production state for '{self.prod_domain}'?"):
                     log("Aborted", console=True)
                     return
+
+        self.prod_state = new_state
+        self.config("prod", True)
 
 class AppUtils:
     pass
