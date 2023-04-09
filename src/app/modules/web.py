@@ -334,12 +334,11 @@ class Web(Project):
         domain = self.env_var(env, "domain")
         db = self.env_var(env, "db")
 
-        log(f"Updating HTML for '{domain}' ...", console=True)
-
         if global_html or not self.global_html:
             db.format_table("fractions")
             self.update_global_html(env)
 
+        log(f"Updating HTML for '{domain}' ...", console=True)
         method_ids = dict(db.execute("select name, id from methods;"))
 
         # Erase current html
@@ -418,8 +417,8 @@ class Web(Project):
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
 
-        self.restart(env)
         log(f"Updated HTML for '{domain}'", console=True)
+        self.restart(env)
 
     def update_py(self, env:"env"="dev", restart:'bool'=False):
         host = self.env_var(env, "host")

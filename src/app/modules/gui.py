@@ -218,7 +218,13 @@ class GUI:
             if p in param_pos:
                 continue
             else:
-                label = self.create_label(frame, text = p.capitalize() + (" *" if p in param_pos else ""))
+                text = p.capitalize().replace("_", " ") + (" *" if p in param_pos else "")
+
+                for x in ("html", "css", "php"):
+                    if x in text:
+                        text = text.replace(x, x.upper())
+
+                label = self.create_label(frame, text=text)
                 label.pack(side=tk.LEFT, padx=[0, 4])
 
                 if v[0] == "str":
@@ -250,7 +256,8 @@ class GUI:
         for arg in self.cmd_args:
             value = self.arg_widgets[arg + "_var"].get()
             if " " in str(value): value = '"' + value + '"'
-            args.append(f"--{arg}={value}")
+            if value:
+                args.append(f"--{arg}={value}")
 
         args = ' '.join(args)
 
@@ -260,6 +267,8 @@ class GUI:
         else:
             command = ' '.join([name, act, args])
             cli.process(command)
+
+        print(command)
 
     ## HOSTS
 

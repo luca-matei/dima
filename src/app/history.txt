@@ -68,3 +68,10 @@ lm7 update html --env=dev --section= --global_html=0
 lm7 update css --env=dev
 lm7 save --message="Updated files"
 lm1 save
+lm7 update html --env=dev --section= --global_html=1
+lm7 update html --env=dev --section= --global_html=0
+lm7 update css --env=dev
+lm7 update html --env=dev --global_html=1
+lm7 update html --env=dev
+lm7 save --message="Updated files"
+lm1 save

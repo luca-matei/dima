@@ -91,6 +91,9 @@ $gutter-sizes: (
 .lma-align-items-start {@extend .lmd-flex; align-items: flex-start;}
 .lma-align-items-end {@extend .lmd-flex; align-items: flex-end;}
 .lma-align-items-center {@extend .lmd-flex; align-items: center;}
+.lma-align-content-start {@extend .lmd-flex; align-content: flex-start;}
+.lma-align-content-end {@extend .lmd-flex; align-content: flex-end;}
+.lma-align-content-center {@extend .lmd-flex; align-content: center;}
 .lma-justify-content-start {@extend .lmd-flex; justify-content: flex-start;}
 .lma-justify-content-end {@extend .lmd-flex; justify-content: flex-end;}
 .lma-justify-content-center {@extend .lmd-flex; justify-content: center;}

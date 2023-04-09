@@ -58,7 +58,7 @@
     &-circle {
         @extend .lmpic;
         img, svg {
-            border-radius: 50%;
+            border-radius: 50% !important;
         }
     }
 
@@ -69,11 +69,18 @@
         max-width: 500px;
         margin-left: auto;
         margin-right: auto;
+        border-radius: $bd-r;
     }
 
     a {
         display: inline-block;
         margin: 15px 0;
+    }
+}
+
+.lmpic-grid .lmpic {
+    img, svg {
+        max-width: none;
     }
 }
 
