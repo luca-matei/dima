@@ -71,11 +71,11 @@ a  {
     transition: background-color $tr-t, color $tr-t;
 
     &.lmactive {
-        background-color: var(--bg-2);
+        background-color: var(--bg-3);
         color: var(--txt-2);
 
         &:hover {
-            background-color: var(--bg-3);
+            background-color: var(--bg-4);
         }
     }
 

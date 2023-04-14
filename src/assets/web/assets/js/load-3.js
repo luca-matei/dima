@@ -32,14 +32,16 @@ utils: {
     // Activate navbar links
     setActive: function() {
         let [section, resource] = document.URL.substr(document.baseURI.length).split('/');
-        let navs = Array.from(document.querySelectorAll('#lmid-app-header, #lmid-compaside'));
+        let navs = Array.from(document.querySelectorAll('#lmid-app-header, #lmid-page-aside'));
         let links = new Array, res = section ? `${section}/${resource}` : resource;
 
         for (let nav of navs) links.push(...nav.getElementsByTagName('a'));
+        console.log(links);
 
         if (!section) section = 'home';
         for (let link of links) {
             let href = link.getAttribute('href');
+            console.log([section, res]);
             if ([section, res].includes(href) && href != 'coming-soon') {
                 link.classList.add('lmactive');
             }

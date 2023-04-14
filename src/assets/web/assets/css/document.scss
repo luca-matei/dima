@@ -189,7 +189,8 @@ label[for=lmid-aside-collapse] {
 #lmid-page-aside {
     position: sticky;
     top: 0;
-    flex: 0 0 $navbar-width;
+    flex: 0 0 20%;
+    min-width: $navbar-width;
     display: flex;
     flex-flow: column nowrap;
     background-color: var(--bg-2);
@@ -201,8 +202,10 @@ label[for=lmid-aside-collapse] {
 
     a {
         display: block;
-        padding: 12px 30px;
-        margin: 8px 0;
+        padding: 12px 15px;
+        margin: 3px 15px;
+        border-radius: $bd-r;
+        &:hover {background-color: var(--bg-4);}
     }
 }
 
