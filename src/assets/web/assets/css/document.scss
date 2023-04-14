@@ -155,7 +155,7 @@ body {
         padding: 8px 12px;
         margin: 4px 6px;
         border-radius: $bd-r;
-        &:hover {background-color: var(--bg-2);}
+        &:hover {background-color: var(--bg-4);}
     }
 }
 
@@ -214,14 +214,17 @@ label[for=lmid-aside-collapse] {
     flex-flow: row nowrap;
     overflow: auto;
     scroll-behavior: smooth;
+    flex: 1;
 }
 
 #lmid-page-content {
     flex: 1 1 auto;
+    overflow: auto;
+    display: flex;
+    flex-flow: column nowrap;
 }
 
 #lmid-app-footer {
-    flex: 0 0 100%;
     text-align: center;
 
     a, span {
