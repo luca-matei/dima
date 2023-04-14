@@ -108,6 +108,9 @@ $gutter-sizes: (
 
 @include media(sm) {
     .lmbox, .lmbox-sm {width: 540px;}
+    #lmid-aside-collapse:checked ~ #lmid-page-content {
+        .lmbox, .lmbox-sm {width: calc(540px - #{$navbar-width});}
+    }
 
     .lmcol-sm {flex: 1 0 0%;}
     @each $id, $size in $col-sizes {
@@ -117,7 +120,14 @@ $gutter-sizes: (
 
 @include media(md) {
     .lmbox {width: 720px;}
+    #lmid-aside-collapse:checked ~ #lmid-page-content {
+        .lmbox {width: calc(720px - #{$navbar-width});}
+    }
+
     @each $size in (sm, md) {
+        #lmid-aside-collapse:checked ~ #lmid-page-content {
+            .lmbox-#{$size} {width: calc(720px - #{$navbar-width});}
+        }
         .lmbox-#{$size} {width: 720px;}
     }
 
@@ -129,7 +139,14 @@ $gutter-sizes: (
 
 @include media(lg) {
     .lmbox {width: 960px;}
+    #lmid-aside-collapse:checked ~ #lmid-page-content {
+        .lmbox {width: calc(960px - #{$navbar-width});}
+    }
+
     @each $size in (sm, md, lg) {
+        #lmid-aside-collapse:checked ~ #lmid-page-content {
+            .lmbox-#{$size} {width: calc(960px - #{$navbar-width});}
+        }
         .lmbox-#{$size} {width: 960px;}
     }
 
@@ -141,7 +158,14 @@ $gutter-sizes: (
 
 @include media(xl) {
     .lmbox {width: 1140px;}
+    #lmid-aside-collapse:checked ~ #lmid-page-content {
+        .lmbox {width: calc(1140px - #{$navbar-width});}
+    }
+
     @each $size in (sm, md, lg, xl) {
+        #lmid-aside-collapse:checked ~ #lmid-page-content {
+            .lmbox-#{$size} {width: calc(1140px - #{$navbar-width});}
+        }
         .lmbox-#{$size} {width: 1140px;}
     }
 
@@ -152,8 +176,15 @@ $gutter-sizes: (
 }
 
 @include media(xxl) {
-    .lmbox {width: 1320px;}
+    .lmbox {width: 1300px;}
+    #lmid-aside-collapse:checked ~ #lmid-page-content {
+        .lmbox {width: calc(1300px - #{$navbar-width});}
+    }
+
     @each $size in (sm, md, lg, xl, xxl) {
+        #lmid-aside-collapse:checked ~ #lmid-page-content {
+            .lmbox-#{$size} {width: calc(1300px - #{$navbar-width});}
+        }
         .lmbox-#{$size} {width: 1300px;}
     }
 

@@ -7,10 +7,11 @@ init: function() {
     this.topBtnCheck();
     this.utils.setActive();
     this.anims.init();
+    this.cookies.check();
 
-    $("#lmid-message-box").addEventListener("click", this.utils.hideMessage);
-    $("#lmid-policy-accept").addEventListener("click", function() {this.cookies.setCookie('__Host-Consent', 1)});
-    $("#lmid-toggle-theme").addEventListener("click", this.settings.toggleTheme);
+    $("#lmid-message-box").addEventListener("click", lm.utils.hideMessage);
+    $("#lmid-policy-accept").addEventListener("click", function() {lm.cookies.setCookie('__Host-Consent', 1)});
+    $("#lmid-toggle-theme").addEventListener("click", lm.settings.toggleTheme);
 
     //$("#lmid-policy-withdraw").addEventListener("click", lm.cookies.withdraw);
     //$("#lmid-toggle-password").addEventListener("click", forms.togglePassword);
@@ -50,8 +51,8 @@ utils: {
         box.textContent = message;
         box.style.display = 'block';
         box.className = `lmbd-${color}`;
-        window.clearTimeout(this.messageDelay);
-        this.messageDelay = window.setTimeout(this.hideMessage, message.length * 150);
+        window.clearTimeout(lm.utils.messageDelay);
+        lm.utils.messageDelay = window.setTimeout(lm.utils.hideMessage, message.length * 150);
     },
 
     hideMessage: function() {
@@ -64,17 +65,17 @@ cookies: {
     noticeObj: $('#lmid-cookies-notice'),
 
     check: function() {
-        if (!this.getCookie('__Host-Consent')) {
-            this.showNotice();
+        if (!lm.cookies.getCookie('__Host-Consent')) {
+            lm.cookies.showNotice();
         }
     },
 
     showNotice: function() {
-        this.noticeObj.style.display = 'block';
+        lm.cookies.noticeObj.style.display = 'block';
     },
 
     hideNotice: function() {
-        this.noticeObj.style.display = 'none';
+        lm.cookies.noticeObj.style.display = 'none';
     },
 
     getCookie: function(key) {
@@ -84,18 +85,18 @@ cookies: {
 
     setCookie: function(key, value) {
         // If the new cookie is for consent or if the user has consented to the cookies module
-        if (key == '__Host-Consent' || this.getCookie('__Host-Consent')) {
+        if (key == '__Host-Consent' || lm.cookies.getCookie('__Host-Consent')) {
             document.cookie = `${key}=${value};Path=/;SameSite=Strict;Secure;${document.cookie}`;
             if (key == '__Host-Consent') {
-                this.setCookie('__Host-Theme', $('html').getAttribute('data-theme'));
-                this.hideNotice();
+                lm.cookies.setCookie('__Host-Theme', $('html').getAttribute('data-theme'));
+                lm.cookies.hideNotice();
             }
         }
     },
 
     withdraw: function() {
-        this.showNotice();
-        Object.entries(this.getCookie()).forEach(([key, value]) => {
+        lm.cookies.showNotice();
+        Object.entries(lm.cookies.getCookie()).forEach(([key, value]) => {
             document.cookie = `${key}=${value};max-age=0;path=/;SameSite=Strict;Secure;${document.cookie}`;
         });
     }

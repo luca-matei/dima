@@ -360,7 +360,7 @@ class Web(Project):
                 name, method = filename[:2]
                 first = len(filename) == 3
 
-                if name == "lm_wrapper":
+                if name.startswith("lm_"):
                     continue
 
                 yml_meta, yml = utils.read(section_dir + page, host=self.dev_host).split("----")
@@ -377,9 +377,14 @@ class Web(Project):
                 for lang in langs:
                     body = self.yml2html(yml, lang)
                     title = meta["title"].get(lang, meta["title"][self.default_lang])
-                    if meta["wrapper"]:
+                    if meta.get("wrapper"):
                         # Save wrappers under meta["wrapper"]
                         body = self.yml2html(f"{meta['wrapper']}-{method}.yml", lang).replace("%CONTENT%", body)
+
+                    if meta.get("aside"):
+                        aside = self.yml2html(f"{meta['aside']}-{method}.yml", lang)
+                    else:
+                        aside = ""
 
                     # FORMAT TITLE
                     #if self.has_domain_in_title:
@@ -394,7 +399,7 @@ class Web(Project):
                         "description": description,
                         "og_url": og_url,
                         "og_image": og_image,
-                        "aside": "",
+                        "aside": aside,
                         "body": body,
                         })
 

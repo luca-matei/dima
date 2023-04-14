@@ -37,6 +37,7 @@ from brightest to darkest
 
 $bd-r: 4px;   // Border radius
 $tr-t: 0.1s;  // Transition time
+$navbar-width: 256px;
 $z-navbar: 20;
 $z-top: 21;
 $z-cookies: 22;
@@ -112,14 +113,9 @@ body {
     height: inherit;
     width: inherit;
     margin: 0;
-
-    display: flex;
-    flex-flow: column nowrap;
 }
 
 #lmid-app-header {
-    position: sticky;
-    top: 0;
     background-color: var(--bg-1);
     z-index: $z-navbar;
 
@@ -175,19 +171,54 @@ body {
     /*! Empty */
 }
 
-#lmid-page-scroll {
-    flex: auto 1 1;
+#lmid-app {
+    width: inherit;
+    height: inherit;
     display: flex;
     flex-flow: column nowrap;
+}
+
+#lmid-page {
+}
+
+#lmid-aside-collapse {display: none;}
+label[for=lmid-aside-collapse] {
+    display: none;
+}
+
+#lmid-page-aside {
+    position: sticky;
+    top: 0;
+    flex: 0 0 $navbar-width;
+    display: flex;
+    flex-flow: column nowrap;
+    background-color: var(--bg-2);
+    border-radius: 0 $bd-r 0 0;
+
+    div:first-of-type {
+        flex: 1;
+    }
+
+    a {
+        display: block;
+        padding: 12px 30px;
+        margin: 8px 0;
+    }
+}
+
+#lmid-page-scroll {
+    display: flex;
+    flex-flow: row nowrap;
     overflow: auto;
     scroll-behavior: smooth;
 }
 
 #lmid-page-content {
-    flex: auto;
+    flex: 1 1 auto;
 }
 
 #lmid-app-footer {
+    flex: 0 0 100%;
     text-align: center;
 
     a, span {
