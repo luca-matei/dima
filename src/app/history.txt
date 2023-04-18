@@ -100,3 +100,17 @@ lm7 update js --env=dev
 lm7 update css --env=dev
 lm7 save --message="Updated files"
 lm1 save
+lm7 update html --env=dev
+lm7 update html --env=dev --global_html=1
+lm7 config nginx --env=dev --restart=1
+lm6 restart nginx 
+lm7 config nginx 
+lm6 mount 
+lm7 update html --env=dev
+lm7 update py --env=dev --restart=1
+lm7 update css --env=dev
+lm7 update html --env=dev --global_html=1
+lm7 update html --env=dev
+lm2 update html --env=dev
+lm7 update css --env=dev
+lm1 save

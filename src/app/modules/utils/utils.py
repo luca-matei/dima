@@ -341,12 +341,20 @@ class Utils:
             attrs = []
             box_html = ""
             text = ""
+            header_permalink = ""
 
             # Solve properties
             if properties != None:
                 for prop in properties:
                     if prop[0] in self.html_tags + tags:
                         box_html += solve_box(prop)
+
+                    elif prop[0] == "id":
+                        if tag in ("h1", "h2", "h3", "h4", "h5", "h6") and prop[1].startswith("lmperma-"):
+                            header_permalink = prop[1].replace("lmperma-", "")
+                            attrs.append(("id", header_permalink))
+                        else:
+                            attrs.append(list(prop))
 
                     elif prop[0] == "text":
                         if type(prop[1]) == list:
@@ -355,6 +363,9 @@ class Utils:
 
                             if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
                                 text = self.md2html(text)
+
+                            elif header_permalink:
+                                text = "<span>" + text + f"</span><a href='%PERMALINK%#{header_permalink}'><i class='fa fa-link'></i></a>"
 
                         else:
                             text = prop[1]

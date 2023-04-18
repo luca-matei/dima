@@ -478,7 +478,6 @@ class Web(Project):
                 "objects.scss",
                 "forms.scss",
                 "animations.scss",
-                "media.scss",
                 ),
             module_path = utils.src_dir + "assets/web/assets/css/"
             )
@@ -577,7 +576,7 @@ class Web(Project):
         log(f"Configured Supervisor for '{domain}'", console=True)
 
     def config_nginx(self, env:'env'="dev", restart:'bool'=False):
-        nginx_file = "/etc/nginx/sites-enabled/{self.lmid}"
+        nginx_file = f"/etc/nginx/sites-enabled/{self.lmid}"
         if env == "prod" and self.prod_state == 0:
             if utils.isfile(nginx_file, host=self.prod_host):
                 cmd(f"sudo rm {nginx_file}", host=self.prod_host)

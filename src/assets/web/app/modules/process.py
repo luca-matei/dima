@@ -54,7 +54,6 @@ class lmProcess:
             find_end_section(section_id)
         else:
             section_id = lm.sections[0]["http"]
-            section = "http"
 
         page = endpoint[0]
         page_data = lm.pages[section_id].get(page, 0)
@@ -65,6 +64,7 @@ class lmProcess:
             page = lm.first_pages[section_id]
             page_data = lm.pages[section_id][page]
         else:
+            section_id = lm.sections[0]["http"]
             page = "404"
             page_data = lm.pages[section_id][page]
 

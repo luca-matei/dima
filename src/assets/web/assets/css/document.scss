@@ -37,7 +37,9 @@ from brightest to darkest
 
 $bd-r: 4px;   // Border radius
 $tr-t: 0.1s;  // Transition time
-$navbar-width: 256px;
+$sidebar-width: 300px;
+$sidebar-btn: 36px;
+$z-sidebar: 19;
 $z-navbar: 20;
 $z-top: 21;
 $z-cookies: 22;
@@ -135,7 +137,6 @@ body {
         &>label {
             display: inline-block;
             padding: 8px 12px;
-            margin: 4px 6px;
             border-radius: $bd-r;
         }
     }
@@ -183,21 +184,48 @@ body {
 
 #lmid-aside-collapse {display: none;}
 label[for=lmid-aside-collapse] {
-    display: none;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+    border-radius: 0 $bd-r $bd-r 0;
+    background-color: var(--bg-3);
+
+    &:hover {
+        background-color: var(--bg-4);
+    }
+}
+
+#lmid-aside-collapse:checked ~ #lmid-page-aside {
+    flex: 0 0 20%;
+    min-width: $sidebar-width;
 }
 
 #lmid-page-aside {
     position: sticky;
     top: 0;
-    flex: 0 0 20%;
-    min-width: $navbar-width;
     display: flex;
-    flex-flow: column nowrap;
-    background-color: var(--bg-2);
+    flex-flow: row nowrap;
     border-radius: 0 $bd-r 0 0;
+    overflow: hidden;
+    transition: $tr-t;
+    z-index: $z-sidebar;
 
-    div:first-of-type {
+    &>div:first-of-type {
         flex: 1;
+        display: flex;
+        flex-flow: column nowrap;
+        background-color: var(--bg-2);
+        overflow: auto;
+        width: 0;
+        transition: $tr-t;
+
+        &>div:first-of-type {
+            flex: 1;
+        }
     }
 
     a {
@@ -214,14 +242,29 @@ label[for=lmid-aside-collapse] {
     flex-flow: row nowrap;
     overflow: auto;
     scroll-behavior: smooth;
+    position: relative;
     flex: 1;
+}
+
+#lmid-aside-collapse ~ #lmid-page-content {
+    padding-left: $sidebar-btn;
+}
+
+#lmid-aside-collapse:checked ~ #lmid-page-content {
+    filter: blur(4px);
 }
 
 #lmid-page-content {
     flex: 1 1 auto;
     overflow: auto;
+    scroll-behavior: smooth;
     display: flex;
     flex-flow: column nowrap;
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
 }
 
 #lmid-app-footer {
@@ -383,4 +426,34 @@ label[for=lmid-aside-collapse] {
 #lmid-sensor-cpt {
     position: absolute;
     bottom: 0;
+}
+
+@include media(lg) {
+    #lmid-page-content {
+        position: static;
+        padding-left: 0 !important;
+    }
+}
+
+@media only screen and (min-width: 1053.98px) {
+    #lmid-app-header>nav {
+        overflow: visible;
+        &>label {display: none;}
+        &>span {flex: 0;}
+    }
+
+    #lmid-nav-links {
+        flex: 0 0 auto;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        max-width: initial;
+        margin: 0;
+    }
+
+    .lmtpl-drop-l, .lmtpl-drop-r {
+        display: inline-block;
+        &>div {position: absolute;}
+    }
+
 }

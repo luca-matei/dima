@@ -40,6 +40,12 @@ notebook:
                     value: ''
 
     frame:
+        id: "apps_page"
+        title: "Apps"
+        fill: "both"
+        expand: True
+
+    frame:
         id: "hosts_page"
         title: "Hosts"
         fill: "both"
