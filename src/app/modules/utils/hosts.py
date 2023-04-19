@@ -1,5 +1,6 @@
 class HostUtils:
     envs = {}
+    services = {}
     domain = None
 
     def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):

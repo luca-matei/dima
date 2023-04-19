@@ -34,6 +34,11 @@
         "name varchar unique not null",
         )),
 
+    ("services", (
+        "id serial primary key",
+        "name varchar unique not null",
+    )),
+
     ("hosts", (
         "id serial primary key",
         "lmobj int",
@@ -45,6 +50,7 @@
         "ssh_port int",
         "pg_port int",
         "pm int",
+        "services smallint[]",
         )),
     )),
 
@@ -103,6 +109,12 @@
         "id serial primary key",
         "name varchar",
         )),
+
+    ("redirects", (
+        "id serial primary key",
+        "ffrom varchar",
+        "tto varchar",
+    )),
 
     ("webs", (
         "id serial primary key",

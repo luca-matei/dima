@@ -80,6 +80,8 @@ $gutter-sizes: (
 
 /* Displays */
 
+.lmd-block {display: block !important;}
+.lmd-inline-block {display: inline-block !important;}
 .lmd-flex {display: flex; flex-flow: row wrap;}
 .lmd-row-wrap {flex-flow: row wrap;}
 .lmd-row-nowrap {flex-flow: row nowrap;}
@@ -103,7 +105,7 @@ $gutter-sizes: (
 
 @include media(sm) {
     @each $size in ("", "-sm") {
-        #lmid-aside-collapse ~ #lmid-page-content {
+        #lmid-aside-collapse ~ #lmid-page-scroll {
             .lmbox#{$size} {width: calc(540px - #{$sidebar-btn});}
         }
         .lmbox#{$size} {width: 540px;}
@@ -117,7 +119,7 @@ $gutter-sizes: (
 
 @include media(md) {
     @each $size in ("", "-sm", "-md") {
-        #lmid-aside-collapse ~ #lmid-page-content {
+        #lmid-aside-collapse ~ #lmid-page-scroll {
             .lmbox#{$size} {width: calc(720px - #{$sidebar-btn});}
         }
         .lmbox#{$size} {width: 720px;}
@@ -131,11 +133,11 @@ $gutter-sizes: (
 
 @include media(lg) {
     @each $size in ("", "-sm", "-md", "-lg") {
-        #lmid-aside-collapse:checked ~ #lmid-page-content {
+        #lmid-aside-collapse:checked ~ #lmid-page-scroll {
             filter: none;
             .lmbox#{$size} {width: calc(960px - #{$sidebar-width});}
         }
-        #lmid-aside-collapse:not(:checked) ~ #lmid-page-content {
+        #lmid-aside-collapse:not(:checked) ~ #lmid-page-scroll {
             .lmbox#{$size} {width: calc(960px - #{$sidebar-btn});}
         }
         .lmbox#{$size} {width: 960px;}
@@ -149,11 +151,11 @@ $gutter-sizes: (
 
 @include media(xl) {
     @each $size in ("", "-sm", "-md", "-lg", "-xl") {
-        #lmid-aside-collapse:checked ~ #lmid-page-content {
+        #lmid-aside-collapse:checked ~ #lmid-page-scroll {
             filter: none;
             .lmbox#{$size} {width: calc(1140px - #{$sidebar-width});}
         }
-        #lmid-aside-collapse:not(:checked) ~ #lmid-page-content {
+        #lmid-aside-collapse:not(:checked) ~ #lmid-page-scroll {
             .lmbox#{$size} {width: calc(1140px - #{$sidebar-btn});}
         }
         .lmbox#{$size} {width: 1140px;}
@@ -167,11 +169,11 @@ $gutter-sizes: (
 
 @include media(xxl) {
     @each $size in ("", "-sm", "-md", "-lg", "-xl", "-xxl") {
-        #lmid-aside-collapse:checked ~ #lmid-page-content {
+        #lmid-aside-collapse:checked ~ #lmid-page-scroll {
             filter: none;
             .lmbox-#{$size} {width: calc(1300px - #{$sidebar-width});}
         }
-        #lmid-aside-collapse:not(:checked) ~ #lmid-page-content {
+        #lmid-aside-collapse:not(:checked) ~ #lmid-page-scroll {
             .lmbox#{$size} {width: calc(1300px - #{$sidebar-btn});}
         }
         .lmbox-#{$size} {width: 1300px;}

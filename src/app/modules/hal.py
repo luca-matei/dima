@@ -51,7 +51,7 @@ class Hal:
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
-        #self.db.rebuild()
+        self.db.rebuild()
 
         self.load_database()
 
@@ -83,10 +83,15 @@ class Hal:
             self.domains[d[0]] = d[1]
             self.domains[d[1]] = d[0]
 
-        log("Phase 4.3: Loading host environments ...")
+        log("Phase 4.3.1: Loading host environments ...")
         for e in self.db.execute("select id, name from host.envs;"):
             utils.hosts.envs[e[0]] = e[1]
             utils.hosts.envs[e[1]] = e[0]
+
+        log("Phase 4.3.2 Loading host services ...")
+        for s in self.db.execute("select id, name from host.services;"):
+            utils.hosts.services[s[0]] = s[1]
+            utils.hosts.services[s[1]] = s[0]
 
         log("Phase 4.4: Loading project languages ...")
         for l in self.db.execute("select id, code from project.langs;"):

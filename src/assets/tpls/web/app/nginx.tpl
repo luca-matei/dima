@@ -1,7 +1,7 @@
 server {
     listen 80;
-    server_name %DOMAIN%;
-    return 301 https://$host$request_uri;
+    server_name %DOMAIN% www.%DOMAIN%;
+    return 301 https://%DOMAIN%$request_uri;
 }
 
 server {

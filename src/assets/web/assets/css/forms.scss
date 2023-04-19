@@ -67,15 +67,15 @@ input:disabled, textarea:disabled, .lmdisabled {
             font-weight: bold;
         }
         @else {
-            background-color: var(--rbg-1);
-            color: var(--rtxt-1);
+            background-color: var(--bg-3);
+            color: var(--txt-1);
         }
 
         &:hover {
             @if $color == red {background-color: $red-2;}
             @else {
-                background-color: var(--rbg-4);
-                color: var(--rtxt-2);
+                background-color: var(--bg-4);
+                color: var(--txt-2);
             }
         }
     }

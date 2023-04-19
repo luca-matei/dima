@@ -237,7 +237,7 @@ label[for=lmid-aside-collapse] {
     }
 }
 
-#lmid-page-scroll {
+#lmid-page-content {
     display: flex;
     flex-flow: row nowrap;
     overflow: auto;
@@ -246,15 +246,15 @@ label[for=lmid-aside-collapse] {
     flex: 1;
 }
 
-#lmid-aside-collapse ~ #lmid-page-content {
+#lmid-aside-collapse ~ #lmid-page-scroll {
     padding-left: $sidebar-btn;
 }
 
-#lmid-aside-collapse:checked ~ #lmid-page-content {
+#lmid-aside-collapse:checked ~ #lmid-page-scroll {
     filter: blur(4px);
 }
 
-#lmid-page-content {
+#lmid-page-scroll {
     flex: 1 1 auto;
     overflow: auto;
     scroll-behavior: smooth;
@@ -265,6 +265,7 @@ label[for=lmid-aside-collapse] {
     right: 0;
     left: 0;
     bottom: 0;
+    transition: filter $tr-t;
 }
 
 #lmid-app-footer {
@@ -429,7 +430,7 @@ label[for=lmid-aside-collapse] {
 }
 
 @include media(lg) {
-    #lmid-page-content {
+    #lmid-page-scroll {
         position: static;
         padding-left: 0 !important;
     }

@@ -65,13 +65,27 @@
         ("prod",),
         )),
 
+    ("services", (
+        ("name",),
+        ("",),
+        ("ssh",),
+        ("web",),
+        ("db",),
+        ("firewall",),
+        ("dns",),
+        ("dhcp",),
+        ("mail",),
+        ("projects",),
+        ("git",),
+    )),
+
     ("hosts", (
-        ("lmobj", "mac", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm"),
-        ("id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", "id:name:host.envs", "", "", "id:lmid:lmobjs"),
-        ("lm4", "40:8d:5c:e4:fd:46", "lm3", "192.168.1.8", "", "dev", -1, 18776, ""),
-        ("lm6", "52:54:00:e5:85:a8", "lm3", "192.168.1.4", "", "dev", 5321, 4898, "lm4"),
-        ("lm8", "52:54:00:d2:01:44", "lm3", "192.168.1.5", "", "prod", 4116, 5639, "lm4"),
-        ("lm9", "52:54:00:1d:9c:a7", "lm3", "192.168.1.6", "", "dev", 7686, 4338, "lm4"),
+        ("lmobj", "mac", "net", "ip", "client", "env", "ssh_port", "pg_port", "pm", "services"),
+        ("id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", "id:name:host.envs", "", "", "id:lmid:lmobjs", "id[]:name:host.services"),
+        ("lm4", "40:8d:5c:e4:fd:46", "lm3", "192.168.1.8", "", "dev", -1, 18776, "", ()),
+        ("lm6", "52:54:00:e5:85:a8", "lm3", "192.168.1.4", "", "dev", 5321, 4898, "lm4", ("ssh", "web", "db", "firewall", "projects", "git",)),
+        ("lm8", "52:54:00:d2:01:44", "lm3", "192.168.1.5", "", "prod", 4116, 5639, "lm4", ("ssh", "web", "db", "firewall", "projects",)),
+        ("lm9", "52:54:00:1d:9c:a7", "lm3", "192.168.1.6", "", "dev", 7686, 4338, "lm4", ()),
         )),
     )),
 
@@ -106,6 +120,7 @@
         ("next", ""),
         ("reach", ""),
         ("reboot", ""),
+        ("refresh", ""),
         ("reset", ""),
         ("restart", ""),
         ("save", ""),
@@ -164,6 +179,7 @@
         ("Host", "motd", ("config",)),
         ("Host", "grub", ("config",)),
         ("Host", "sysctl", ("config",)),
+        ("Host", "redirects", ("refresh",)),
 
         ("App", "", ("check", "start", "stop", "restart", "save")),
         ("App", "alias", ("set", "delete")),
@@ -226,6 +242,13 @@
         ("blog",),
         ("gallery",),
         )),
+
+    ("redirects", (
+        ("ffrom", "tto",),
+        ("", "",),
+        ("lucamatei.ro", "lucamatei.eu/ro/"),
+        ("lucamatei.blog", "lucamatei.eu/blog/"),
+    )),
 
     ("webs", (
         ("lmobj", "domain", "dev_port", "prod_port", "dev_ssl_due", "prod_ssl_due", "prod_state", "modules", "langs", "themes", "default_lang", "default_theme", "has_animations"),
