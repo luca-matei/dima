@@ -121,3 +121,8 @@ lm7 update css --env=dev
 lm7 update html --env=dev
 lm7 save --message="Updated files"
 lm1 save
+lm7 update css --env=dev
+lm7 update html --env=dev
+lm7 save --message="Updated files"
+lm7 update js --env=dev
+lm1 save

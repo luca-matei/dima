@@ -4,7 +4,7 @@
     flex-flow: row wrap;
     align-items: center;
 
-    a:hover {background-color: var(--bg-3);}
+    a:hover {background-color: var(--bg-4);}
 
     &>a {
         flex-grow: 1;
@@ -189,10 +189,14 @@
 
     &>div:first-of-type {
         border-radius: $bd-r $bd-r 0 0;
+        img {
+            width: 100%;
+            height: auto;
+        }
     }
 
     &>div:last-of-type {
-        padding: 15px;
+        padding: 30px;
         border-radius: 0 0 $bd-r $bd-r;
     }
 }

@@ -135,7 +135,26 @@ anims: {
             observer.observe(elem);
         });
     },
-}
+},
+
+perma: {
+    headings: document.querySelectorAll("h1,h2,h3,h4,h5,h6"),
+    init: ()=> {
+        lm.perma.headings.forEach((heading) => {
+            const heading_id = heading.getAttribute("id");
+            let permalink = "#";
+            if (heading_id) {
+                permalink = heading_id.replace("lmperma-", "");
+                document.getElementById(heading_id).innerHTML = "<span>" + heading.text + "</span><a href='"
+            }
+            console.log(permalink);
+        });
+    },
+
+    copy_link: ()=> {
+        console.log("Copied!");
+    },
+},
 
 }
 

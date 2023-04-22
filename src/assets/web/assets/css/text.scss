@@ -29,16 +29,14 @@ $text-sizes: (
 );
 
 @each $size, $value in $text-sizes {
-    .lmf-#{$size} {font-size: $value;}
-}
-
-.lmf-extra-xxl {
-    line-height: 1;
-    &::after {
-        display: none;
+    .lmf-#{$size} {
+        font-size: $value;
+        line-height: 1;
+        &::after {
+            display: none;
+        }
     }
 }
-
 
 /* Links */
 

@@ -635,11 +635,37 @@ class Web(Project):
         log(f"Restarted '{domain}'", console=True)
 
     def change_state(self, new_state:'int', confirm:'bool'=False):
+        states = {
+            1: "Invisible",
+            2: "Taken Down",
+            3: "Under Maintenance",
+            4: "Coming Soon",
+            5: "Published"
+            }
+
         if utils.isfile(self.repo_dir, host=self.prod_host):
             if not confirm:
-                if not utils.confirm(f"Are you sure you want to change current production state for '{self.prod_domain}'?"):
+                if not utils.confirm(f"Are you sure you want to change current production state for '{self.prod_domain}' to {states[new_state]}?"):
                     log("Aborted", console=True)
                     return
 
+        log(f"Changing '{self.prod_domain}' state to {states[new_state]} ...", console=True)
+        if new_state == 1:
+            # Remove production config files for nginx and supervisor
+            # Remove from production DNS
+
+            for p in (
+                "/etc/nginx/sites-enabled/" + self.lmid,
+                f"nano /etc/supervisor/conf.d/{self.lmid}.conf"
+                ):
+
+                if utils.isfile(p, host=self.prod_host):
+                    cmd("sudo rm " + p, host=self.prod_host)
+
+        elif new_state == 5:
+            self.config("prod", True)
+
+
+        log(f"Changed '{self.prod_domain}' state to {states[new_state]}.", console=True)
+
         self.prod_state = new_state
-        self.config("prod", True)
