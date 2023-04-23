@@ -216,34 +216,40 @@ class GUI:
         for p, v in params.items():
             self.cmd_args[p] = "NaN"
             if p in param_pos:
-                continue
-            else:
-                text = p.capitalize().replace("_", " ") + (" *" if p in param_pos else "")
+                print("PARAM POS " + p)
 
-                for x in ("html", "css", "php"):
-                    if x in text:
-                        text = text.replace(x, x.upper())
+            text = p.capitalize().replace("_", " ") + (" *" if p in param_pos else "")
 
-                label = self.create_label(frame, text=text)
-                label.pack(side=tk.LEFT, padx=[0, 4])
+            for x in ("html", "css", "php"):
+                if x in text:
+                    text = text.replace(x, x.upper())
 
-                if v[0] == "str":
-                    widgets[p + "_var"] = tk.StringVar(frame)
-                    widgets[p] = ttk.Entry(frame, textvariable = widgets[p + "_var"])
+            label = self.create_label(frame, text=text)
+            label.pack(side=tk.LEFT, padx=[0, 4])
 
-                    if v[1] and v[1] != inspect._empty:
-                        widgets[p + "_var"].set(v[1])
+            if v[0] == "str":
+                widgets[p + "_var"] = tk.StringVar(frame)
+                widgets[p] = ttk.Entry(frame, textvariable = widgets[p + "_var"])
 
-                elif v[0] == "bool":
-                    widgets[p + "_var"] = tk.IntVar(frame)
-                    widgets[p] = ttk.Checkbutton(frame, variable=widgets[p + "_var"])
+                if v[1] and v[1] != inspect._empty:
+                    widgets[p + "_var"].set(v[1])
 
-                elif v[0] == "env":
-                    widgets[p + "_var"] = tk.StringVar(frame)
-                    opts = [k for k, v in utils.hosts.envs.items() if isinstance(k, str)]
-                    widgets[p] = ttk.OptionMenu(frame, widgets[p + "_var"], v[1], *opts)
+            elif v[0] == "bool":
+                widgets[p + "_var"] = tk.IntVar(frame)
+                widgets[p] = ttk.Checkbutton(frame, variable=widgets[p + "_var"])
 
-                widgets[p].pack(side=tk.LEFT, padx=[0, 8])
+            elif v[0] == "env":
+                widgets[p + "_var"] = tk.StringVar(frame)
+                opts = [k for k, v in utils.hosts.envs.items() if isinstance(k, str)]
+                widgets[p] = ttk.OptionMenu(frame, widgets[p + "_var"], v[1], *opts)
+
+            elif v[0] == "web_state":
+                widgets[p + "_var"] = tk.StringVar(frame)
+                opts = [s[1] for s in sorted(utils.webs.states.items(), key = lambda e: e[0])]
+                current_state = utils.webs.states.get(hal.pools.get(hal.lmobjs.get(lmid)).prod_state)
+                widgets[p] = ttk.OptionMenu(frame, widgets[p + "_var"], current_state, *opts)
+
+            widgets[p].pack(side=tk.LEFT, padx=[0, 8])
 
         self.arg_widgets = widgets
 
@@ -256,7 +262,9 @@ class GUI:
         for arg in self.cmd_args:
             value = self.arg_widgets[arg + "_var"].get()
             if " " in str(value): value = '"' + value + '"'
-            if value:
+            if arg == "new_state" and module == "web":
+                args.append(f'--new_state="{utils.reverse_dict(utils.webs.states)[value]}"')
+            else:
                 args.append(f"--{arg}={value}")
 
         args = ' '.join(args)

@@ -134,3 +134,4 @@ lm7 update html --env=dev
 lm4 mount 
 lm8 mount 
 lm1 save
+lm7 save --message="Updated files"

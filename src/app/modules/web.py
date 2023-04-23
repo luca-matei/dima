@@ -491,22 +491,14 @@ class Web(Project):
 
         log(f"Generated SSL certificates for '{domain}'", console=True)
 
-    def change_state(self, new_state:'int', confirm:'bool'=False):
-        states = {
-            1: "Invisible",
-            2: "Taken Down",
-            3: "Under Maintenance",
-            4: "Coming Soon",
-            5: "Published"
-            }
-
+    def change_state(self, new_state:'web_state', confirm:'bool'=False):
         if utils.isfile(self.repo_dir, host=self.prod_host):
             if not confirm:
-                if not utils.confirm(f"Are you sure you want to change current production state for '{self.prod_domain}' to {states[new_state]}?"):
+                if not utils.confirm(f"Are you sure you want to change current production state for '{self.prod_domain}' to {utils.webs.states[new_state]}?"):
                     log("Aborted", console=True)
                     return
 
-        log(f"Changing '{self.prod_domain}' state to {states[new_state]} ...", console=True)
+        log(f"Changing '{self.prod_domain}' state to {utils.webs.states[new_state]} ...", console=True)
         self.prod_state = new_state
 
         if new_state == 1:
@@ -521,6 +513,9 @@ class Web(Project):
                 if utils.isfile(p, host=self.prod_host):
                     cmd("sudo rm " + p, host=self.prod_host)
 
+            hal.pools.get(self.prod_host_id).restart_nginx()
+            hal.pools.get(self.prod_host_id).restart_supervisor()
+
         elif new_state == 5:
             if utils.isdir(utils.projects_dir + self.lmid, host=self.prod_host):
                 # To do: Backup the database
@@ -528,7 +523,7 @@ class Web(Project):
 
             self.build("prod", confirm=True)
 
-        log(f"Changed '{self.prod_domain}' state to {states[new_state]}.", console=True)
+        log(f"Changed '{self.prod_domain}' state to {utils.webs.states[new_state]}.", console=True)
 
     def update_js(self, env:"env"="dev"):
         # To do: add manual files

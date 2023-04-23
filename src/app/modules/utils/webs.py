@@ -1,6 +1,13 @@
 class WebUtils:
     methods = "get", "put", "post", "delete"
     modules = {}
+    states = {
+        1: "Invisible",
+        2: "Taken Down",
+        3: "Under Maintenance",
+        4: "Coming Soon",
+        5: "Published"
+    }
     fields = {
         "id": {
             'type': 'hidden',

@@ -114,6 +114,13 @@ class CLI:
                     else:
                         return self.invalid(p=a, pt='env')
 
+                elif arg_type == "web_state":
+                    try: args[a] = int(arg)
+                    except ValueError: return self.invalid(p=a, pt='int')
+
+                    if args[a] not in range(1, len(utils.webs.states) + 1):
+                        return self.invalid(p=a, pt="web_state")
+
                 # Remove extra quotes
                 elif args[a].startswith("'"):
                     args[a] = args[a].strip("'")
