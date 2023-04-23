@@ -136,6 +136,10 @@ class Utils:
             hal.pools.get(hal.lmobjs[host]).send_file(self.tmp_dir + filename, path, owner=owner)
 
     def copy(self, src, dest, owner="root", host=None):
+        """
+            Copies files inside a host
+        """
+
         r = " -R" if src.endswith('/') else ""
         if dest.startswith("/etc/"):
             cmd(f"sudo cp{r} {src} {dest}", host=host)
@@ -350,7 +354,7 @@ class Utils:
                         box_html += solve_box(prop)
 
                     elif prop[0] == "id":
-                        if tag in ("h1", "h2", "h3", "h4", "h5", "h6") and prop[1].startswith("lmperma-"):
+                        if tag in ("h1", "h2", "h3", "h4", "h5", "h6", "span") and prop[1].startswith("lmperma-"):
                             header_permalink = prop[1].replace("lmperma-", "")
                             attrs.append(("id", header_permalink))
                         else:
@@ -364,11 +368,11 @@ class Utils:
                             if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
                                 text = self.md2html(text)
 
-                            elif header_permalink:
-                                text = "<span>" + text + f"</span><a href='%PERMALINK%#{header_permalink}'><i class='fa fa-link'></i></a>"
-
                         else:
                             text = prop[1]
+
+                        if header_permalink:
+                            text = "<span>" + text + f"</span><a href='%PERMALINK%#{header_permalink}'><i class='fa fa-link'></i></a>"
 
                         text = utils.replace_multiple(text, {
                             "\\": "<br>",

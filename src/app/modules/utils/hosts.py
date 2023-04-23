@@ -119,4 +119,13 @@ class HostUtils:
         elif mode == 2:
             pass
 
+    def transfer_file(self, from_path, to_path, from_host, to_host):
+        transfer_path = utils.tmp_dir + "transfer/"
+        if utils.isdir(transfer_path):
+            cmd("rm -r " + transfer_path)
+
+        hal.pools.get(from_host).retrieve_file(from_path, transfer_path)
+        hal.pools.get(to_host).send_file(transfer_path, to_path)
+
+
 utils.hosts = HostUtils()

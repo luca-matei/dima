@@ -126,3 +126,11 @@ lm7 update html --env=dev
 lm7 save --message="Updated files"
 lm7 update js --env=dev
 lm1 save
+lm7 update html --env=dev
+lm7 update html --env=dev --global_html=1
+lm7 save --message="Updated files"
+lm5 update html --env=dev
+lm7 update html --env=dev
+lm4 mount 
+lm8 mount 
+lm1 save
