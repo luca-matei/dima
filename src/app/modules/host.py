@@ -853,8 +853,9 @@ class Host(lmObj, HostServices):
             if owner != "root": cmd(f"sudo chown {owner}:{owner} {final_path}", host=self.lmid)
 
     def retrieve_file(self, src_path:'str', dest_path:'str'):
+        is_dir = src_path.endswith('/')
         # Handle permissions
-        cmd(f"scp -P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} hal@{self.lmid}:{src_path} {dest_path}", catch=True)
+        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} hal@{self.lmid}:{src_path.rstrip('/')} {dest_path.rstrip('/')}", catch=True)
 
     def status(self):
         print("OK")

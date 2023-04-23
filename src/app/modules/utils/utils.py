@@ -214,11 +214,11 @@ class Utils:
 
     def isfile(self, path, host=None, quiet=False):
         response = cmd(f"ls {path}", catch=True, host=host)
-        if response == path:
-            return 1
-        elif "No such file or directory" in response:
+        if "No such file or directory" in response:
             if not quiet:
                 log(f"'{path}' doesn't exist!", level=3, console=True)
+        elif response == path or (path.endswith("/") and response):
+            return 1
         return 0
 
     def replace_multiple(self, text:'str', reps:'dict'):

@@ -62,7 +62,7 @@ class Web(Project):
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
 
-        if utils.isdir(self.repo_dir, host=host):
+        if utils.isfile(self.repo_dir, host=host):
             if not confirm:
                 if not utils.confirm(f"Are you sure you want to rebuild '{domain}'?"):
                     log("Aborted", console=True)
@@ -73,6 +73,7 @@ class Web(Project):
                 return
 
             elif env == "prod":
+                print("REMOVE REPO")
                 cmd(f"rm -r " + self.repo_dir, host=host)
 
         log(f"Building '{domain}' ...", console=True)
@@ -101,11 +102,13 @@ class Web(Project):
         self.generate_ssl(env)
 
         if env == "prod":
+            log("PROD")
+            utils.get_dirs(self.repo_dir + "src/assets/", host=self.prod_host)
             utils.hosts.transfer_file(
                 from_path = self.repo_dir + "src/assets/",
                 to_path = self.repo_dir + "src/assets/",
-                from_host = self.dev_host,
-                to_host = self.prod_host
+                from_host = self.dev_host_id,
+                to_host = self.prod_host_id
                 )
 
         self.default(env)
@@ -161,17 +164,18 @@ class Web(Project):
 
         log(f"Formatting '{domain}' database ...", console=True)
 
-        host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
-        remote_struct_file = self.app_dir + "db/struct.ast"
-        host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
-        remote_default_file = self.app_dir + "db/default.ast"
+        if env == "dev":
+            host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
+            remote_struct_file = self.app_dir + "db/struct.ast"
+            host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
+            remote_default_file = self.app_dir + "db/default.ast"
 
-        if host_id == hal.host_dbid:
-            utils.copy(host_struct_file, remote_struct_file)
-            utils.copy(host_default_file, remote_default_file)
-        else:
-            hal.pools.get(host_id).send_file(host_struct_file, remote_struct_file)
-            hal.pools.get(host_id).send_file(host_default_file, remote_default_file)
+            if host_id == hal.host_dbid:
+                utils.copy(host_struct_file, remote_struct_file)
+                utils.copy(host_default_file, remote_default_file)
+            else:
+                hal.pools.get(host_id).send_file(host_struct_file, remote_struct_file)
+                hal.pools.get(host_id).send_file(host_default_file, remote_default_file)
 
         db.rebuild()
 
@@ -195,6 +199,8 @@ class Web(Project):
         """
             Command only for dev environment.
         """
+        # To do: Copy img dir from default assets for http pages
+
         if not confirm:
             if not utils.confirm(f"Are you sure you want to format '{self.dev_domain}' HTML?"):
                 log("Aborted", console=True)
@@ -202,16 +208,22 @@ class Web(Project):
 
         src_html = utils.src_dir + "assets/web/app/html/"
         dest_html = self.app_dir + "html/"
+        src_img = utils.src_dir + "assets/web/assets/img/"
+        dest_img = self.repo_dir + "src/assets/img/"
 
         if hello:
-            log(f"Setting '{self.dev_domain}' HTML to 'Hello World' ...", console=True)
-            cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
+            log(f"Setting '{self.dev_domain}' to 'Hello World' ...", console=True)
+            cmd(f"rm -r " + dest_html, host=self.dev_host)
+            cmd(f"rm -r " + dest_img, host=self.dev_host)
+
             if self.dev_host_id == hal.host_dbid:
                 utils.copy(src_html, dest_html)
+                utils.copy(src_img, dest_img)
             else:
                 hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
+                hal.pools.get(self.dev_host_id).send_file(src_img, dest_img)
 
-            log(f"Set '{self.dev_domain}' HTML to 'Hello World.'", console=True)
+            log(f"Set '{self.dev_domain}' to 'Hello World.'", console=True)
 
         else:
             # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
@@ -395,7 +407,8 @@ class Web(Project):
                     reps = {f"%VAR-{k}%": self.global_html[lang].get(k.lower(), "NONE") for k in html_vars}
 
                     # Rename CSS classes
-                    reps.update(self.css_classes)
+                    if env == "prod":
+                        reps.update(self.css_classes)
 
                     html = utils.replace_multiple(html, reps)
 
@@ -486,7 +499,7 @@ class Web(Project):
         cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={hal.domain}/CN={domain}"', host=host)
 
         query = f"update web.webs set {env}_ssl_due=%s where lmobj=%s;"
-        params = datetime.now() + datetime.timedelta(3*365/12-3), self.dbid,
+        params = datetime.now() + timedelta(3*365/12-3), self.dbid,
         hal.db.execute(query, params)
 
         log(f"Generated SSL certificates for '{domain}'", console=True)
@@ -517,11 +530,11 @@ class Web(Project):
             hal.pools.get(self.prod_host_id).restart_supervisor()
 
         elif new_state == 5:
-            if utils.isdir(utils.projects_dir + self.lmid, host=self.prod_host):
-                # To do: Backup the database
-                pass
-
+            # To do: Backup the database
+            db_pass_path = self.app_dir + "db/db_pass"
+            db_pass = utils.read(db_pass_path, host=self.prod_host)
             self.build("prod", confirm=True)
+            utils.write(db_pass_path, db_pass, host=self.prod_host)
 
         log(f"Changed '{self.prod_domain}' state to {utils.webs.states[new_state]}.", console=True)
 

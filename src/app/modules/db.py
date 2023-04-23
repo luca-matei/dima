@@ -8,17 +8,17 @@ class Db:
 
         if self.lmid == hal.app_lmid:
             self.dev_host = hal.host_lmid
-            host_id = hal.host_dbid
+            self.host_id = hal.host_dbid
         else:
             self.dev_host = hal.lmobjs.get(hal.db.execute("select dev_host from project.projects where lmobj=%s;", (dbid,))[0][0])[0]
-            host_id = hal.lmobjs.get(host)
+            self.host_id = hal.lmobjs.get(host)
 
             if not utils.read(port_file, host=host):
-                hal.pools.get(host_id).config_postgres()
+                hal.pools.get(self.host_id).config_postgres()
 
             if not cmd(utils.dbs.query.format(f"select 1 from pg_database where datname='{lmid}';"), catch=True, host=host):
-                hal.pools.get(host_id).create_pg_role(self.lmid)
-                hal.pools.get(host_id).create_pg_db(self.lmid)
+                hal.pools.get(self.host_id).create_pg_role(self.lmid)
+                hal.pools.get(self.host_id).create_pg_db(self.lmid)
 
         self.port = int(utils.read(port_file, host=host))
         self.connect()
@@ -33,7 +33,19 @@ class Db:
                 ip = hal.pools.get(hal.lmobjs.get(self.host)).ip
             else:
                 ip = "127.0.0.1"
-            password = utils.read(self.db_dir + "db_pass", host=self.host)
+
+            if utils.isfile(self.db_dir + "db_pass", host=self.host):
+                # Password file exists
+                password = utils.read(self.db_dir + "db_pass", host=self.host)
+            else:
+                # Password file has been removed
+                if utils.confirm(f"Couldn't find password for database '{self.lmid}' on host '{self.host}'! Purge database? Manual intervention is required otherwise!"):
+                    hal.pools.get(self.host_id).create_pg_role(self.lmid)
+                    hal.pools.get(self.host_id).create_pg_db(self.lmid)
+
+                    password = utils.read(self.db_dir + "db_pass", host=self.host)
+                else:
+                    log(f"Required manual intervention for database '{self.lmid}' on '{self.host}' to change password!", level=5, console=True)
 
             self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={ip} password={password} port={self.port}")
 

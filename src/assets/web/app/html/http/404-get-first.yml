@@ -2,7 +2,8 @@ title:
     en: "Error 404"
     ro: "Eroare 404"
 description:
-    en: "Default description"
+    en: "Sorry, the page you are looking for cannot be found."
+    ro: "Ne pare rău, pagina pe care o căutați nu poate fi găsită."
 keywords:
     en: ""
 wrapper: "http/lm_wrapper"
@@ -11,14 +12,19 @@ module: "static"
 
 ----
 
-lm_:
+h1:
+    class: "lmmx-auto"
     text:
-        en: |
-            # Error 404
+        en: "Error 404"
+        ro: "Eroare 404"
 
-            We couldn't find the page!
+p:
+    text:
+        en: "Sorry, the page you are looking for cannot be found."
+        ro: "Ne pare rău, pagina pe care o căutați nu poate fi găsită."
 
-        ro: |
-            # Eroare 404
-
-            Nu am putut găsi pagina!
+div:
+    class: "lmpic"
+    img:
+        src: "/assets/img/404-not-found.svg"
+        alt: "Not Found"

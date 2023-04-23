@@ -2,7 +2,8 @@ title:
     en: "Error 403"
     ro: "Eroare 403"
 description:
-    en: "Default description"
+    en: "You are not authorized to access this resource."
+    ro: "Nu sunteți autorizat să accesați această resursă."
 keywords:
     en: ""
 wrapper: "http/lm_wrapper"
@@ -11,14 +12,19 @@ module: "static"
 
 ----
 
-lm_:
+h1:
+    class: "lmmx-auto"
     text:
-        en: |
-            # Error 403
+        en: "Error 403"
+        ro: "Eroare 403"
 
-            You don't have access here!
+p:
+    text:
+        en: "You are not authorized to access this resource."
+        ro: "Nu sunteți autorizat să accesați această resursă."
 
-        ro: |
-            # Eroare 403
-
-            Nu ai acces aici!
+div:
+    class: "lmpic"
+    img:
+        src: "/assets/img/403-forbidden.svg"
+        alt: "Forbidden"

@@ -132,16 +132,19 @@ html:
         lm_:
             text: "%HIDE_ALL%"
         div:
-            id: "lmid-page-scroll"
-            div:
-                id: "top"
+            id: "lmid-app"
             lm_:
                 text: "%APP_HEADER%"
             div:
                 id: "lmid-page-content"
-                text: "%BODY%"
-            lm_:
-                text: "%APP_FOOTER%"
+                lm_:
+                    text: "%ASIDE%"
+                div:
+                    id: "lmid-page-scroll"
+                    div:
+                        id: "top"
+                    lm_:
+                        text: "%BODY%%APP_FOOTER%"
         lm_:
             text: "%TOP_BUTTON%"
         button:

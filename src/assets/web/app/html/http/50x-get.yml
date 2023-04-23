@@ -1,24 +1,31 @@
 title:
-    en: "Error 500"
-    ro: "Eroare 500"
+    en: "Internal Error"
+    ro: "Eroare internă"
 description:
-    en: "Default description"
+    en: "Oops! Something went wrong on our end."
+    ro: "Ups! S-a întâmplat ceva neașteptat din partea noastră."
 keywords:
     en: ""
 wrapper: "http/lm_wrapper"
 aside: null
 module: "static"
 
+
 ----
 
-lm_:
+h1:
+    class: "lmmx-auto"
     text:
-        en: |
-            # Error 500
+        en: "Internal Error"
+        ro: "Eroare internă"
 
-            Internal issues!
+p:
+    text:
+        en: "Oops! Something went wrong on our end."
+        ro: "Ups! S-a întâmplat ceva neașteptat din partea noastră."
 
-        ro: |
-            # Eroare 500
-
-            Probleme interioare!
+div:
+    class: "lmpic"
+    img:
+        src: "/assets/img/50x-internal-error.svg"
+        alt: "Internal Error"

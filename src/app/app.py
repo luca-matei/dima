@@ -214,11 +214,11 @@ class Utils:
 
     def isfile(self, path, host=None, quiet=False):
         response = cmd(f"ls {path}", catch=True, host=host)
-        if response == path:
-            return 1
-        elif "No such file or directory" in response:
+        if "No such file or directory" in response:
             if not quiet:
                 log(f"'{path}' doesn't exist!", level=3, console=True)
+        elif response == path or (path.endswith("/") and response):
+            return 1
         return 0
 
     def replace_multiple(self, text:'str', reps:'dict'):
@@ -834,17 +834,17 @@ class Db:
 
         if self.lmid == hal.app_lmid:
             self.dev_host = hal.host_lmid
-            host_id = hal.host_dbid
+            self.host_id = hal.host_dbid
         else:
             self.dev_host = hal.lmobjs.get(hal.db.execute("select dev_host from project.projects where lmobj=%s;", (dbid,))[0][0])[0]
-            host_id = hal.lmobjs.get(host)
+            self.host_id = hal.lmobjs.get(host)
 
             if not utils.read(port_file, host=host):
-                hal.pools.get(host_id).config_postgres()
+                hal.pools.get(self.host_id).config_postgres()
 
             if not cmd(utils.dbs.query.format(f"select 1 from pg_database where datname='{lmid}';"), catch=True, host=host):
-                hal.pools.get(host_id).create_pg_role(self.lmid)
-                hal.pools.get(host_id).create_pg_db(self.lmid)
+                hal.pools.get(self.host_id).create_pg_role(self.lmid)
+                hal.pools.get(self.host_id).create_pg_db(self.lmid)
 
         self.port = int(utils.read(port_file, host=host))
         self.connect()
@@ -859,7 +859,19 @@ class Db:
                 ip = hal.pools.get(hal.lmobjs.get(self.host)).ip
             else:
                 ip = "127.0.0.1"
-            password = utils.read(self.db_dir + "db_pass", host=self.host)
+
+            if utils.isfile(self.db_dir + "db_pass", host=self.host):
+                # Password file exists
+                password = utils.read(self.db_dir + "db_pass", host=self.host)
+            else:
+                # Password file has been removed
+                if utils.confirm(f"Couldn't find password for database '{self.lmid}' on host '{self.host}'! Purge database? Manual intervention is required otherwise!"):
+                    hal.pools.get(self.host_id).create_pg_role(self.lmid)
+                    hal.pools.get(self.host_id).create_pg_db(self.lmid)
+
+                    password = utils.read(self.db_dir + "db_pass", host=self.host)
+                else:
+                    log(f"Required manual intervention for database '{self.lmid}' on '{self.host}' to change password!", level=5, console=True)
 
             self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={ip} password={password} port={self.port}")
 
@@ -1392,7 +1404,8 @@ class HostUtils:
 
     def transfer_file(self, from_path, to_path, from_host, to_host):
         transfer_path = utils.tmp_dir + "transfer/"
-        if utils.isdir(transfer_path):
+        if utils.isfile(transfer_path):
+            print("REMOVE TRANSFER")
             cmd("rm -r " + transfer_path)
 
         hal.pools.get(from_host).retrieve_file(from_path, transfer_path)
@@ -2355,8 +2368,9 @@ class Host(lmObj, HostServices):
             if owner != "root": cmd(f"sudo chown {owner}:{owner} {final_path}", host=self.lmid)
 
     def retrieve_file(self, src_path:'str', dest_path:'str'):
+        is_dir = src_path.endswith('/')
         # Handle permissions
-        cmd(f"scp -P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} hal@{self.lmid}:{src_path} {dest_path}", catch=True)
+        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} hal@{self.lmid}:{src_path.rstrip('/')} {dest_path.rstrip('/')}", catch=True)
 
     def status(self):
         print("OK")
@@ -2613,7 +2627,7 @@ class Web(Project):
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
 
-        if utils.isdir(self.repo_dir, host=host):
+        if utils.isfile(self.repo_dir, host=host):
             if not confirm:
                 if not utils.confirm(f"Are you sure you want to rebuild '{domain}'?"):
                     log("Aborted", console=True)
@@ -2624,6 +2638,7 @@ class Web(Project):
                 return
 
             elif env == "prod":
+                print("REMOVE REPO")
                 cmd(f"rm -r " + self.repo_dir, host=host)
 
         log(f"Building '{domain}' ...", console=True)
@@ -2652,11 +2667,13 @@ class Web(Project):
         self.generate_ssl(env)
 
         if env == "prod":
+            log("PROD")
+            utils.get_dirs(self.repo_dir + "src/assets/", host=self.prod_host)
             utils.hosts.transfer_file(
                 from_path = self.repo_dir + "src/assets/",
                 to_path = self.repo_dir + "src/assets/",
-                from_host = self.dev_host,
-                to_host = self.prod_host
+                from_host = self.dev_host_id,
+                to_host = self.prod_host_id
                 )
 
         self.default(env)
@@ -2712,17 +2729,18 @@ class Web(Project):
 
         log(f"Formatting '{domain}' database ...", console=True)
 
-        host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
-        remote_struct_file = self.app_dir + "db/struct.ast"
-        host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
-        remote_default_file = self.app_dir + "db/default.ast"
+        if env == "dev":
+            host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
+            remote_struct_file = self.app_dir + "db/struct.ast"
+            host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
+            remote_default_file = self.app_dir + "db/default.ast"
 
-        if host_id == hal.host_dbid:
-            utils.copy(host_struct_file, remote_struct_file)
-            utils.copy(host_default_file, remote_default_file)
-        else:
-            hal.pools.get(host_id).send_file(host_struct_file, remote_struct_file)
-            hal.pools.get(host_id).send_file(host_default_file, remote_default_file)
+            if host_id == hal.host_dbid:
+                utils.copy(host_struct_file, remote_struct_file)
+                utils.copy(host_default_file, remote_default_file)
+            else:
+                hal.pools.get(host_id).send_file(host_struct_file, remote_struct_file)
+                hal.pools.get(host_id).send_file(host_default_file, remote_default_file)
 
         db.rebuild()
 
@@ -2746,6 +2764,8 @@ class Web(Project):
         """
             Command only for dev environment.
         """
+        # To do: Copy img dir from default assets for http pages
+
         if not confirm:
             if not utils.confirm(f"Are you sure you want to format '{self.dev_domain}' HTML?"):
                 log("Aborted", console=True)
@@ -2753,16 +2773,22 @@ class Web(Project):
 
         src_html = utils.src_dir + "assets/web/app/html/"
         dest_html = self.app_dir + "html/"
+        src_img = utils.src_dir + "assets/web/assets/img/"
+        dest_img = self.repo_dir + "src/assets/img/"
 
         if hello:
-            log(f"Setting '{self.dev_domain}' HTML to 'Hello World' ...", console=True)
-            cmd(f"rm -r {self.app_dir}html/", host=self.dev_host)
+            log(f"Setting '{self.dev_domain}' to 'Hello World' ...", console=True)
+            cmd(f"rm -r " + dest_html, host=self.dev_host)
+            cmd(f"rm -r " + dest_img, host=self.dev_host)
+
             if self.dev_host_id == hal.host_dbid:
                 utils.copy(src_html, dest_html)
+                utils.copy(src_img, dest_img)
             else:
                 hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
+                hal.pools.get(self.dev_host_id).send_file(src_img, dest_img)
 
-            log(f"Set '{self.dev_domain}' HTML to 'Hello World.'", console=True)
+            log(f"Set '{self.dev_domain}' to 'Hello World.'", console=True)
 
         else:
             # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
@@ -2946,7 +2972,8 @@ class Web(Project):
                     reps = {f"%VAR-{k}%": self.global_html[lang].get(k.lower(), "NONE") for k in html_vars}
 
                     # Rename CSS classes
-                    reps.update(self.css_classes)
+                    if env == "prod":
+                        reps.update(self.css_classes)
 
                     html = utils.replace_multiple(html, reps)
 
@@ -3037,7 +3064,7 @@ class Web(Project):
         cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={hal.domain}/CN={domain}"', host=host)
 
         query = f"update web.webs set {env}_ssl_due=%s where lmobj=%s;"
-        params = datetime.now() + datetime.timedelta(3*365/12-3), self.dbid,
+        params = datetime.now() + timedelta(3*365/12-3), self.dbid,
         hal.db.execute(query, params)
 
         log(f"Generated SSL certificates for '{domain}'", console=True)
@@ -3068,11 +3095,11 @@ class Web(Project):
             hal.pools.get(self.prod_host_id).restart_supervisor()
 
         elif new_state == 5:
-            if utils.isdir(utils.projects_dir + self.lmid, host=self.prod_host):
-                # To do: Backup the database
-                pass
-
+            # To do: Backup the database
+            db_pass_path = self.app_dir + "db/db_pass"
+            db_pass = utils.read(db_pass_path, host=self.prod_host)
             self.build("prod", confirm=True)
+            utils.write(db_pass_path, db_pass, host=self.prod_host)
 
         log(f"Changed '{self.prod_domain}' state to {utils.webs.states[new_state]}.", console=True)
 
@@ -3751,9 +3778,6 @@ class GUI:
         widgets = {}
         for p, v in params.items():
             self.cmd_args[p] = "NaN"
-            if p in param_pos:
-                print("PARAM POS " + p)
-
             text = p.capitalize().replace("_", " ") + (" *" if p in param_pos else "")
 
             for x in ("html", "css", "php"):
@@ -3799,7 +3823,7 @@ class GUI:
             value = self.arg_widgets[arg + "_var"].get()
             if " " in str(value): value = '"' + value + '"'
             if arg == "new_state" and module == "web":
-                args.append(f'--new_state="{utils.reverse_dict(utils.webs.states)[value]}"')
+                args.append(f"--new_state={utils.reverse_dict(utils.webs.states)[value]}")
             else:
                 args.append(f"--{arg}={value}")
 

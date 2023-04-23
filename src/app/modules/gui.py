@@ -215,9 +215,6 @@ class GUI:
         widgets = {}
         for p, v in params.items():
             self.cmd_args[p] = "NaN"
-            if p in param_pos:
-                print("PARAM POS " + p)
-
             text = p.capitalize().replace("_", " ") + (" *" if p in param_pos else "")
 
             for x in ("html", "css", "php"):
@@ -263,7 +260,7 @@ class GUI:
             value = self.arg_widgets[arg + "_var"].get()
             if " " in str(value): value = '"' + value + '"'
             if arg == "new_state" and module == "web":
-                args.append(f'--new_state="{utils.reverse_dict(utils.webs.states)[value]}"')
+                args.append(f"--new_state={utils.reverse_dict(utils.webs.states)[value]}")
             else:
                 args.append(f"--{arg}={value}")
 

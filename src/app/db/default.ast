@@ -254,9 +254,9 @@
         ("lmobj", "domain", "dev_port", "prod_port", "dev_ssl_due", "prod_ssl_due", "prod_state", "modules", "langs", "themes", "default_lang", "default_theme", "has_animations"),
         ("id:lmid:lmobjs", "id:name:domains", "", "", "", "", "", "id[]:name:web.modules", "id[]:code:project.langs", "id[]:code:project.themes", "id:code:project.langs", "id:code:project.themes", ""),
 
-        ("lm2", "hal.lucamatei.net", 19062, 16863, "", "", 0, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
-        ("lm5", "hello.lucamatei.net", 19353, 18532, "", "", 0, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
-        ("lm7", "lucamatei.eu", 19845, 19680, "", "", 0, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
+        ("lm2", "hal.lucamatei.net", 19062, 16863, "", "", 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
+        ("lm5", "hello.lucamatei.net", 19353, 18532, "", "", 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
+        ("lm7", "lucamatei.eu", 19845, 19680, "", "", 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
         )),
     )),
 )

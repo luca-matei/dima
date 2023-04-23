@@ -6,12 +6,13 @@ description:
 keywords:
     en: ""
 wrapper: null
+aside: null
 module: static
 
 ----
 
 div:
-    class: "lma-h-center lmpt-md"
+    class: "lmbox lmpy-md lmt-j"
     text:
         en: |
             # Hello World! {: .lmf-xxl}

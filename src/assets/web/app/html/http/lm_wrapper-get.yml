@@ -1,5 +1,7 @@
 
 div:
-    class: "lmbox lmpy-md"
-    lm_:
-        text: "%CONTENT%"
+    class: "lmbox lmpy-md lmrow"
+    div:
+        class: "lmcol-lg-5 lmmx-auto lmt-c"
+        lm_:
+            text: "%CONTENT%"
