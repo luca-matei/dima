@@ -143,3 +143,5 @@ lm5 default html --confirm=1 --hello=1
 lm7 save --message="Updated files"
 lm5 save --message="Updated files"
 lm1 save
+lm7 change state --new_state=5 --confirm=1
+lm7 save --message="Updated files"

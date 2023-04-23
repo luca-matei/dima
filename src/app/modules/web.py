@@ -73,7 +73,6 @@ class Web(Project):
                 return
 
             elif env == "prod":
-                print("REMOVE REPO")
                 cmd(f"rm -r " + self.repo_dir, host=host)
 
         log(f"Building '{domain}' ...", console=True)
@@ -247,6 +246,7 @@ class Web(Project):
         self.global_html = {}
         var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
         query = "insert into fractions (name, lang, html) values (%s, %s, %s);"
+        css_classes = self.css_classes if env == "prod" else {}
 
         # Update global and variables html
         langs = [v for k, v in self.langs.items() if type(v)==str]
@@ -255,10 +255,9 @@ class Web(Project):
                 self.global_html[lang] = {}
 
             for var_file in var_files:
-                self.global_html[lang][var_file[:-4]] = self.yml2html("_fractions/" + var_file, lang)
+                self.global_html[lang][var_file[:-4]] = utils.replace_multiple(self.yml2html("_fractions/" + var_file, lang), css_classes)
 
             # Save logged user dropdown
-            css_classes = self.css_classes if env == "prod" else {}
             user_drop_html = utils.replace_multiple(self.yml2html("user-drop.yml", lang), css_classes)
             params = "user-drop", self.langs[lang], user_drop_html
             db.execute(query, params)
