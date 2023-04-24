@@ -798,6 +798,7 @@ class Logs:
         if type(call_info) == list and len(call_info) == 4: host = f" {call_info[3]}:"
         else: host = ""
         filename, lineno, function = call_info[:3]
+        message = message.strip('\n')
 
         # function == "execute" and "Data" in message and
         if level == 2 and len(message) > 256:
@@ -1896,11 +1897,13 @@ class HostServices:
 
         cmd(ssh.keygen.format(privkey), host=host)
 
-        log(f"SSH Key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}' generated", console=True)
-
         if utils.isfile(privkey, host=host):
             cmd("chmod 600 " + privkey, host=host)
             cmd("chmod 600 " + privkey + ".pub", host=host)
+
+            log(f"SSH Key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}' generated", console=True)
+
+            log(f"\nUse the following command to copy the key manually. Beware of the user name.\n$ ssh-copy-id -i {privkey}.pub dima@{self.ip}\n")
 
             if for_gitlab:
                 self.config_ssh_client()
@@ -2250,6 +2253,9 @@ class Host(lmObj, HostServices):
         utils.write("/etc/hosts", hosts_file, host=self.lmid)
 
         log(f"Generated /etc/hosts for '{self.name}'", console=True)
+
+    def add_user(self):
+        pass
 
     def ping(self):
         log(f"Trying to ping '{self.name}' ...", console=True)
@@ -3383,8 +3389,12 @@ class CLI:
                     except ValueError: return self.invalid(p=a, pt='float')
 
                 elif arg_type == 'bool':
-                    try: args[a] = bool(arg)
-                    except ValueError: return self.invalid(p=a, pt='boolean')
+                    if arg.lower() in ("1", "true", "yes", "y"):
+                        args[a] = True
+                    elif arg.lower() in ("0", "false", "no", "n"):
+                        args[a] = False
+                    else:
+                        return self.invalid(p=a, pt='boolean')
 
                 elif arg_type == "list":
                     if arg.startswith(("(", "[")) and arg.endswith((")", "]")):
@@ -3846,7 +3856,7 @@ class GUI:
             pool = hal.pools[hal.host_dbid]
 
         self.widgets["host_id_str"].set(pool.lmid)
-        self.widgets["host_net_str"].set(hal.lmobjs[pool.net_id][0])
+        self.widgets["host_net_str"].set(hal.lmobjs.get(pool.net_id, ["NaN"])[0])
         self.widgets["host_mac_str"].set(pool.mac.upper())
         self.widgets["host_ip_str"].set(pool.ip)
         self.widgets["host_env_str"].set(pool.env)

@@ -93,8 +93,12 @@ class CLI:
                     except ValueError: return self.invalid(p=a, pt='float')
 
                 elif arg_type == 'bool':
-                    try: args[a] = bool(arg)
-                    except ValueError: return self.invalid(p=a, pt='boolean')
+                    if arg.lower() in ("1", "true", "yes", "y"):
+                        args[a] = True
+                    elif arg.lower() in ("0", "false", "no", "n"):
+                        args[a] = False
+                    else:
+                        return self.invalid(p=a, pt='boolean')
 
                 elif arg_type == "list":
                     if arg.startswith(("(", "[")) and arg.endswith((")", "]")):

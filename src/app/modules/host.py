@@ -382,11 +382,13 @@ class HostServices:
 
         cmd(ssh.keygen.format(privkey), host=host)
 
-        log(f"SSH Key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}' generated", console=True)
-
         if utils.isfile(privkey, host=host):
             cmd("chmod 600 " + privkey, host=host)
             cmd("chmod 600 " + privkey + ".pub", host=host)
+
+            log(f"SSH Key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}' generated", console=True)
+
+            log(f"\nUse the following command to copy the key manually. Beware of the user name.\n$ ssh-copy-id -i {privkey}.pub dima@{self.ip}\n", console=True)
 
             if for_gitlab:
                 self.config_ssh_client()
@@ -736,6 +738,9 @@ class Host(lmObj, HostServices):
         utils.write("/etc/hosts", hosts_file, host=self.lmid)
 
         log(f"Generated /etc/hosts for '{self.name}'", console=True)
+
+    def add_user(self):
+        pass
 
     def ping(self):
         log(f"Trying to ping '{self.name}' ...", console=True)

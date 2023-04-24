@@ -145,3 +145,7 @@ lm5 save --message="Updated files"
 lm1 save
 lm7 change state --new_state=5 --confirm=1
 lm7 save --message="Updated files"
+lm10 create ssh_key --for_gitlab=0
+lm11 create ssh_key --for_gitlab=0
+lm12 create ssh_key --for_gitlab=0
+lm1 save

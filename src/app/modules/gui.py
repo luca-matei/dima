@@ -285,7 +285,7 @@ class GUI:
             pool = hal.pools[hal.host_dbid]
 
         self.widgets["host_id_str"].set(pool.lmid)
-        self.widgets["host_net_str"].set(hal.lmobjs[pool.net_id][0])
+        self.widgets["host_net_str"].set(hal.lmobjs.get(pool.net_id, ["NaN"])[0])
         self.widgets["host_mac_str"].set(pool.mac.upper())
         self.widgets["host_ip_str"].set(pool.ip)
         self.widgets["host_env_str"].set(pool.env)
