@@ -59,11 +59,14 @@ class Web(Project):
 
     def build(self, env:'env'="dev", confirm:'bool'=False):
         """
+            1. STRUCTURE
             Command used when creating the web, when the structure has changed or when parts are missing.
         """
         domain = self.env_var(env, "domain")
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
+        #db_pass_path = self.app_dir + "db/db_pass.txt"
+        #db_pass = None
 
         if utils.isfile(self.repo_dir, host=host):
             if not confirm:
@@ -72,10 +75,12 @@ class Web(Project):
                     return
 
             elif env == "dev":
-                # To do : Remove everything but .git
+                # To do: Remove everything but .git
                 return
 
             elif env == "prod":
+                # To do: Backup the database
+                # db_pass = utils.read(db_pass_path, host=self.prod_host)
                 cmd(f"rm -r " + self.repo_dir, host=host)
 
         log(f"Building '{domain}' ...", console=True)
@@ -101,10 +106,8 @@ class Web(Project):
             ))
 
         utils.create_dir_tree(dir_tree, root=self.repo_dir, host=host)
-        self.generate_ssl(env)
 
         if env == "prod":
-            log("PROD")
             utils.get_dirs(self.repo_dir + "src/assets/", host=self.prod_host)
             utils.hosts.transfer_file(
                 from_path = self.repo_dir + "src/assets/",
@@ -114,11 +117,13 @@ class Web(Project):
                 )
 
         self.default(env)
+        self.generate_ssl(env)
 
         log(f"Built '{domain}'", console=True)
 
     def default(self, env:'env'="dev", confirm:'bool'=False):
         """
+            2. DEFAULT CONTENT
             Format files to Hello World
         """
 
@@ -157,7 +162,6 @@ class Web(Project):
     def default_db(self, env:"env"="dev", confirm:'bool'=False):
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
-        db = self.env_var(env, "db")
 
         if not confirm:
             if not utils.confirm(f"Are you sure you want to format '{domain}' database?"):
@@ -179,6 +183,14 @@ class Web(Project):
                 dima.pools.get(host_id).send_file(host_struct_file, remote_struct_file)
                 dima.pools.get(host_id).send_file(host_default_file, remote_default_file)
 
+            self.db = Db(self.lmid, self.dbid, self.dev_host)
+            db = self.db
+
+        elif env == "prod":
+            self.prod_db = Db(self.lmid, self.dbid, self.prod_host)
+            db = self.prod_db
+
+        # When rebuilding the project, this is redundant
         db.rebuild()
 
         query = f"insert into methods (name) values {', '.join(['(%s)' for m in utils.webs.methods])};"
@@ -532,12 +544,9 @@ class Web(Project):
             dima.pools.get(self.prod_host_id).restart_supervisor()
 
         elif new_state == 5:
-            # To do: Backup the database
-            db_pass_path = self.app_dir + "db/db_pass.txt"
-            db_pass = utils.read(db_pass_path, host=self.prod_host)
             self.build("prod", confirm=True)
-            utils.write(db_pass_path, db_pass, host=self.prod_host)
 
+        dima.db.execute("update web.webs set prod_state=%s where lmobj=%s", (new_state, self.dbid))
         log(f"Changed '{self.prod_domain}' state to {utils.webs.states[new_state]}.", console=True)
 
     def update_js(self, env:"env"="dev"):

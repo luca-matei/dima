@@ -196,3 +196,22 @@ lm5 update html --env=dev --section= --global_html=1
 lm1 save
 lm4 config git 
 lm4 create gpg_key --email=
+lm5 save --message="Updated files"
+lm7 save --message="Updated files"
+lm10 create ssh_key --for_gitlab=0
+lm10 ping 
+lm4 config ssh_client 
+lm10 install dependencies 
+lm10 setup 
+lm10 ping 
+lm4 config ssh_client 
+lm8 ping 
+lm8 setup 
+lm5 change state 
+lm5 change state --new_state=5 --confirm=1
+lm7 change state --new_state=5 --confirm=1
+lm7 restart --env=dev
+lm7 restart --env=prod
+lm8 restart nginx 
+lm8 restart supervisor 
+lm1 save

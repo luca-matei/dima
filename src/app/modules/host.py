@@ -11,6 +11,8 @@ class HostServices:
             "disable": "Disabling",
             }
 
+        # To do: Check for service
+
         if service == "postgresql":
             if action == "status":
                 pass
@@ -34,7 +36,10 @@ class HostServices:
 
     # Nets
     def config_dhcp(self):
-        # To do: check in services
+        if "dhcp" not in self.services:
+            log(f"Host '{self.name}' isn't a DHCP server!", level=4, console=True)
+            return
+
         log(f"Configuring DHCP server on '{self.name}' ...", console=True)
         query = "select a.lmid, b.lmobj, b.dns, b.domain, b.netmask, b.gateway, b.lease_start, b.lease_end from lmobjs a, nets b where a.id = b.lmobj and pm=%s;"
         params = self.dbid,
@@ -112,8 +117,9 @@ class HostServices:
                     })
 
     def config_dns(self):
-        # To do: check in services
-        pass
+        if "dns" not in self.services:
+            log(f"Host '{self.name}' isn't a DNS server!", level=4, console=True)
+            return
 
     def restart_dhcp(self):
         self.manage_service("restart", "isc-dhcp-server")
@@ -126,7 +132,10 @@ class HostServices:
 
     # Firewall
     def config_firewall(self):
-        # To do: check in services
+        if "firewall" not in self.services:
+            log(f"Host '{self.name}' isn't supposed to have a firewall!", level=4, console=True)
+            return
+
         log(f"Configuring Firewall for '{self.name}' ...", console=True)
         self.manage_service("enable", "nftables")
 
@@ -161,7 +170,10 @@ class HostServices:
 
     # Nginx
     def config_nginx(self):
-        # To do: check in services
+        if "web" not in self.services:
+            log(f"Host '{self.name}' isn't a web server!", level=4, console=True)
+            return
+
         log(f"Configuring Nginx for '{self.name}' ...")
         self.send_file(dima.tpls_dir + "web/nginx.tpl", "/etc/nginx/nginx.conf")
         cmd("sudo rm /etc/nginx/sites-enabled/default", host=self.name)
@@ -193,7 +205,8 @@ class HostServices:
         output = cmd(role_query, catch=True, host=self.lmid)
         if "already exists" in output:
             if utils.confirm(f"'{role}' role already exists on '{self.name}'! Purge it?"):
-                cmd(utils.dbs.query.format(f"drop database if exists {role}; drop role if exists {role};"), host=self.lmid)
+                cmd(utils.dbs.query.format(f"drop database if exists {role};"), host=self.lmid)
+                cmd(utils.dbs.query.format(f"drop role if exists {role};"), host=self.lmid)
             else: return
 
             cmd(role_query, host=self.lmid)
@@ -225,12 +238,15 @@ class HostServices:
         log(f"Postgres database '{db}' created on '{self.name}'", console=True)
 
     def config_postgres(self):
-        # To do: check in services
         """
         Manages /etc/postgresql/13/main/postgresql.conf
                 /etc/postgresql/13/main/pg_hba.conf
         Assigns a new port to the PostgreSQL server.
         """
+
+        if "db" not in self.services:
+            log(f"Host '{self.name}' isn't a database server!", level=4, console=True)
+            return
 
         log(f"Configuring PostgreSQL for '{self.name}' ...", console=True)
 
@@ -315,10 +331,16 @@ class HostServices:
         self.manage_service("restart", "ssh")
 
     def config_ssh_client(self):
-        if not utils.isfile("/home/dima/.ssh/", host=self.lmid):
-            cmd("mkdir /home/dima/.ssh/", host=self.lmid)
+        if "ssh_client" not in self.services:
+            log(f"Host '{self.name}' isn't a SSH client!", level=4, console=True)
+            return
 
         log(f"Configuring SSH Client for '{self.name}' ...", console=True)
+
+        if not utils.isfile("/home/dima/.ssh/", host=self.lmid):
+            cmd("mkdir /home/dima/.ssh/", host=self.lmid)
+        cmd("chmod 700 /home/dima/.ssh/", host=self.lmid)
+
         hosts = []
 
         if self.dbid == dima.host_dbid:
@@ -359,34 +381,37 @@ class HostServices:
         log(f"Configured SSH Client for '{self.name}'", console=True)
 
     def config_ssh_server(self):
-        # To do: check in services
-        if self.ssh_port == -1:
-            log(f"'{self.name}' is not a SSH Server!", level=4, console=True)
+        if "ssh_server" not in self.services:
+            log(f"Host '{self.name}' isn't a SSH server!", level=4, console=True)
+            return
+
+        log(f"Configuring SSH Server for '{self.name}' ...", console=True)
+
+        cmd("sudo groupadd sshusers", host=self.lmid)
+        cmd("sudo usermod -a -G sshusers dima", host=self.lmid)
+
+        if self.ssh_port == 22 or utils.confirm(f"There's already a SSH port configured for '{self.name}'! Change it?"):
+            port = self.next_port(service=True)
+
+            dima.db.execute("update host.hosts set ssh_port=%s where lmobj=%s;", (port, self.dbid))
+
+            log(f"Assigned SSH port {port} to '{self.name}'", console=True)
+
         else:
-            log(f"Configuring SSH Server for '{self.name}' ...", console=True)
+            port = self.ssh_port
 
-            if self.ssh_port == 22 or utils.confirm(f"There's already a SSH port configured for '{self.name}'! Change it?"):
-                port = self.next_port(service=True)
-                self.ssh_port = port
+        config = utils.format_tpl("ssh/server_config.tpl", {
+            "port": port,
+            })
 
-                dima.db.execute("update host.hosts set ssh_port=%s where lmobj=%s;", (port, self.dbid))
+        utils.write("/etc/ssh/sshd_config", config, tpl=True, host=self.lmid)
+        #self.config_firewall()
+        self.restart_ssh()
 
-                log(f"Assigned SSH port {port} to '{self.name}'", console=True)
+        self.ssh_port = port
+        dima.pools.get(dima.host_dbid).config_ssh_client()
 
-            else:
-                port = self.ssh_port
-
-            config = utils.format_tpl("ssh/server_config.tpl", {
-                "port": port,
-                })
-
-            utils.write("/etc/ssh/sshd_config", config, tpl=True, host=self.lmid)
-            #self.config_firewall()
-            self.restart_ssh()
-            dima.pools.get(dima.host_dbid).config_ssh_client()
-
-            log(f"Configured SSH Server for '{self.name}'", console=True)
-
+        log(f"Configured SSH Server for '{self.name}'", console=True)
 
     def create_ssh_key(self, for_gitlab:'bool'=False):
         log(f"Generating SSH key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}'. This may take a while ...", console=True)
@@ -459,6 +484,10 @@ class HostServices:
             return re.findall(r'\bpub   rsa4096/\w+', key_id)[0].split('/')[1]
 
     def create_gpg_key(self, email:'str'=None):
+        if self.env != "dev":
+            log(f"'{self.name}' isn't a development machine!", level=4, console=True)
+            return
+
         if not email: email = self.email
         log(f"Generating GPG Key for '{email}'. This may take a while ...", console=True)
 
@@ -477,6 +506,10 @@ class HostServices:
         return key_id
 
     def delete_gpg_key(self, email:'str'=None):
+        if self.env != "dev":
+            log(f"'{self.name}' isn't a development machine!", level=4, console=True)
+            return
+
         log(f"Removing GPG Key for '{email}' ...", level=3, console=True)
         if not email: email = self.email
         cmd(f"gpg2 --batch --delete-secret-keys {email}", host=self.lmid)
@@ -488,13 +521,35 @@ class Host(lmObj, HostServices):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
-        query = "select mac, net, ip, client, env, ssh_port, pg_port, pm from host.hosts where lmobj=%s;"
+        """
+            Prepare VPS
+
+            # apt update && apt upgrade -y
+
+            # nano /etc/hostname
+            # nano /etc/hosts
+
+            # adduser --gecos '' dima
+            # sudo -u dima mkdir /home/dima/.ssh/
+            # chmod 700 /home/dima/.ssh/
+            # sudo -u dima nano /home/dima/.ssh/authorized_keys
+            # chmod 600 /home/dima/.ssh/authorized_keys
+
+            # echo "dima ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dima
+
+            # nano /etc/ssh/sshd_config
+            # systemctl restart ssh
+            # systemctl reboot
+        """
+
+        query = "select mac, net, ip, client, env, ssh_port, pg_port, pm, services from host.hosts where lmobj=%s;"
         params = dbid,
 
-        self.mac, self.net_id, self.ip, self.client_id, self.env_id, self.ssh_port, self.pg_port, self.pm_id = dima.db.execute(query, params)[0]
+        self.mac, self.net_id, self.ip, self.client_id, self.env_id, self.ssh_port, self.pg_port, self.pm_id, self.service_ids = dima.db.execute(query, params)[0]
 
         self.env = utils.hosts.envs.get(self.env_id)
         self.mnt_dir = utils.mnt_dir + self.name + "/"
+        self.services = [utils.hosts.services.get(x) for x in self.service_ids]
         self.email = self.lmid + "@" + utils.hosts.domain
         self.check()
 
@@ -784,12 +839,57 @@ class Host(lmObj, HostServices):
             if utils.isfile(prjct_dir + "src/app/db/db_pass.txt", host=self.lmid):
                 cmd(f"sudo chmod 600 {prjct_dir}src/app/db/db_pass.txt", host=self.lmid)
 
+    def install_dependencies(self):
+        packages = "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip",
+
+        log(f"Installing dependencies on '{self.name}' ...", console=True)
+
+        if self.env == "dev":
+            packages += "gnupg2", "git", "curl"
+
+        if "web" in self.services:
+            packages += "openssl", "nginx", "supervisor",
+
+        if "web" in self.services or "db" in self.services:
+            packages += "postgresql", "libpq-dev",
+
+        if "ssh_server" in self.services:
+            packages += "openssh-server",
+
+        if "ssh_client" in self.services:
+            packages += "openssh-client",
+
+        if "vms" in self.services:
+            packages += "bridge-utils",
+
+        if "dhcp" in self.services:
+            packages += "isc-dhcp-server",
+
+        if "dns" in self.services:
+            packages += "bind9",
+
+        if "firewall" in self.services:
+            pass
+            #packages += "nftables",
+
+        if "mail" in self.services:
+            packages += "postfix",
+
+        for package in packages:
+            if not "ok installed" in cmd(f"sudo dpkg -s {package} | grep Status", catch=True, host=self.lmid):
+                log(f"Installing '{package}' ...", console=True)
+                cmd(f"sudo apt install {package} -y", catch=True, host=self.lmid)
+            else:
+                log(f"'{package}' is already installed!", console=True)
+
+        log(f"Installed dependencies on '{self.name}' ...", console=True)
+
     def create_user(self, name:'str'):
         # https://manpages.debian.org/jessie/adduser/adduser.8.en.html
         if not cmd(f"getent passwd {name}", catch=True):
             log(f"Creating user and group '{name}' ...", console=True)
 
-            cmd(f"sudo adduser --system --group --gecos '' {name}", catch=True)
+            cmd(f"sudo adduser --group --gecos '' {name}", catch=True)
             cmd(f"sudo echo {name}:{utils.new_pass(64)} | sudo chpasswd")
 
             log(f"Created user and group '{name}'", console=True)
@@ -815,25 +915,28 @@ class Host(lmObj, HostServices):
             utils.logs_dir,
             utils.projects_dir,
                 utils.projects_dir + "pids/",
-            utils.res_dir,
-                utils.res_dir + "web/",
-                utils.res_dir + "web/css/",
-                utils.res_dir + "web/js/",
-                utils.res_dir + "web/fonts/",
-                utils.res_dir + "web/icons/",
             utils.tmp_dir
             ]
 
-        if not self.pm_id:
+        if "vms" in self.services:
             dir_tree.extend([utils.vms_dir])
 
-        if self.env == "dev":
+        if "ssh_client" in self.services:
             dir_tree.extend([utils.ssh_dir])
+
+        if self.dbid == dima.host_dbid:
+            dir_tree.extend([
+                utils.res_dir,
+                    utils.res_dir + "web/",
+                    utils.res_dir + "web/css/",
+                    utils.res_dir + "web/js/",
+                    utils.res_dir + "web/fonts/",
+                    utils.res_dir + "web/icons/",
+            ])
 
         utils.create_dir_tree(dir_tree, host=self.lmid)
 
-        # has Nginx as service
-        if True:
+        if "web" in self.services:
             if not utils.isfile(utils.ssl_dir, host=self.lmid):
                 cmd(f"sudo mkdir {utils.ssl_dir}", host=self.lmid)
 
@@ -881,8 +984,18 @@ class Host(lmObj, HostServices):
 
         log(f"Configured Git for '{self.name}'", console=True)
 
+    def config_sudo(self, user:'str'="dima"):
+        user = "dima"
+        log(f"Configuring sudo for user {user} on host '{self.lmid}' ...", console=True)
+
+        utils.write(f"{user} ALL=(ALL) NOPASSWD:ALL", f"/etc/sudoers.d/{user}", host=self.lmid)
+
+        log(f"Configured sudo for user {user} on host '{self.lmid}'", console=True)
+
     def setup(self):
-        # To do: Get services from db
+        if not utils.isfile(utils.tmp_dir, host=self.lmid):
+            cmd("mkdir " + utils.tmp_dir, host=self.lmid)
+
         self.config_ssh_server()
         self.config_grub()
         self.config_motd()
