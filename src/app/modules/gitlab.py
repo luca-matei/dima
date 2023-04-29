@@ -7,11 +7,11 @@ class Gitlab:
         pass
 
     def get_token(self):
-        token_file = hal.app_dir + 'personal_token.txt'
+        token_file = dima.app_dir + 'personal_token.txt'
 
         if not utils.isfile(token_file):
             log("Getting Gitlab REST API token ...")
-            print("Please enter Hal's Gitlab REST API token")
+            print("Please enter Dima's Gitlab REST API token")
 
             token = getpass.getpass("Token: ")
             utils.write(token_file, token)
@@ -21,7 +21,7 @@ class Gitlab:
         else:
             return utils.read(token_file)
 
-    def request(self, host=hal.host_lmid, token=None, method="get", endpoint="", data={}):
+    def request(self, host=dima.host_lmid, token=None, method="get", endpoint="", data={}):
         if not token: token = self.get_token()
 
         method = method.upper()
@@ -54,7 +54,7 @@ class Gitlab:
             }
 
         self.request(
-            host = hal.host_lmid,
+            host = dima.host_lmid,
             token = self.get_token(),
             method = "post",
             endpoint = "/user/keys",
@@ -109,7 +109,7 @@ class Gitlab:
             )
 
     def delete_ssh_key(self):
-        hal.pools.get(self.host_dbid).delete_ssh_key(gitlab=True)
+        dima.pools.get(self.host_dbid).delete_ssh_key(gitlab=True)
         self.request(
             method = "delete",
             endpoint = "/user/keys/" + self.get_ssh_keys(self.host_lmid).get('id')
@@ -128,7 +128,7 @@ class Gitlab:
         return keys
 
     def check(self):
-        if not utils.isfile("/home/hal/.gitconfig"):
+        if not utils.isfile("/home/dima/.gitconfig"):
             self.config_git()
 
         if not gitlab.get_ssh_keys(self.lmid):
@@ -137,7 +137,7 @@ class Gitlab:
         if not gitlab.get_gpg_keys():
             gitlab.add_gpg_key(self.lmid)
 
-        if not utils.ssh_dir + self.lmid + "-gitlab" in utils.read("/home/hal/.ssh/config"):
+        if not utils.ssh_dir + self.lmid + "-gitlab" in utils.read("/home/dima/.ssh/config"):
             self.config_ssh_client()
 
 gitlab = Gitlab()

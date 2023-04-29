@@ -1,5 +1,5 @@
 #!/bin/bash
 
-xhost SI:localuser:hal
-sudo -u hal python3 /home/hal/projects/%LMID/src/make.py "$@"
-sudo -u hal python3 /home/hal/projects/%LMID/src/app/app.py "$@"
+xhost SI:localuser:dima
+sudo -u dima python3 /home/dima/projects/%LMID/src/make.py
+sudo -u dima python3 /home/dima/projects/%LMID/src/app/app.py "$@"

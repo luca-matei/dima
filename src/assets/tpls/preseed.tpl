@@ -126,14 +126,14 @@ d-i cdrom-detect/eject boolean true
 
 d-i preseed/late_command string \
 cd /target/; \
-mkdir home/hal/.ssh/; \
-mkdir home/hal/tmp/; \
-echo "%SSH_KEY%" > home/hal/.ssh/authorized_keys; \
+mkdir home/dima/.ssh/; \
+mkdir home/dima/tmp/; \
+echo "%SSH_KEY%" > home/dima/.ssh/authorized_keys; \
 echo "Port %SSH_PORT%" >> etc/ssh/sshd_config; \
 echo "PasswordAuthentication no" >> etc/ssh/sshd_config; \
-echo "hal ALL=(ALL) NOPASSWD:ALL" > etc/sudoers.d/hal; \
-in-target chown -R hal:hal home/hal/; \
+echo "dima ALL=(ALL) NOPASSWD:ALL" > etc/sudoers.d/dima; \
+in-target chown -R dima:dima home/dima/; \
 cd /; \
 in-target systemctl restart ssh; \
 in-target sudo groupadd sshusers; \
-in-target sudo usermod -a -G sshusers hal;
+in-target sudo usermod -a -G sshusers dima;

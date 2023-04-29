@@ -168,7 +168,7 @@ class CLI:
 
         command = [p for p in re.split("( |\\\".*?\\\"|'.*?')", command) if p.strip()] + ['']    # Split by spaces unless surrounded by quotes
 
-        lmobj_id = hal.lmobjs.get(command[0], 0)    # Try to get a lmobj
+        lmobj_id = dima.lmobjs.get(command[0], 0)    # Try to get a lmobj
 
         if lmobj_id:
             # lmobj act obj    ===    lm1 restart nginx
@@ -182,7 +182,7 @@ class CLI:
                 return self.invalid(a=act)
 
             # Find object id from particular command
-            module_id = hal.lmobjs[lmobj_id][1]      # Get Host module id
+            module_id = dima.lmobjs[lmobj_id][1]      # Get Host module id
             obj_id = self.objs[module_id].get(obj, 0)    # Get nginx object id
 
             if not obj_id:
@@ -199,16 +199,16 @@ class CLI:
             try: args = command[3:] if obj else command[2:]
             except: args = []
 
-            params = self.process_args(hal.pools[lmobj_id], act, obj, args)
+            params = self.process_args(dima.pools[lmobj_id], act, obj, args)
             if self.skip:
                 self.skip = False
                 return
 
             # Call the method
             if obj == '':
-                getattr(hal.pools[lmobj_id], act)(**params)
+                getattr(dima.pools[lmobj_id], act)(**params)
             else:
-                getattr(hal.pools[lmobj_id], act + '_' + obj)(**params)
+                getattr(dima.pools[lmobj_id], act + '_' + obj)(**params)
 
         else:
             # act obj    ===    create net
@@ -222,7 +222,7 @@ class CLI:
                 return self.invalid(ao=act)
 
             module_id = 0
-            module_ids = [x for x in utils.get_keys(self.objs) if hal.modules[x][0].islower()]
+            module_ids = [x for x in utils.get_keys(self.objs) if dima.modules[x][0].islower()]
             obj_id = 0
 
             # Find object id from global command
@@ -230,7 +230,7 @@ class CLI:
                 obj_id = self.objs[m_id].get(obj, 0)
                 if obj_id:
                     module_id = m_id
-                    module = hal.modules[m_id]
+                    module = dima.modules[m_id]
                     break
 
             if not obj_id:
@@ -248,7 +248,7 @@ class CLI:
             except: args = []
 
             if obj == '':
-                params = self.process_args(hal, act, obj, args)
+                params = self.process_args(dima, act, obj, args)
 
             elif module.startswith("utils"):
                 params = self.process_args(getattr(utils, module.split('.')[1]), act, obj, args)
@@ -263,7 +263,7 @@ class CLI:
 
             # Call the method
             if obj == '':
-                getattr(hal, act)(**params)
+                getattr(dima, act)(**params)
 
             elif module.startswith("utils"):
                 getattr(getattr(utils, module.split('.')[1]), act + '_' + obj)(**params)

@@ -1,4 +1,4 @@
-class Hal:
+class Dima:
     lmid = None
     version = None
     settings = None
@@ -22,7 +22,7 @@ class Hal:
     pools = {}
 
     def status(self):
-        print("STATUS")
+        print(utils.new_pass(64))
 
     def start(self):
         self.app_dir = utils.src_dir + "app/"
@@ -109,7 +109,7 @@ class Hal:
             utils.webs.modules[m[1]] = m[0]    # static = 1
 
         log("Phase 4.7: Loading command actions ...")
-        for act in hal.db.execute("select id, name, alias from command.acts;"):
+        for act in dima.db.execute("select id, name, alias from command.acts;"):
             cli.acts[act[0]] = act[1]    # id = name
             cli.acts[act[1]] = act[0]    # name = id
             if act[2]:
@@ -117,7 +117,7 @@ class Hal:
 
         log("Phase 4.8: Loading command objects ...")
         module_ids = []
-        for obj in hal.db.execute("select id, module, name, acts from command.objs;"):
+        for obj in dima.db.execute("select id, module, name, acts from command.objs;"):
             module_id = obj[1]
             if module_id not in module_ids:
                 cli.objs[module_id] = {}
@@ -160,20 +160,20 @@ class Hal:
 
     def insert_lmobj(self, lmid, module, alias):
         log(f"Inserting {lmid} of type {module} ...")
-        module_id = hal.modules[module]
+        module_id = dima.modules[module]
 
         query = f"insert into lmobjs (lmid, module, alias) values (%s, %s, %s) returning id;"
         params = lmid, module_id, alias,
-        dbid = hal.db.execute(query, params)[0][0]
+        dbid = dima.db.execute(query, params)[0][0]
 
-        hal.lmobjs[dbid] = list(params)
-        hal.lmobjs[lmid] = dbid
-        if alias: hal.lmobjs[alias] = dbid
+        dima.lmobjs[dbid] = list(params)
+        dima.lmobjs[lmid] = dbid
+        if alias: dima.lmobjs[alias] = dbid
 
         return dbid
 
     def next_lmid(self):
-        taken = [int(lmid[0][2:]) for lmid in hal.db.execute("select lmid from lmobjs;")]
+        taken = [int(lmid[0][2:]) for lmid in dima.db.execute("select lmid from lmobjs;")]
 
         for i in range(1, 1000):
             if i not in taken:
@@ -192,6 +192,9 @@ class Hal:
 
         else:
             return 1
+
+    def generate_password(self, length:'int'=64):
+        print(utils.new_pass(length))
 
     def check(self):
         """
@@ -236,11 +239,11 @@ class Hal:
             reload = True
 
         if not self.app_dbid:
-            self.app_dbid = self.insert_lmobj(self.app_lmid, "App", "hal")
+            self.app_dbid = self.insert_lmobj(self.app_lmid, "App", "dima")
 
             # Register project
             query = "insert into project.projects (lmobj, dev_host, dev_version, prod_host, prod_version, name, description) values (%s, %s, %s, %s, %s, %s, %s);"
-            params = self.app_dbid, self.host_dbid, self.version, None, None, "Hal", None,
+            params = self.app_dbid, self.host_dbid, self.version, None, None, "dima", None,
             self.db.execute(query, params)
 
             # Register app
@@ -256,4 +259,4 @@ class Hal:
         if reload:
             self.load_database()
 
-hal = Hal()
+dima = Dima()

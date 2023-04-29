@@ -40,9 +40,9 @@ class GUI:
         self.style.theme_use("clam")
 
         for p in ("host", "web"):
-            self.lmids[p] = hal.db.execute(f"select lmid, alias from lmobjs where module=(select id from modules where name='{p.capitalize()}');")
+            self.lmids[p] = dima.db.execute(f"select lmid, alias from lmobjs where module=(select id from modules where name='{p.capitalize()}');")
 
-            acts = hal.db.execute(f"select name, acts from command.objs where module=(select id from modules where name='{p.capitalize()}');")
+            acts = dima.db.execute(f"select name, acts from command.objs where module=(select id from modules where name='{p.capitalize()}');")
 
             self.panel_acts[p] = self.panel_acts[p] = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in acts}
 
@@ -200,8 +200,8 @@ class GUI:
         obj = self.widgets[module + "_obj_str"].get()
         act = self.widgets[module + "_act_str"].get()
 
-        if obj: method = getattr(hal.pools[hal.lmobjs[lmid]], act + '_' + obj)
-        else: method = getattr(hal.pools[hal.lmobjs[lmid]], act)
+        if obj: method = getattr(dima.pools[dima.lmobjs[lmid]], act + '_' + obj)
+        else: method = getattr(dima.pools[dima.lmobjs[lmid]], act)
 
         param_pos, params = utils.get_method_params(method)
         frame = module + "_args_panel_tmp"
@@ -243,7 +243,7 @@ class GUI:
             elif v[0] == "web_state":
                 widgets[p + "_var"] = tk.StringVar(frame)
                 opts = [s[1] for s in sorted(utils.webs.states.items(), key = lambda e: e[0])]
-                current_state = utils.webs.states.get(hal.pools.get(hal.lmobjs.get(lmid)).prod_state)
+                current_state = utils.webs.states.get(dima.pools.get(dima.lmobjs.get(lmid)).prod_state)
                 widgets[p] = ttk.OptionMenu(frame, widgets[p + "_var"], current_state, *opts)
 
             widgets[p].pack(side=tk.LEFT, padx=[0, 8])
@@ -280,12 +280,12 @@ class GUI:
     def set_host_details(self, *args):
         lmid = self.widgets["host_lmid_str"].get()
         if lmid:
-            pool = hal.pools[hal.lmobjs[lmid]]
+            pool = dima.pools[dima.lmobjs[lmid]]
         else:
-            pool = hal.pools[hal.host_dbid]
+            pool = dima.pools[dima.host_dbid]
 
         self.widgets["host_id_str"].set(pool.lmid)
-        self.widgets["host_net_str"].set(hal.lmobjs.get(pool.net_id, ["NaN"])[0])
+        self.widgets["host_net_str"].set(dima.lmobjs.get(pool.net_id, ["NaN"])[0])
         self.widgets["host_mac_str"].set(pool.mac.upper())
         self.widgets["host_ip_str"].set(pool.ip)
         self.widgets["host_env_str"].set(pool.env)
@@ -293,7 +293,7 @@ class GUI:
         self.widgets["host_alias_str"].set(pool.alias if pool.alias else "NaN")
         self.widgets["host_ssh_str"].set(pool.ssh_port if pool.ssh_port != -1 else "NaN")
         self.widgets["host_pg_str"].set(pool.pg_port if pool.pg_port != -1 else "NaN")
-        self.widgets["host_pm_str"].set(hal.lmobjs.get(pool.pm_id, ["NaN"])[0])
+        self.widgets["host_pm_str"].set(dima.lmobjs.get(pool.pm_id, ["NaN"])[0])
 
     def send_host_cmd(self, *args):
         self.send_cmd("host")
@@ -316,7 +316,7 @@ class GUI:
 
     def set_web_details(self, *args):
         lmid = self.widgets["web_lmid_str"].get()
-        pool = hal.pools[hal.lmobjs[lmid]]
+        pool = dima.pools[dima.lmobjs[lmid]]
 
         try: dssl_date = utils.format_date(pool.dev_ssl_due, "%d %b %Y")
         except: dssl_date = "NaN"

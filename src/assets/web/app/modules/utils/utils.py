@@ -5,11 +5,11 @@ class Utils:
     localhost = "127.0.0.1"
     abc = string.ascii_lowercase
 
-    hal_dir = "/home/hal/"
-    logs_dir = hal_dir + "logs/"
-    projects_dir = hal_dir + "projects/"
-    res_dir = hal_dir + "res/"
-    tmp_dir = hal_dir + "tmp/"
+    dima_dir = "/home/dima/"
+    logs_dir = dima_dir + "logs/"
+    projects_dir = dima_dir + "projects/"
+    res_dir = dima_dir + "res/"
+    tmp_dir = dima_dir + "tmp/"
 
     def __init__(self):
         self.src_dir = self.get_src_dir()

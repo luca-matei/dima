@@ -6,13 +6,12 @@ class HostUtils:
     def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):
         self.__doc__ = Host.create_host.__doc__
         # To do: choose a pm and invoke create_host()
-        host_dbid = hal.lmobjs["lm4"]
+        host_dbid = dima.lmobjs["lm4"]
 
-        hal.pools.get(host_dbid).create_host(env, alias, mem, cpus, disk)
+        dima.pools.get(host_dbid).create_host(env, alias, mem, cpus, disk)
 
-    def preseed_host(self, hostname, net_id, ip, ssh_port, host=hal.host_lmid):
+    def preseed_host(self, hostname, net_id, ip, ssh_port, host=dima.host_lmid):
         log(f"Preseeding '{hostname}' ...", console=True)
-        # To do: preseed static ip
         arch = "amd" # "386"
         iso_dir = f"{utils.tmp_dir}debian-{utils.debian_version}/"
         iso_file = f"{utils.res_dir}debian-{utils.debian_version}.iso"
@@ -33,16 +32,16 @@ class HostUtils:
 
         log("Creating preseed file ...")
         # utils.new_pass(64)
-        net = hal.pools.get(net_id)
+        net = dima.pools.get(net_id)
         preseed_config = utils.format_tpl("preseed.tpl", {
             "ip": ip,
             "netmask": net.netmask,
             "gateway": net.gateway,
-            "dns": hal.pools.get(net.dns_id).ip,
+            "dns": dima.pools.get(net.dns_id).ip,
             "hostname": hostname,
             "domain_name": net.domain,
             "root_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),
-            "username": "hal",
+            "username": "dima",
             "user_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),
             "packages": "sudo openssh-server build-essential python3 python3-dev python3-venv python3-pip postgresql libpq-dev openssl nginx supervisor git curl wget gnupg2",
             "ssh_key": utils.read(utils.ssh_dir + hostname + ".pub"),
@@ -100,12 +99,12 @@ class HostUtils:
             2: "Create install script",
             }
 
-        lmid = hal.next_lmid()
+        lmid = dima.next_lmid()
         alias = None
 
         while alias != "":
             alias = input("Preferred hostname (Press Enter to skip): ")
-            if hal.check_alias(alias):
+            if dima.check_alias(alias):
                 break
 
         hostname = alias if alias else lmid
@@ -113,8 +112,8 @@ class HostUtils:
         mode = utils.select_opt(opts)
 
         if mode == 1:
-            ip = utils.nets.get_free_ip(hal.net_dbid)
-            self.preseed_host(hostname, hal.net_dbid, ip)
+            ip = utils.nets.get_free_ip(dima.net_dbid)
+            self.preseed_host(hostname, dima.net_dbid, ip)
 
         elif mode == 2:
             pass
@@ -124,8 +123,8 @@ class HostUtils:
         if utils.isfile(transfer_path):
             cmd("rm -r " + transfer_path)
 
-        hal.pools.get(from_host).retrieve_file(from_path, transfer_path)
-        hal.pools.get(to_host).send_file(transfer_path, to_path)
+        dima.pools.get(from_host).retrieve_file(from_path, transfer_path)
+        dima.pools.get(to_host).send_file(transfer_path, to_path)
 
 
 utils.hosts = HostUtils()

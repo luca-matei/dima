@@ -2,20 +2,20 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 GIT_PARAMS="--git-dir=$SCRIPT_DIR/.git/ --work-tree=$SCRIPT_DIR/"
-HAL_DIR="/home/hal/projects/lm1"
+dima_DIR="/home/dima/projects/lm1"
 
 #echo "git $GIT_PARAMS add $SCRIPT_DIR/."
-sudo -u hal git $GIT_PARAMS add $SCRIPT_DIR/.
+sudo -u dima git $GIT_PARAMS add $SCRIPT_DIR/.
 
 #echo "git $GIT_PARAMS commit -m "
-sudo -u hal git $GIT_PARAMS commit -m "$@"
+sudo -u dima git $GIT_PARAMS commit -m "$@"
 
 #echo "git $GIT_PARAMS push"
-sudo -u hal git $GIT_PARAMS push
+sudo -u dima git $GIT_PARAMS push
 
-sudo -u hal chmod -R g+w /home/hal
+sudo -u dima chmod -R g+w /home/dima
 
-#echo "sudo -u hal git --git-dir=$HAL_DIR/.git/ --work-tree=$HAL_DIR/ pull"
-#sudo -u hal git --git-dir=$HAL_DIR/.git/ --work-tree=$HAL_DIR/ pull
+#echo "sudo -u dima git --git-dir=$dima_DIR/.git/ --work-tree=$dima_DIR/ pull"
+#sudo -u dima git --git-dir=$dima_DIR/.git/ --work-tree=$dima_DIR/ pull
 
-#sudo -u hal $HAL_DIR/make
+#sudo -u dima $dima_DIR/make

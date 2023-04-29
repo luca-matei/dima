@@ -14,13 +14,13 @@ class NetUtils:
         # Get machine's ips
         query = "select ip from host.hosts where net=%s;"
         params = net_id,
-        used_ips = hal.db.execute(query, params)
+        used_ips = dima.db.execute(query, params)
 
         if used_ips:
             used_ips = [ipaddress.ip_address(ip[0]) for ip in used_ips]
 
         query = "select netmask, gateway, lease_start, lease_end from nets where lmobj=%s;"
-        netmask, gateway, lease_start, lease_end = hal.db.execute(query, params)[0]
+        netmask, gateway, lease_start, lease_end = dima.db.execute(query, params)[0]
 
         net = ipaddress.ip_network(gateway + '/' + netmask, strict=False)
         lease_start = ipaddress.ip_address(lease_start)
@@ -30,7 +30,7 @@ class NetUtils:
             if ip >= lease_start and ip <= lease_end and ip not in used_ips:
                 return str(ip)
 
-        log(f"No free ips for net {hal.pools.get(net_id).name}!", level=4, console=True)
+        log(f"No free ips for net {dima.pools.get(net_id).name}!", level=4, console=True)
         return None
 
 utils.nets = NetUtils()

@@ -13,15 +13,15 @@ class Utils:
     debian_version = None
     hostname = os.uname()[1]
 
-    hal_dir = "/home/hal/"
-    logs_dir = hal_dir + "logs/"
-    mnt_dir = hal_dir + "mnt/"
-    projects_dir = hal_dir + "projects/"
-    res_dir = hal_dir + "res/"
-    ssh_dir = hal_dir + "ssh/"
-    ssl_dir = hal_dir + "ssl/"
-    tmp_dir = hal_dir + "tmp/"
-    vms_dir = hal_dir + "vms/"
+    dima_dir = "/home/dima/"
+    logs_dir = dima_dir + "logs/"
+    mnt_dir = dima_dir + "mnt/"
+    projects_dir = dima_dir + "projects/"
+    res_dir = dima_dir + "res/"
+    ssh_dir = dima_dir + "ssh/"
+    ssl_dir = "/etc/nginx/lmssl/"
+    tmp_dir = dima_dir + "tmp/"
+    vms_dir = dima_dir + "vms/"
 
     dbs = None
     nets = None
@@ -118,7 +118,7 @@ class Utils:
         #if host == None:
             #print("utils.write NONE!")
 
-        if host == None or host == hal.host_lmid:
+        if host == None or host == dima.host_lmid:
             final_path = None
             if path.startswith("/etc/"):
                 final_path = path
@@ -133,7 +133,7 @@ class Utils:
         else:
             filename = "export" + (".ast" if is_ast else "")
             write_contents(self.tmp_dir + filename, content, lines, mode)
-            hal.pools.get(hal.lmobjs[host]).send_file(self.tmp_dir + filename, path, owner=owner)
+            dima.pools.get(dima.lmobjs[host]).send_file(self.tmp_dir + filename, path, owner=owner)
 
     def copy(self, src, dest, owner="root", host=None):
         """
@@ -462,7 +462,7 @@ class Utils:
         if call_info: call_info.append(host)
         # To do: display the functions that have called execute, isfile, send_file
 
-        if host and host != hal.host_lmid:
+        if host and host != dima.host_lmid:
             if call_info: logs._log(call_info, command)
             self.write(self.tmp_dir + "script.sh", command)
             command = f"ssh {host} 'bash -s' < {self.tmp_dir}script.sh"

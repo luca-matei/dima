@@ -17,7 +17,7 @@ else:
     print("Making app.py ...")
     utils.join_modules((
         "utils/utils.py",
-        "hal.py",
+        "dima.py",
         "logs.py",
         "utils/dbs.py",
         "db.py",

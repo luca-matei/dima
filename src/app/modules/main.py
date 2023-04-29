@@ -1,7 +1,7 @@
 def main():
     global gui
     cl = sys.argv[1:]
-    hal.start()
+    dima.start()
 
     cli.load_history()
     if cl:

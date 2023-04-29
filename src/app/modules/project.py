@@ -7,10 +7,20 @@ class Project(lmObj):
 
         query = "select dev_host, dev_version, prod_host, prod_version from project.projects where lmobj=%s;"
         params = self.dbid,
-        self.dev_host_id, self.dev_version, self.prod_host_id, self.prod_version = hal.db.execute(query, params)[0]
+        self.dev_host_id, self.dev_version, self.prod_host_id, self.prod_version = dima.db.execute(query, params)[0]
 
-        self.dev_host = hal.lmobjs[self.dev_host_id][0]
-        self.prod_host = hal.lmobjs[self.prod_host_id][0]
+        self.dev_host = dima.lmobjs[self.dev_host_id][0]
+        self.prod_host = dima.lmobjs[self.prod_host_id][0]
+
+        self.check_project()
+
+    def check_project(self):
+        if not utils.isfile(self.repo_dir, host=self.dev_host):
+            if utils.confirm(f"'{self.name}' project repository doesn't exist on '{self.dev_host}'! Clone it from Gitlab?"):
+                dima.pools.get(self.dev_host_id).clone_repo(self.lmid)
+            else:
+                log(f"Project '{self.name}' isn't on a dev machine!", level=4, console=True)
+                return
 
         self.get_token()
 

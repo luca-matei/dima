@@ -20,7 +20,7 @@ server {
     ssl_session_cache shared:SSL:10m;
     ssl_session_tickets off;
 
-    ssl_dhparam %HAL_SSL_DIR%dhparam.pem;
+    ssl_dhparam %DIMA_SSL_DIR%dhparam.pem;
     ssl_ecdh_curve secp521r1:secp384r1;
 
     ssl_stapling %OCSP%;

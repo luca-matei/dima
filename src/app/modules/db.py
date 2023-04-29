@@ -6,19 +6,19 @@ class Db:
         self.db_dir = utils.projects_dir + lmid + "/src/app/db/"
         port_file = utils.projects_dir + "pg_port.txt"
 
-        if self.lmid == hal.app_lmid:
-            self.dev_host = hal.host_lmid
-            self.host_id = hal.host_dbid
+        if self.lmid == dima.app_lmid:
+            self.dev_host = dima.host_lmid
+            self.host_id = dima.host_dbid
         else:
-            self.dev_host = hal.lmobjs.get(hal.db.execute("select dev_host from project.projects where lmobj=%s;", (dbid,))[0][0])[0]
-            self.host_id = hal.lmobjs.get(host)
+            self.dev_host = dima.lmobjs.get(dima.db.execute("select dev_host from project.projects where lmobj=%s;", (dbid,))[0][0])[0]
+            self.host_id = dima.lmobjs.get(host)
 
             if not utils.read(port_file, host=host):
-                hal.pools.get(self.host_id).config_postgres()
+                dima.pools.get(self.host_id).config_postgres()
 
             if not cmd(utils.dbs.query.format(f"select 1 from pg_database where datname='{lmid}';"), catch=True, host=host):
-                hal.pools.get(self.host_id).create_pg_role(self.lmid)
-                hal.pools.get(self.host_id).create_pg_db(self.lmid)
+                dima.pools.get(self.host_id).create_pg_role(self.lmid)
+                dima.pools.get(self.host_id).create_pg_db(self.lmid)
 
         self.port = int(utils.read(port_file, host=host))
         self.connect()
@@ -29,21 +29,21 @@ class Db:
 
     def connect(self):
         try:
-            if self.host and self.host != hal.host_lmid:
-                ip = hal.pools.get(hal.lmobjs.get(self.host)).ip
+            if self.host and self.host != dima.host_lmid:
+                ip = dima.pools.get(dima.lmobjs.get(self.host)).ip
             else:
                 ip = "127.0.0.1"
 
-            if utils.isfile(self.db_dir + "db_pass", host=self.host):
+            if utils.isfile(self.db_dir + "db_pass.txt", host=self.host):
                 # Password file exists
-                password = utils.read(self.db_dir + "db_pass", host=self.host)
+                password = utils.read(self.db_dir + "db_pass.txt", host=self.host)
             else:
                 # Password file has been removed
                 if utils.confirm(f"Couldn't find password for database '{self.lmid}' on host '{self.host}'! Purge database? Manual intervention is required otherwise!"):
-                    hal.pools.get(self.host_id).create_pg_role(self.lmid)
-                    hal.pools.get(self.host_id).create_pg_db(self.lmid)
+                    dima.pools.get(self.host_id).create_pg_role(self.lmid)
+                    dima.pools.get(self.host_id).create_pg_db(self.lmid)
 
-                    password = utils.read(self.db_dir + "db_pass", host=self.host)
+                    password = utils.read(self.db_dir + "db_pass.txt", host=self.host)
                 else:
                     log(f"Required manual intervention for database '{self.lmid}' on '{self.host}' to change password!", level=5, console=True)
 
@@ -204,7 +204,7 @@ class Db:
         log(f"Loaded '{file}'", console=True)
 
     def export(self, file_path=""):
-        if not file_path: file_path = f"/home/hal/tmp/{self.lmid}.db.ast"
+        if not file_path: file_path = f"/home/dima/tmp/{self.lmid}.db.ast"
         log(f"Exported {self.lmid} database to {file_path}", console=True)
 
     def execute(self, query, params=()):

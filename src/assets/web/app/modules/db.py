@@ -5,7 +5,7 @@ class lmDb:
     def connect(self):
         host = "127.0.0.1"
         port = int(utils.read(utils.projects_dir + "pg_port.txt"))
-        password = utils.read(self.db_dir + "db_pass")
+        password = utils.read(self.db_dir + "db_pass.txt")
 
         self.conn = psycopg2.connect(f"dbname={lm.lmid} user={lm.lmid} host={host} password={password} port={port}")
 

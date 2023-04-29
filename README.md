@@ -1,8 +1,8 @@
 
-# Hal
+# dima
 
 Description.  
-Visit [lucamatei.net/hal](https://) for more.
+Visit [lucamatei.eu/projects/dima](https://) for more.
 
 ## TO DO
 - separate host, dev / test / prod machines, guest devices from main network in dhcp
@@ -33,12 +33,12 @@ $ sudo ./init
 ## Usage
 Command line
 ```
-$ hal <action> <object> <parameters>
+$ dima <action> <object> <parameters>
 ```
 
 Interactive
 ```
-$ hal
+$ dima
 > <action> <object> <parameters>
 
 > q    # to quit
@@ -47,10 +47,10 @@ $ hal
 
 GUI  
 ```
-$ hal setup gui
+$ dima setup gui
 ```
-Then visit [hal.example.com](https://) where "example.com" is your home domain.
+Then visit [dima.example.com](https://) where "example.com" is your home domain.
 
 ## Permission system
-Hal belongs to [@lucamatei](https://gitlab.com/lucamatei) gitlab account.  
-Hal uses a REST API token from your gitlab account to save the projects.
+dima belongs to [@lucamatei](https://gitlab.com/lucamatei) gitlab account.  
+dima uses a REST API token from your gitlab account to save the projects.

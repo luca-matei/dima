@@ -18,7 +18,7 @@ class HostServices:
                 cmd(f"sudo pg_ctlcluster {self.pg_version} main {action}", host=self.lmid)
         else:
             if action == "status":
-                out = cmd(f"sudo systemctl status {service}", catch=True)
+                out = cmd(f"sudo systemctl status {service}", catch=True, host=self.lmid)
                 if "active (running)" in out:
                     log(f"{service} is active", console=True)
                     return 1
@@ -34,10 +34,11 @@ class HostServices:
 
     # Nets
     def config_dhcp(self):
+        # To do: check in services
         log(f"Configuring DHCP server on '{self.name}' ...", console=True)
         query = "select a.lmid, b.lmobj, b.dns, b.domain, b.netmask, b.gateway, b.lease_start, b.lease_end from lmobjs a, nets b where a.id = b.lmobj and pm=%s;"
         params = self.dbid,
-        nets = hal.db.execute(query, params)
+        nets = dima.db.execute(query, params)
 
         if not nets:
             log("There are no networks managed by this host!", level=4, console=True)
@@ -48,7 +49,7 @@ class HostServices:
             subnet = str(net_obj).split('/')[0]
             broadcast = str(net_obj[-1])
 
-            if net[1] == hal.net_dbid:
+            if net[1] == dima.net_dbid:
                 # Main config
                 dhcp_config = utils.format_tpl("dhcp/dhcpd.tpl", {
                     "domain": self.domain,
@@ -81,7 +82,7 @@ class HostServices:
                 # Write hosts file
                 query = "select a.lmid, b.mac, b.ip from lmobjs a, host.hosts b where a.id=b.lmobj and a.net=%s;"
                 params = net[1],
-                hosts = hal.db.execute(query, params)
+                hosts = dima.db.execute(query, params)
 
                 hosts_config = ""
                 for host in hosts:
@@ -99,7 +100,7 @@ class HostServices:
             else:
                 query = "select a.lmid, b.mac, b.ip from lmobjs a, host.hosts b where a.id=b.lmobj and a.net=%s;"
                 params = net[1],
-                hosts = hal.db.execute(query, params)
+                hosts = dima.db.execute(query, params)
 
                 hosts_config = '\n'.join([f'<host mac="{host[1]}" ip="{host[2]}"/>' for host in hosts])
 
@@ -111,6 +112,7 @@ class HostServices:
                     })
 
     def config_dns(self):
+        # To do: check in services
         pass
 
     def restart_dhcp(self):
@@ -124,6 +126,7 @@ class HostServices:
 
     # Firewall
     def config_firewall(self):
+        # To do: check in services
         log(f"Configuring Firewall for '{self.name}' ...", console=True)
         self.manage_service("enable", "nftables")
 
@@ -136,8 +139,8 @@ class HostServices:
             })
 
         utils.write("/etc/nftables.conf", nftables, host=self.lmid)
-        self.send_file(hal.tpls_dir + "nftables/bogons-ipv4.tpl", "/etc/nft/bogons-ipv4.nft")
-        self.send_file(hal.tpls_dir + "nftables/black-ipv4.tpl", "/etc/nft/black-ipv4.nft")
+        self.send_file(dima.tpls_dir + "nftables/bogons-ipv4.tpl", "/etc/nft/bogons-ipv4.nft")
+        self.send_file(dima.tpls_dir + "nftables/black-ipv4.tpl", "/etc/nft/black-ipv4.nft")
         self.manage_service("restart", "nftables")
         log(f"Configured Firewall for '{self.name}'", console=True)
 
@@ -158,8 +161,9 @@ class HostServices:
 
     # Nginx
     def config_nginx(self):
+        # To do: check in services
         log(f"Configuring Nginx for '{self.name}' ...")
-        self.send_file(hal.tpls_dir + "web/nginx.tpl", "/etc/nginx/nginx.conf")
+        self.send_file(dima.tpls_dir + "web/nginx.tpl", "/etc/nginx/nginx.conf")
         cmd("sudo rm /etc/nginx/sites-enabled/default", host=self.name)
         self.manage_service("restart", "nginx")
 
@@ -194,15 +198,16 @@ class HostServices:
 
             cmd(role_query, host=self.lmid)
 
-        cmd(utils.dbs.query.format(f"grant {role} to hal;"), host=self.lmid)
+        cmd(utils.dbs.query.format(f"grant {role} to dima;"), host=self.lmid)
+        cmd(utils.dbs.query.format(f"alter role {role} with password '{password}';"))
 
         if role.startswith("lm"):
-            utils.write(utils.projects_dir + role + "/src/app/db/db_pass", password, host=self.lmid)
+            utils.write(utils.projects_dir + role + "/src/app/db/db_pass.txt", password, host=self.lmid)
             return password
 
         else:
-            utils.write(utils.tmp_dir + "db_pass.tmp", password)
-            log(f"Password stored in {utils.tmp_dir}db_pass.tmp!", console=True)
+            utils.write(utils.tmp_dir + "db_pass.txt.tmp", password)
+            log(f"Password stored in {utils.tmp_dir}db_pass.txt.tmp!", console=True)
 
         log(f"Postgres role '{role}' created on '{self.name}'", console=True)
 
@@ -220,6 +225,7 @@ class HostServices:
         log(f"Postgres database '{db}' created on '{self.name}'", console=True)
 
     def config_postgres(self):
+        # To do: check in services
         """
         Manages /etc/postgresql/13/main/postgresql.conf
                 /etc/postgresql/13/main/pg_hba.conf
@@ -227,7 +233,6 @@ class HostServices:
         """
 
         log(f"Configuring PostgreSQL for '{self.name}' ...", console=True)
-        port = self.next_port(service=True)
 
         pg_dir = f"/etc/postgresql/{self.pg_version}/main/"
         config_file = pg_dir + "postgresql.conf"
@@ -238,35 +243,42 @@ class HostServices:
             if not utils.isfile(cfg_file + ".bak", host=self.lmid):
                 utils.copy(cfg_file, cfg_file + ".bak", owner="postgres", host=self.lmid)
 
+        if self.pg_port == 5432 or utils.confirm(f"There's already a Postgres port configured for '{self.name}'! Change it?"):
+            port = self.next_port(service=True)
+            self.pg_port = port
+
+            dima.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
+
+            log(f"Assigned Postgres port {port} to '{self.name}'", console=True)
+
+        else:
+            port = self.pg_port
+
         # Modify port in config file
         config = utils.format_tpl("pg/postgresql.tpl", {
-            "listen": "" if self.dbid == hal.host_dbid else "," + self.ip,
+            "listen": "" if self.dbid == dima.host_dbid else "," + self.ip,
             "port": port
             })
 
         # Allow remote access
         hba = utils.format_tpl("pg/pg_hba.tpl", {
-            "remote_auth": "" if self.dbid == hal.host_dbid else f"host all all {hal.pools.get(hal.host_dbid).ip}/32 scram-sha-256"
+            "remote_auth": "" if self.dbid == dima.host_dbid else f"host all all {dima.pools.get(dima.host_dbid).ip}/32 scram-sha-256"
             })
 
         # Write new config file and restart service
         utils.write(config_file, config, owner="postgres", tpl=True, host=self.lmid)
         utils.write(hba_file, hba, owner="postgres", tpl=True, host=self.lmid)
 
-        # Update ports in Hal projects and in db
+        # Update ports in dima projects and in db
         utils.write(utils.dbs.port_file, str(port), host=self.lmid)
-        hal.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
-        log(f"Assigned Postgres port {port} to '{self.name}'", console=True)
-
-        self.pg_port = port
         self.manage_service("restart", "postgresql")
 
-        query = utils.dbs.query.replace("hal", "postgres")
-        has_db = cmd(query.format(f"select 1 from pg_database where datname='hal';"), catch=True, host=self.lmid)
+        query = utils.dbs.query.replace("dima", "postgres")
+        has_db = cmd(query.format(f"select 1 from pg_database where datname='dima';"), catch=True, host=self.lmid)
 
         if not has_db:
-            cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"), host=self.lmid)
-            cmd(query.format("create database hal owner hal encoding 'utf-8';"), host=self.lmid)
+            cmd(query.format(f"create role dima with login createdb createrole password '{utils.new_pass(64)}';"), host=self.lmid)
+            cmd(query.format("create database dima owner dima encoding 'utf-8';"), host=self.lmid)
 
         log(f"Configured PostgreSQL for '{self.name}'", console=True)
 
@@ -303,22 +315,22 @@ class HostServices:
         self.manage_service("restart", "ssh")
 
     def config_ssh_client(self):
-        if not utils.isfile("/home/hal/.ssh/", host=self.lmid):
-            cmd("mkdir /home/hal/.ssh/", host=self.lmid)
+        if not utils.isfile("/home/dima/.ssh/", host=self.lmid):
+            cmd("mkdir /home/dima/.ssh/", host=self.lmid)
 
         log(f"Configuring SSH Client for '{self.name}' ...", console=True)
         hosts = []
 
-        if self.dbid == hal.host_dbid:
+        if self.dbid == dima.host_dbid:
             query = "select a.lmid, a.alias, b.ip, b.ssh_port from lmobjs a, host.hosts b where a.id = b.lmobj and a.id != %s;"
-            params = hal.host_dbid,
+            params = dima.host_dbid,
 
-            for host in hal.db.execute(query, params):
+            for host in dima.db.execute(query, params):
                 hosts.append(utils.format_tpl("ssh/host.tpl", {
                     "lmid": host[0],
                     "ip": host[2],
                     "port": host[3],
-                    "user": "hal",
+                    "user": "dima",
                     "privkey": utils.ssh_dir + host[0],
                     }))
 
@@ -327,7 +339,7 @@ class HostServices:
                         "lmid": host[1],
                         "ip": host[2],
                         "port": host[3],
-                        "user": "hal",
+                        "user": "dima",
                         "privkey": utils.ssh_dir + host[0],
                     }))
 
@@ -341,40 +353,49 @@ class HostServices:
 
         hosts = '\n\n'.join(hosts)
 
-        utils.write("/home/hal/.ssh/config", hosts, tpl=True, host=self.lmid)
+        utils.write("/home/dima/.ssh/config", hosts, tpl=True, host=self.lmid)
         self.update_hosts_file()
 
         log(f"Configured SSH Client for '{self.name}'", console=True)
 
     def config_ssh_server(self):
+        # To do: check in services
         if self.ssh_port == -1:
             log(f"'{self.name}' is not a SSH Server!", level=4, console=True)
         else:
             log(f"Configuring SSH Server for '{self.name}' ...", console=True)
-            port = self.next_port(service=True)
-            self.port = port
 
-            hal.db.execute("update host.hosts set ssh_port=%s where lmobj=%s;", (port, self.dbid))
+            if self.ssh_port == 22 or utils.confirm(f"There's already a SSH port configured for '{self.name}'! Change it?"):
+                port = self.next_port(service=True)
+                self.ssh_port = port
+
+                dima.db.execute("update host.hosts set ssh_port=%s where lmobj=%s;", (port, self.dbid))
+
+                log(f"Assigned SSH port {port} to '{self.name}'", console=True)
+
+            else:
+                port = self.ssh_port
 
             config = utils.format_tpl("ssh/server_config.tpl", {
                 "port": port,
                 })
 
             utils.write("/etc/ssh/sshd_config", config, tpl=True, host=self.lmid)
-            self.config_firewall()
+            #self.config_firewall()
             self.restart_ssh()
-            hal.pools.get(hal.host_dbid).config_ssh_client()
+            dima.pools.get(dima.host_dbid).config_ssh_client()
 
             log(f"Configured SSH Server for '{self.name}'", console=True)
+
 
     def create_ssh_key(self, for_gitlab:'bool'=False):
         log(f"Generating SSH key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}'. This may take a while ...", console=True)
 
-        host = self.lmid if for_gitlab else hal.host_lmid
+        host = self.lmid if for_gitlab else dima.host_lmid
         privkey = utils.ssh_dir + self.lmid + ("-gitlab" if for_gitlab else '')
 
         if utils.isfile(privkey, host=host):
-            if utils.confirm("SSH key already exists! Overwrite it?"):
+            if utils.confirm(f"SSH key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}' already exists! Overwrite it?"):
                 cmd(f"mv {privkey} {privkey}.old", host=host)
                 cmd(f"mv {privkey}.pub {privkey}.pub.old", host=host)
             else:
@@ -394,7 +415,7 @@ class HostServices:
                 self.config_ssh_client()
                 gitlab.add_ssh_key(self.lmid, utils.read(utils.ssh_dir + self.lmid + "-gitlab.pub", host=self.lmid))
             else:
-                hal.pools.get(hal.host_dbid).config_ssh_client()
+                dima.pools.get(dima.host_dbid).config_ssh_client()
 
             return 1
         else:
@@ -405,7 +426,7 @@ class HostServices:
     def delete_ssh_key(self, for_gitlab:'bool'=False):
         log(f"Removing {'Gitlab ' if for_gitlab else ''}SSH key for host '{self.name}' ...", console=True)
 
-        host = self.lmid if for_gitlab else hal.host_lmid
+        host = self.lmid if for_gitlab else dima.host_lmid
         privkey = utils.ssh_dir + self.lmid + ("-gitlab" if for_gitlab else '')
 
         cmd(f"rm {privkey} {privkey}.pub", host=host)
@@ -470,7 +491,7 @@ class Host(lmObj, HostServices):
         query = "select mac, net, ip, client, env, ssh_port, pg_port, pm from host.hosts where lmobj=%s;"
         params = dbid,
 
-        self.mac, self.net_id, self.ip, self.client_id, self.env_id, self.ssh_port, self.pg_port, self.pm_id = hal.db.execute(query, params)[0]
+        self.mac, self.net_id, self.ip, self.client_id, self.env_id, self.ssh_port, self.pg_port, self.pm_id = dima.db.execute(query, params)[0]
 
         self.env = utils.hosts.envs.get(self.env_id)
         self.mnt_dir = utils.mnt_dir + self.name + "/"
@@ -480,12 +501,12 @@ class Host(lmObj, HostServices):
     def next_port(self, service=False):
         if service:
             min, max = 4096, 8192
-            used = [self.ssh_port, self.pg_port]
+            used = [self.ssh_port, self.pg_port, 5432, 8080, 4343, 5353]
 
         else:
             min, max = 16384, 32768
             used = []
-            for ports in hal.db.execute("select a.dev_port, a.prod_port, b.port from web.webs a, project.apps b;"):
+            for ports in dima.db.execute("select a.dev_port, a.prod_port, b.port from web.webs a, project.apps b;"):
                 used.extend(ports)
 
         port = random.randint(min, max)
@@ -508,11 +529,11 @@ class Host(lmObj, HostServices):
             'initialize_with_readme': True,
             }):
 
-            dbid = hal.insert_lmobj(lmid, module, alias)
+            dbid = dima.insert_lmobj(lmid, module, alias)
 
             query = f"insert into project.projects (lmobj, dev_host, dev_version, prod_host, prod_version, name, description) values (%s, %s, %s, %s, %s, %s, %s);"
             params = dbid, self.dbid, 0.1, self.dbid, 0.1, name, description,
-            hal.db.execute(query, params)
+            dima.db.execute(query, params)
 
             self.clone_repo(lmid)
             return dbid
@@ -529,11 +550,11 @@ class Host(lmObj, HostServices):
 
         # To do: validate parameters
 
-        #if hal.domains.get(domain):
+        #if dima.domains.get(domain):
             #log("Domain already exists!", level=4, console=True)
             #return 0
 
-        lmid = hal.next_lmid()
+        lmid = dima.next_lmid()
         dbid = self.create_project(lmid, "Web", alias, name, description)
 
         if dbid:
@@ -542,11 +563,11 @@ class Host(lmObj, HostServices):
             theme_ids = [x for x in [utils.projects.themes.get(t, 0) for t in themes] if x]
 
             query = "insert into web.webs (lmobj, domain, dev_port, prod_port, dev_ssl_due, prod_ssl_due, prod_state, modules, langs, themes, default_lang, default_theme, has_animations) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
-            params = hal.lmobjs[lmid], domain, self.next_port(), self.next_port(), None, None, 0, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], has_animations,
+            params = dima.lmobjs[lmid], domain, self.next_port(), self.next_port(), None, None, 0, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], has_animations,
 
-            if hal.db.execute(query, params)[0][0]:
+            if dima.db.execute(query, params)[0][0]:
                 log(f"{name if name else (alias if alias else lmid)} web app created!", console=True)
-                hal.create_pool(dbid)
+                dima.create_pool(dbid)
                 self.update_hosts_file()
                 return 1
 
@@ -555,18 +576,18 @@ class Host(lmObj, HostServices):
     def generate_dh(self):
         if utils.isfile(utils.ssl_dir + "dhparam.pem", host=self.lmid):
             if utils.confirm("DH parameters are already in place! Purge them?"):
-                cmd(f"rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
+                cmd(f"sudo rm {utils.ssl_dir}dhparam.pem", host=self.lmid)
             else:
                 return
 
         log(f"Generating DH params for '{self.name}'. This may take a while ...", console=True)
-        cmd(f"openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096", host=self.lmid)
+        cmd(f"sudo openssl dhparam -out {utils.ssl_dir}dhparam.pem -5 4096", host=self.lmid)
         log(f"Generated DH params for '{self.name}'", console=True)
 
     # Hosts
     def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):
-        log("Creating new VM ...", console=True)
-        lmid = hal.next_lmid()
+        lmid = dima.next_lmid()
+        log(f"Creating new '{lmid}' VM ...", console=True)
 
         ip = utils.nets.get_free_ip(self.net_id)
         ssh.create_ssh_key(lmid)
@@ -587,16 +608,16 @@ class Host(lmObj, HostServices):
         if utils.isfile(f"/etc/libvirt/qemu/{lmid}.xml", host=self.lmid):
             mac = re.compile("<mac address='(.*?)'/>").search(utils.read(f"/etc/libvirt/qemu/{lmid}.xml", host=self.lmid)).group(1)
 
-            dbid = hal.insert_lmobj(lmid, 'Host', alias)
+            dbid = dima.insert_lmobj(lmid, 'Host', alias)
 
             query = "insert into host.hosts (lmobj, mac, net, ip, client, env, ssh_port, pg_port, pm) values (%s, %s, %s, %s, %s, %s, %s, %s, %s);"
             params = dbid, mac, self.net_id, ip, None, utils.hosts.envs.get(env), ssh_port, self.next_port(service=True), self.dbid,
 
-            hal.db.execute(query, params)
-            hal.pools.get(hal.host_dbid).config_ssh_client()
+            dima.db.execute(query, params)
+            dima.pools.get(dima.host_dbid).config_ssh_client()
 
             log(f"'{lmid}' VM created on '{self.name}'", console=True)
-            hal.create_pool(dbid)
+            dima.create_pool(dbid)
 
         else:
             log(f"Couldn't create '{lmid}' VM on '{self.name}'!", level=4, console=True)
@@ -608,7 +629,7 @@ class Host(lmObj, HostServices):
         return False
 
     def mount(self):
-        if self.dbid == hal.host_dbid:
+        if self.dbid == dima.host_dbid:
             log("You can't mount the host!", level=4, console=True)
         else:
             if not utils.isfile(self.mnt_dir):
@@ -616,13 +637,13 @@ class Host(lmObj, HostServices):
                 cmd("mkdir " + self.mnt_dir)
 
             if not self.is_mounted():
-                cmd(f"sshfs -p {self.ssh_port} -o allow_other,identityfile={utils.ssh_dir}{self.lmid} hal@{self.ip}:/home/hal {self.mnt_dir}")
+                cmd(f"sshfs -p {self.ssh_port} -o allow_other,identityfile={utils.ssh_dir}{self.lmid} dima@{self.ip}:/home/dima {self.mnt_dir}")
                 log(f"'{self.name}' mounted at {utils.now()}", console=True)
             else:
                 log(f"'{self.name}' is already mounted!", level=4, console=True)
 
     def unmount(self):
-        if self.dbid == hal.host_dbid:
+        if self.dbid == dima.host_dbid:
             log("You can't unmount the host!", level=4, console=True)
         else:
             if self.is_mounted():
@@ -643,16 +664,16 @@ class Host(lmObj, HostServices):
 
     def config_grub(self):
         log(f"Configuring GRUB for '{self.name}' ...", console=True)
-        self.send_file(hal.tpls_dir + "grub.tpl", "/etc/default/grub")
+        self.send_file(dima.tpls_dir + "grub.tpl", "/etc/default/grub")
         cmd("sudo update-grub", host=self.lmid)
         log(f"Configured GRUB for '{self.name}'", console=True)
 
     def config_motd(self):
-        self.send_file(hal.tpls_dir + "motd.tpl", "/etc/motd")
+        self.send_file(dima.tpls_dir + "motd.tpl", "/etc/motd")
 
     def update_resources(self):
         log(f"Updating resources for '{self.name}' ...", console=True)
-        if self.dbid != hal.host_dbid:
+        if self.dbid != dima.host_dbid:
             cmd(f"rm -r {utils.res_dir}web/", host=self.lmid)
             self.send_file(utils.res_dir + "web/", utils.res_dir + "web/")
         else:
@@ -694,11 +715,11 @@ class Host(lmObj, HostServices):
         host_entry = '\n'.join(hosts)
         hosts = []
 
-        if self.dbid == hal.host_dbid:
+        if self.dbid == dima.host_dbid:
             # Hosts
             query = "select a.ip, b.lmid, b.alias from host.hosts a, lmobjs b where b.id = a.lmobj and b.id != %s;"
             params = self.dbid,
-            db_hosts = [list(h) for h in hal.db.execute(query, params)]
+            db_hosts = [list(h) for h in dima.db.execute(query, params)]
 
             for host in db_hosts:
                 fill_spaces1 = (len("255.255.255.255") - len(host[0]))*' ' + spaces
@@ -716,7 +737,7 @@ class Host(lmObj, HostServices):
 
             # Web apps
             query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj;"
-            db_webs = [list(h) for h in hal.db.execute(query, params)]
+            db_webs = [list(h) for h in dima.db.execute(query, params)]
 
             for web in db_webs:
                 append_web(web)
@@ -724,7 +745,7 @@ class Host(lmObj, HostServices):
             host_entries = ""
             query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj and c.name=%s;"
             #params = utils.webs.assets_domain,
-            #web = list(hal.db.execute(query, params)[0])
+            #web = list(dima.db.execute(query, params)[0])
 
             #append_web(web)
 
@@ -739,12 +760,46 @@ class Host(lmObj, HostServices):
 
         log(f"Generated /etc/hosts for '{self.name}'", console=True)
 
-    def add_user(self):
-        pass
+    def set_permissions(self):
+        # All  -rw-rw-r--
+        cmd("sudo chmod g+w -R /home/dima/", host=self.lmid)
+
+        # /home/dima/.ssh/config  -rw-r--r--
+        cmd("sudo chmod g-w /home/dima/.ssh/config", host=self.lmid)
+
+        # /home/dima/ssh/  -rw-------
+        cmd("sudo chmod 600 /home/dima/ssh/*", host=self.lmid)
+
+        # personal_token.txt  -rw-------
+        if self.dbid == dima.host_dbid: cmd("sudo chmod 600 /home/dima/lm1/src/app/personal_token.txt")
+
+        # project_token.txt, db_pass.txt  -rw-------
+        for prjct_dir in utils.get_dirs("/home/dima/projects/"):
+            if prjct_dir.endswith(("pids/", "venv/")):
+                continue
+
+            if utils.isfile(prjct_dir + "project_token.txt", host=self.lmid):
+                cmd(f"sudo chmod 600 {prjct_dir}project_token.txt", host=self.lmid)
+
+            if utils.isfile(prjct_dir + "src/app/db/db_pass.txt", host=self.lmid):
+                cmd(f"sudo chmod 600 {prjct_dir}src/app/db/db_pass.txt", host=self.lmid)
+
+    def create_user(self, name:'str'):
+        # https://manpages.debian.org/jessie/adduser/adduser.8.en.html
+        if not cmd(f"getent passwd {name}", catch=True):
+            log(f"Creating user and group '{name}' ...", console=True)
+
+            cmd(f"sudo adduser --system --group --gecos '' {name}", catch=True)
+            cmd(f"sudo echo {name}:{utils.new_pass(64)} | sudo chpasswd")
+
+            log(f"Created user and group '{name}'", console=True)
+        else:
+            if not utils.confirm(f"User '{name}' already exists! Use it?"):
+                log(f"Can't create another user '{name}'!", level=4, console=True)
 
     def ping(self):
         log(f"Trying to ping '{self.name}' ...", console=True)
-        if self.dbid == hal.host_dbid:
+        if self.dbid == dima.host_dbid:
             print("It's this machine, dumbass!")
         else:
             response = cmd("echo 1", catch=True, host=self.lmid)
@@ -754,7 +809,7 @@ class Host(lmObj, HostServices):
                 log(f"Couldn't reach host '{self.name}'!", level=3, console=True)
 
     def build_dir_tree(self):
-        log(f"Creating Hal's directory tree on '{self.name}' ...", console=True)
+        log(f"Creating Dima's directory tree on '{self.name}' ...", console=True)
 
         dir_tree = [
             utils.logs_dir,
@@ -766,7 +821,6 @@ class Host(lmObj, HostServices):
                 utils.res_dir + "web/js/",
                 utils.res_dir + "web/fonts/",
                 utils.res_dir + "web/icons/",
-            utils.ssl_dir,
             utils.tmp_dir
             ]
 
@@ -776,7 +830,13 @@ class Host(lmObj, HostServices):
         if self.env == "dev":
             dir_tree.extend([utils.ssh_dir])
 
-        utils.create_dir_tree(dir_tree)
+        utils.create_dir_tree(dir_tree, host=self.lmid)
+
+        # has Nginx as service
+        if True:
+            if not utils.isfile(utils.ssl_dir, host=self.lmid):
+                cmd(f"sudo mkdir {utils.ssl_dir}", host=self.lmid)
+
         cmd(f"sudo chown www-data:www-data {utils.projects_dir}pids", host=self.lmid)
 
     def build_venv(self):
@@ -805,7 +865,7 @@ class Host(lmObj, HostServices):
             "gpg_key_id": self.get_gpg_key_id(self.email),
             })
 
-        utils.write(f"/home/hal/.gitconfig", config, tpl=True, host=self.lmid)
+        utils.write(f"/home/dima/.gitconfig", config, tpl=True, host=self.lmid)
 
         exists = False
         gpg_pubkey = self.get_gpg_pubkey(self.email)
@@ -822,6 +882,7 @@ class Host(lmObj, HostServices):
         log(f"Configured Git for '{self.name}'", console=True)
 
     def setup(self):
+        # To do: Get services from db
         self.config_ssh_server()
         self.config_grub()
         self.config_motd()
@@ -851,7 +912,7 @@ class Host(lmObj, HostServices):
             final_path = dest_path
             dest_path = utils.tmp_dir + 'restricted' + ('/' if is_dir else '')
 
-        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path.rstrip('/')} hal@{self.lmid}:{dest_path.rstrip('/')}", catch=True)
+        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path.rstrip('/')} dima@{self.lmid}:{dest_path.rstrip('/')}", catch=True)
 
         if final_path:
             cmd(f"sudo mv {dest_path} {final_path}", host=self.lmid)
@@ -860,7 +921,10 @@ class Host(lmObj, HostServices):
     def retrieve_file(self, src_path:'str', dest_path:'str'):
         is_dir = src_path.endswith('/')
         # Handle permissions
-        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} hal@{self.lmid}:{src_path.rstrip('/')} {dest_path.rstrip('/')}", catch=True)
+        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} dima@{self.lmid}:{src_path.rstrip('/')} {dest_path.rstrip('/')}", catch=True)
+
+    def rebuild(self):
+        pass
 
     def status(self):
         print("OK")

@@ -4,7 +4,7 @@ class Web(Project):
 
         query = "select a.name, b.dev_port, b.prod_port, b.dev_ssl_due, b.prod_ssl_due, b.prod_state, b.modules, b.langs, b.themes, b.default_lang, b.default_theme, b.has_animations from domains a, web.webs b where b.domain=a.id and b.lmobj=%s;"
         params = dbid,
-        self.prod_domain, self.dev_port, self.prod_port, self.dev_ssl_due, self.prod_ssl_due, self.prod_state, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = hal.db.execute(query, params)[0]
+        self.prod_domain, self.dev_port, self.prod_port, self.dev_ssl_due, self.prod_ssl_due, self.prod_state, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = dima.db.execute(query, params)[0]
 
         self.global_html = {}
         self.css_classes = {}
@@ -31,11 +31,14 @@ class Web(Project):
         self.html_dir = self.app_dir + "html/"
 
         self.db = Db(self.lmid, self.dbid, self.dev_host)
-        self.prod_db = Db(self.lmid, self.dbid, self.prod_host)
+        if self.prod_state == 5:
+            self.prod_db = Db(self.lmid, self.dbid, self.prod_host)
+        else:
+            self.prod_db = None
 
-        self.check()
+        self.check_web()
 
-    def check(self):
+    def check_web(self):
         for env in ("dev", "prod"):
             port = self.env_var(env, "port")
             host_id = self.env_var(env, "host_id")
@@ -51,8 +54,8 @@ class Web(Project):
                 cmd(f"touch {self.log_file}", host=host)
                 cmd(f"sudo chown www-data:www-data {self.log_file}", host=host)
 
-            if not utils.isfile(self.app_dir + "db/db_pass", host=host):
-                self.build(env)
+        if not utils.isfile(self.app_dir + "db/db_pass.txt", host=self.dev_host):
+            self.build("dev")
 
     def build(self, env:'env'="dev", confirm:'bool'=False):
         """
@@ -146,8 +149,8 @@ class Web(Project):
         if env == "dev":
             self.default_html(confirm=True, hello=True)
 
-        hal.pools.get(host_id).restart_supervisor()
-        hal.pools.get(host_id).restart_nginx()
+        dima.pools.get(host_id).restart_supervisor()
+        dima.pools.get(host_id).restart_nginx()
 
         log(f"Set '{domain}' to 'Hello World'", console=True)
 
@@ -169,12 +172,12 @@ class Web(Project):
             host_default_file = utils.src_dir + "assets/web/app/db/default.ast"
             remote_default_file = self.app_dir + "db/default.ast"
 
-            if host_id == hal.host_dbid:
+            if host_id == dima.host_dbid:
                 utils.copy(host_struct_file, remote_struct_file)
                 utils.copy(host_default_file, remote_default_file)
             else:
-                hal.pools.get(host_id).send_file(host_struct_file, remote_struct_file)
-                hal.pools.get(host_id).send_file(host_default_file, remote_default_file)
+                dima.pools.get(host_id).send_file(host_struct_file, remote_struct_file)
+                dima.pools.get(host_id).send_file(host_default_file, remote_default_file)
 
         db.rebuild()
 
@@ -215,12 +218,12 @@ class Web(Project):
             cmd(f"rm -r " + dest_html, host=self.dev_host)
             cmd(f"rm -r " + dest_img, host=self.dev_host)
 
-            if self.dev_host_id == hal.host_dbid:
+            if self.dev_host_id == dima.host_dbid:
                 utils.copy(src_html, dest_html)
                 utils.copy(src_img, dest_img)
             else:
-                hal.pools.get(self.dev_host_id).send_file(src_html, dest_html)
-                hal.pools.get(self.dev_host_id).send_file(src_img, dest_img)
+                dima.pools.get(self.dev_host_id).send_file(src_html, dest_html)
+                dima.pools.get(self.dev_host_id).send_file(src_img, dest_img)
 
             log(f"Set '{self.dev_domain}' to 'Hello World.'", console=True)
 
@@ -228,10 +231,10 @@ class Web(Project):
             # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
             log(f"Setting '{self.dev_domain}' Global HTML to 'Hello World' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
-            if self.dev_host_id == hal.host_dbid:
+            if self.dev_host_id == dima.host_dbid:
                 utils.copy(src_html + "*.yml", dest_html)
             else:
-                hal.pools.get(self.dev_host_id).send_file(dest_html + "*.yml", dest_html)
+                dima.pools.get(self.dev_host_id).send_file(dest_html + "*.yml", dest_html)
 
             log(f"Set '{self.dev_domain}' Global HTML to 'Hello World'", console=True)
 
@@ -489,17 +492,17 @@ class Web(Project):
         domain = self.env_var(env, "domain")
 
         if not utils.isfile(ssl_dir, host=host):
-            cmd("mkdir " + ssl_dir, host=host)
+            cmd("sudo mkdir " + ssl_dir, host=host)
 
         # Production certificates
         #log(f"Generating Let's Encrypt SSL certs for {self.dev_domain}. This may take a while ...", console=True)
 
         log(f"Generating SSL certificates for '{domain}'. This may take a while ...", console=True)
-        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={hal.domain}/CN={domain}"', host=host)
+        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain}"', host=host)
 
         query = f"update web.webs set {env}_ssl_due=%s where lmobj=%s;"
         params = datetime.now() + timedelta(3*365/12-3), self.dbid,
-        hal.db.execute(query, params)
+        dima.db.execute(query, params)
 
         log(f"Generated SSL certificates for '{domain}'", console=True)
 
@@ -525,12 +528,12 @@ class Web(Project):
                 if utils.isfile(p, host=self.prod_host):
                     cmd("sudo rm " + p, host=self.prod_host)
 
-            hal.pools.get(self.prod_host_id).restart_nginx()
-            hal.pools.get(self.prod_host_id).restart_supervisor()
+            dima.pools.get(self.prod_host_id).restart_nginx()
+            dima.pools.get(self.prod_host_id).restart_supervisor()
 
         elif new_state == 5:
             # To do: Backup the database
-            db_pass_path = self.app_dir + "db/db_pass"
+            db_pass_path = self.app_dir + "db/db_pass.txt"
             db_pass = utils.read(db_pass_path, host=self.prod_host)
             self.build("prod", confirm=True)
             utils.write(db_pass_path, db_pass, host=self.prod_host)
@@ -585,12 +588,12 @@ class Web(Project):
 
     def assign_port(self, env:"env"="dev"):
         log(f"Assigning {env} port {port} to '{domain}' ...", console=True)
-        setattr(self, env + "_port", hal.pools.get(host_id).next_port())
+        setattr(self, env + "_port", dima.pools.get(host_id).next_port())
         port = self.env_var(env, "port")
 
         query = f"update web.webs set {env}_port=%s where lmobj=%s;"
         params = port, self.dbid,
-        hal.db.execute(query, params)
+        dima.db.execute(query, params)
 
         log(f"Assigned {env} port {port} to '{domain}'", console=True)
         self.config(env)
@@ -634,7 +637,7 @@ class Web(Project):
             })
         utils.write(supervisor_file, supervisor_config, host=host)
 
-        if restart: hal.pools.get(host_id).restart_supervisor()
+        if restart: dima.pools.get(host_id).restart_supervisor()
         log(f"Configured Supervisor for '{domain}'", console=True)
 
     def config_nginx(self, env:'env'="dev", restart:'bool'=False):
@@ -664,7 +667,7 @@ class Web(Project):
         nginx_config = utils.format_tpl(tpl, {
             "domain": domain,
             "ssl_dir": ssl_dir,
-            "hal_ssl_dir": utils.ssl_dir,
+            "dima_ssl_dir": utils.ssl_dir,
             "ocsp": "off" if env == "đev" else "on",
             "projects_dir": utils.projects_dir,
             "res_dir": utils.res_dir,
@@ -674,7 +677,7 @@ class Web(Project):
             })
         utils.write(nginx_file, nginx_config, host=host)
 
-        if restart: hal.pools.get(host_id).restart_nginx()
+        if restart: dima.pools.get(host_id).restart_nginx()
         log(f"Configured Nginx for '{domain}'", console=True)
 
     def config(self, env:'env'="dev", restart:'bool'=False):

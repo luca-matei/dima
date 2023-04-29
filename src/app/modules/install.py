@@ -20,28 +20,28 @@ class Install:
         print()
 
         if self.opts['is_main']:
-            self.place_hal()
+            self.place_dima()
             cmd("xhost")
-            cmd("xhost +SI:localuser:hal")
+            cmd("xhost +SI:localuser:dima")
             print()
 
         if self.opts['has_db']:
             query = """sudo -u postgres psql -tAc \"{}\""""
-            cmd(query.format(f"create role hal with login createdb createrole password '{utils.new_pass(64)}';"))
-            cmd(query.format("create database hal owner hal encoding 'utf-8';"))
+            cmd(query.format(f"create role dima with login createdb createrole password '{utils.new_pass(64)}';"))
+            cmd(query.format("create database dima owner dima encoding 'utf-8';"))
 
-        cmd(f"sudo -u hal {utils.projects_dir + self.lmid}/make")
-        cmd(f"hal {utils.hostname} config git")
+        cmd(f"sudo -u dima {utils.projects_dir + self.lmid}/make")
+        cmd(f"dima {utils.hostname} config git")
 
         #if self.opts['has_db']:
-            #cmd(f"hal {utils.hostname} config postgres")
+            #cmd(f"dima {utils.hostname} config postgres")
             #print()
 
         if self.opts['has_web']:
-            cmd(f"hal {utils.hostname} config nginx")
+            cmd(f"dima {utils.hostname} config nginx")
             print()
 
-        cmd(f"chmod -R g+w {utils.hal_dir}")
+        cmd(f"chmod -R g+w {utils.dima_dir}")
 
     def abort(self, msg):
         print(f"{msg} Aborting ...")
@@ -52,12 +52,12 @@ class Install:
             print("Installing sudo ...")
             cmd("apt install sudo")
 
-        print("Giving sudo permissions to Hal ...")
+        print("Giving sudo permissions to dima ...")
         cmd_path = "/usr/bin/"
         cmds = "ALL"
         #cmds = "apt",
         #cmds = ', '.join(cmd_path + c for c in cmds)
-        cmd(f"echo 'hal ALL=(ALL) NOPASSWD: {cmds}' > /etc/sudoers.d/hal")
+        cmd(f"echo 'dima ALL=(ALL) NOPASSWD: {cmds}' > /etc/sudoers.d/dima")
 
     def install_deps(self):
         print("Installing dependencies ...")
@@ -93,58 +93,58 @@ class Install:
 
     def create_user(self):
         # https://manpages.debian.org/jessie/adduser/adduser.8.en.html
-        if not cmd("getent passwd hal", catch=True):
-            print("Creating 'hal' user and group ...")
-            cmd("adduser --system --group --gecos '' hal", catch=True)
-            cmd(f"echo hal:{utils.new_pass(64)} | chpasswd")
+        if not cmd("getent passwd dima", catch=True):
+            print("Creating 'dima' user and group ...")
+            cmd("adduser --system --group --gecos '' dima", catch=True)
+            cmd(f"echo dima:{utils.new_pass(64)} | chpasswd")
         else:
-            if not utils.confirm("User 'hal' already exists! Use it?"):
-                self.abort("Can't use user 'hal'!")
+            if not utils.confirm("User 'dima' already exists! Use it?"):
+                self.abort("Can't use user 'dima'!")
 
     def add_to_group(self):
-        users = ', '.join([x.split(':')[-1] for x in cmd("sudo -u hal getent group hal", catch=True).split('\n')])
+        users = ', '.join([x.split(':')[-1] for x in cmd("sudo -u dima getent group dima", catch=True).split('\n')])
         if users:
-            if not utils.confirm(f"Users already in Hal's group: {users} Add another one?"):
+            if not utils.confirm(f"Users already in dima's group: {users} Add another one?"):
                 return
 
         user = ""
         output = "does not exist"
 
         while "does not exist" in output:
-            user = input("Enter an user to access Hal's files: ")
-            output = cmd(f"sudo -u hal usermod -a -G hal {user}", catch=True)
+            user = input("Enter an user to access dima's files: ")
+            output = cmd(f"sudo -u dima usermod -a -G dima {user}", catch=True)
 
-        print(f"{user} has to logout and login again to have access to Hal's files!")
+        print(f"{user} has to logout and login again to have access to dima's files!")
 
     def create_dir_tree(self):
-        print("Creating Hal's directory tree ...")
+        print("Creating dima's directory tree ...")
 
         dir_tree = utils.logs_dir, utils.mnt_dir, utils.projects_dir, utils.projects_dir + "pids/", utils.res_dir, utils.ssh_dir, utils.ssl_dir, utils.tmp_dir, utils.vms_dir,
 
-        if not os.path.isdir(utils.hal_dir):
-            cmd(f"mkdir {utils.hal_dir}")
-            cmd(f"chown hal:hal {utils.hal_dir}")
+        if not os.path.isdir(utils.dima_dir):
+            cmd(f"mkdir {utils.dima_dir}")
+            cmd(f"chown dima:dima {utils.dima_dir}")
 
         for node in dir_tree:
             # It's a directory
             if node.endswith('/') and not os.path.isdir(node):
-                cmd(f"sudo -u hal mkdir {node}")
+                cmd(f"sudo -u dima mkdir {node}")
 
             # It's a file
             elif not os.path.isfile(node):
-                cmd(f"sudo -u hal touch {node}")
+                cmd(f"sudo -u dima touch {node}")
 
         cmd(f"chown www-data:www-data {utils.projects_dir}pids", host=self.lmid)
 
     def create_env(self):
         if os.path.isdir(f"{utils.projects_dir}venv/"):
             if utils.confirm("There's already a Virtual Env! Purge it?"):
-                cmd(f"sudo -u hal rm -r {utils.projects_dir}venv/")
+                cmd(f"sudo -u dima rm -r {utils.projects_dir}venv/")
             else:
                 return
 
         print("Creating Virtual Env ...")
-        cmd(f"sudo -u hal python3 -m venv {utils.projects_dir}venv")
+        cmd(f"sudo -u dima python3 -m venv {utils.projects_dir}venv")
 
         packages = "wheel", "netifaces", "requests",
         if self.opts['has_web']:
@@ -154,24 +154,24 @@ class Install:
             packages += "psycopg2",
 
         for package in packages:
-            cmd(f"sudo -u hal {utils.projects_dir}venv/bin/pip install {package}")
+            cmd(f"sudo -u dima {utils.projects_dir}venv/bin/pip install {package}")
 
     def create_cmd(self):
-        print("Creating 'hal' command ...")
-        hal_bash = utils.format_tpl("hal-bash.tpl", {"lmid": self.lmid})
-        utils.write("/usr/local/bin/hal", hal_bash)
-        cmd("chmod +x /usr/local/bin/hal")
+        print("Creating 'dima' command ...")
+        dima_bash = utils.format_tpl("dima-bash.tpl", {"lmid": self.lmid})
+        utils.write("/usr/local/bin/dima", dima_bash)
+        cmd("chmod +x /usr/local/bin/dima")
 
-    def place_hal(self):
+    def place_dima(self):
         # To do: download lm1-versions, lm2, lm2-versions
         if os.path.isdir(utils.projects_dir + self.lmid):
-            if utils.confirm("Hal already is in the right place! Purge it?"):
-                cmd(f"sudo -u hal rm -r {utils.projects_dir + self.lmid}")
+            if utils.confirm("dima already is in the right place! Purge it?"):
+                cmd(f"sudo -u dima rm -r {utils.projects_dir + self.lmid}")
             else:
                 return
 
-        print("Placing Hal in the right place ...")
-        cmd(f"sudo -u hal git clone https://gitlab.com/lucamatei/{self.lmid}.git {utils.projects_dir + self.lmid}/")
+        print("Placing dima in the right place ...")
+        cmd(f"sudo -u dima git clone https://gitlab.com/lucamatei/{self.lmid}.git {utils.projects_dir + self.lmid}/")
 
 help = """
     Help

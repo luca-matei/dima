@@ -1,7 +1,7 @@
 status
 lm1 save
-lm6 mount 
-lm6 unmount 
+lm6 mount
+lm6 unmount
 lm4 restart
 lm6 restart nginx
 lm6 mount
@@ -49,20 +49,20 @@ lm7 config --env=dev --restart=1
 lm7 update html --env=dev --section= --global_html=1
 lm7 update html --env=prod --section= --global_html=1
 lm7 config --env=prod --restart=1
-lm8 mount 
-lm7 config 
+lm8 mount
+lm7 config
 lm7 save --message="Updated files"
 lm1 save
 lm7 default --env=prod --confirm=1
-lm8 restart nginx 
-lm8 restart supervisor 
-lm8 config nginx 
+lm8 restart nginx
+lm8 restart supervisor
+lm8 config nginx
 lm7 update html --env=prod --section= --global_html=1
-lm8 update resources 
+lm8 update resources
 lm1 save
-lm8 update 
-lm6 update 
-lm6 mount 
+lm8 update
+lm6 update
+lm6 mount
 lm7 update html --env=dev --section= --global_html=1
 lm7 update html --env=dev --section= --global_html=0
 lm7 update css --env=dev
@@ -85,7 +85,7 @@ lm7 update css --env=dev
 lm7 update html --env=dev
 lm7 update html --env=dev --global_html=1
 :(
-lm6 mount 
+lm6 mount
 lm7 update css --env=dev
 lm7 update html --env=dev --global_html=1
 lm7 update html --env=dev
@@ -103,9 +103,9 @@ lm1 save
 lm7 update html --env=dev
 lm7 update html --env=dev --global_html=1
 lm7 config nginx --env=dev --restart=1
-lm6 restart nginx 
-lm7 config nginx 
-lm6 mount 
+lm6 restart nginx
+lm7 config nginx
+lm6 mount
 lm7 update html --env=dev
 lm7 update py --env=dev --restart=1
 lm7 update css --env=dev
@@ -131,8 +131,8 @@ lm7 update html --env=dev --global_html=1
 lm7 save --message="Updated files"
 lm5 update html --env=dev
 lm7 update html --env=dev
-lm4 mount 
-lm8 mount 
+lm4 mount
+lm8 mount
 lm1 save
 lm7 save --message="Updated files"
 lm7 change state --new_state="1" --confirm=1
@@ -149,3 +149,50 @@ lm10 create ssh_key --for_gitlab=0
 lm11 create ssh_key --for_gitlab=0
 lm12 create ssh_key --for_gitlab=0
 lm1 save
+lm5 save
+lm7 save
+lm6 mount
+generate password
+password generate
+dima generate password
+status
+lm4 create host
+create host
+lm6 setup
+lm4 config ssh_clinet
+lm4 config ssh_client
+lm4 setup
+lm6 setup
+lm6 generate dh
+lm8 setup
+lm8 generate dh
+lm6 config nginx 
+lm5 config nginx --env=dev --restart=1
+lm5 generate ssl --env=dev
+lm7 generate ssl --env=dev
+lm6 config nginx 
+lm7 config nginx 
+lm5 config nginx 
+lm6 restart nginx 
+lm5 generate ssl --env=dev
+lm7 generate ssl --env=dev
+lm6 config nginx 
+lm5 restart --env=dev
+lm5 config --env=dev --restart=1
+lm7 config --env=dev --restart=1
+lm4 update hosts_file 
+lm6 mount 
+lm5 config 
+lm7 config 
+lm7 restart --env=dev
+lm5 restart --env=dev
+lm5 update py --env=dev --restart=1
+lm7 update py --env=dev --restart=1
+lm5 update html --env=dev --section= --global_html=1
+lm5 default db --env=dev --confirm=1
+lm7 default db --env=dev --confirm=1
+lm7 update html --env=dev --section= --global_html=1
+lm5 update html --env=dev --section= --global_html=1
+lm1 save
+lm4 config git 
+lm4 create gpg_key --email=

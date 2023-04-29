@@ -42,7 +42,7 @@ class Logs:
         if type(call_info) == list and len(call_info) == 4: host = f" {call_info[3]}:"
         else: host = ""
         filename, lineno, function = call_info[:3]
-        message = message.strip('\n')
+        message = str(message).strip('\n')
 
         # function == "execute" and "Data" in message and
         if level == 2 and len(message) > 256:
