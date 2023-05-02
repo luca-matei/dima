@@ -41,85 +41,98 @@ class HostServices:
             return
 
         log(f"Configuring DHCP server on '{self.name}' ...", console=True)
-        query = "select a.lmid, b.lmobj, b.dns, b.domain, b.netmask, b.gateway, b.lease_start, b.lease_end from lmobjs a, nets b where a.id = b.lmobj and pm=%s;"
+        query = "select a.lmid, b.lmobj, b.dns, c.name, b.netmask, b.gateway, b.lease_start, b.lease_end from lmobjs a, nets b, domains c where a.id = b.lmobj and c.id=b.domain and b.dhcp=%s;"
         params = self.dbid,
         nets = dima.db.execute(query, params)
+        print(nets)
 
         if not nets:
-            log("There are no networks managed by this host!", level=4, console=True)
+            log("There are no networks managed by this DHCP server!", level=4, console=True)
             return
 
-        for net in nets:
-            net_obj = ipaddress.ip_network(net[5] + "/" + net[4], strict=False)
+        net_fields = "lmid", "dbid", "dns_dbid", "domain", "netmask", "gateway", "lease_start", "lease_end",
+        host_fields = "lmid", "mac", "ip",
+
+        for n in nets:
+            net = dict(zip(net_fields, n))
+            net_obj = ipaddress.ip_network(net.get("gateway") + "/" + net.get("netmask"), strict=False)
             subnet = str(net_obj).split('/')[0]
             broadcast = str(net_obj[-1])
 
-            if net[1] == dima.net_dbid:
+            if net.get("dbid") == dima.net_dbid:
                 # Main config
                 dhcp_config = utils.format_tpl("dhcp/dhcpd.tpl", {
-                    "domain": self.domain,
-                    "dns": "8.8.8.8" #self.dns
+                    "domain": net.get("domain"),
+                    "dns": "8.8.8.8" #self.dns.ip
                     })
-                utils.write('/etc/dhcp/dhcpd.conf', dhcp_config, host=self.lmid)
 
                 # default file
-                iface = [x for x in cmd("ls /sys/class/net", catch=True, host=self.lmid).split(' ') if x.startswith(("eth", "eno", "enp"))][0]
                 init_config = utils.format_tpl("dhcp/default.tpl", {
-                    "interfaces": iface,
+                    "interfaces": self.get_iface(),
                     })
-                utils.write("/etc/default/isc-dhcp-server", init_config, host=self.lmid)
 
                 # Create subnets and hosts directory
                 if not utils.isfile("/etc/dhcp/dhcp.d/", host=self.lmid):
                     cmd("sudo mkdir /etc/dhcp/dhcp.d/", host=self.lmid)
 
                 # Write subnets file
-                subnet_config = utils.format_tpl("dhcp/subnet.tpl", {
+                subnets_config = utils.format_tpl("dhcp/subnet.tpl", {
                     "subnet": subnet,
-                    "netmask": net[4],
-                    "gateway": net[5],
+                    "netmask": net.get("netmask"),
+                    "gateway": net.get("gateway"),
                     "broadcast": broadcast,
-                    "lease_start": net[6],
-                    "lease_end": net[7]
+                    "lease_start": net.get("lease_start"),
+                    "lease_end": net.get("lease_end")
                     })
-                utils.write("/etc/dhcp/dhcp.d/subnets.conf", subnets_config, host=self.lmid)
 
                 # Write hosts file
-                query = "select a.lmid, b.mac, b.ip from lmobjs a, host.hosts b where a.id=b.lmobj and a.net=%s;"
-                params = net[1],
+                query = "select a.lmid, b.mac, b.ip from lmobjs a, host.hosts b where a.id=b.lmobj and b.net=%s;"
+                params = net.get("dbid"),
                 hosts = dima.db.execute(query, params)
 
                 hosts_config = ""
-                for host in hosts:
+                for h in hosts:
+                    host = dict(zip(host_fields, h))
                     host_config = utils.format_tpl("dhcp/host.tpl", {
-                        "lmid": host[0],
-                        "mac": host[1],
-                        "ip": host[2]
+                        "lmid": host.get("lmid"),
+                        "mac": host.get("mac"),
+                        "ip": host.get("ip")
                         })
 
                     hosts_config += host_config + '\n\n'
+
+                utils.write('/etc/dhcp/dhcpd.conf', dhcp_config, host=self.lmid)
+                utils.write("/etc/default/isc-dhcp-server", init_config, host=self.lmid)
+                utils.write("/etc/dhcp/dhcp.d/subnets.conf", subnets_config, host=self.lmid)
                 utils.write('/etc/dhcp/dhcp.d/hosts.conf', hosts_config, host=self.lmid)
 
                 self.restart_dhcp()
 
             else:
                 query = "select a.lmid, b.mac, b.ip from lmobjs a, host.hosts b where a.id=b.lmobj and a.net=%s;"
-                params = net[1],
+                params = net.get("dbid"),
                 hosts = dima.db.execute(query, params)
 
-                hosts_config = '\n'.join([f'<host mac="{host[1]}" ip="{host[2]}"/>' for host in hosts])
+                hosts_config = '\n'.join(['<host mac="{}" ip="{}"/>'.format(host.get('mac'), host.get('ip')) for host in hosts])
 
                 net_xml = utils.format_tpl("dhcp/net.tpl", {
-                    "lmid": net[0],
-                    "netmask": net[4],
-                    "gateway": net[5],
+                    "lmid": net.get("lmid"),
+                    "netmask": net.get("netmask"),
+                    "gateway": net.get("gateway"),
                     "hosts": hosts_config
                     })
 
-    def config_dns(self):
-        if "dns" not in self.services:
-            log(f"Host '{self.name}' isn't a DNS server!", level=4, console=True)
-            return
+    def enable_dhcp(self):
+        self.manage_service("enable", "isc-dhcp-server")
+
+    def disable_dhcp(self):
+        self.manage_service("disable", "isc-dhcp-server")
+
+    def start_dhcp(self):
+        self.manage_service("start", "isc-dhcp-server")
+
+    def stop_dhcp(self):
+        self.manage_service("stop", "isc-dhcp-server")
 
     def restart_dhcp(self):
         self.manage_service("restart", "isc-dhcp-server")
@@ -128,7 +141,38 @@ class HostServices:
         self.manage_service("status", "isc-dhcp-server")
 
     def get_iface(self):
-        return "ens3"
+        return [x for x in cmd("ls /sys/class/net", catch=True, host=self.lmid).split('\n') if x.startswith(("eth", "eno", "enp"))][0]
+        return "eth0"
+
+    def config_dns(self):
+        # https://wiki.debian.org/Bind9#Introduction
+
+        if "dns" not in self.services:
+            log(f"Host '{self.name}' isn't a DNS server!", level=4, console=True)
+            return
+
+        # Generate RDNC Key
+        # dnssec-keygen -a HMAC-MD5 -b 512 -n dima ns1-lucamatei-net_rdnc-key
+        # Copy the key to /etc/bind/ns1-lucamatei-net_rdnc-key
+        # Remove generated key files
+
+        # Bind config
+        # nano /etc/bind/named.conf
+        """
+        acl internals { 127.0.0.0/8; 192.168.0.0/24; };
+        include "/etc/bind/named.conf.options";
+        include "/etc/bind/ns1-lucamatei-net_rdnc-key";
+
+        controls {
+                inet 127.0.0.1 port 953 allow { 127.0.0.1; };
+        };
+        """
+
+        # nano /etc/bind/named.conf.options
+        """
+        directory "/var/cache/bind"
+
+        """
 
     # Firewall
     def config_firewall(self):
@@ -866,7 +910,7 @@ class Host(lmObj, HostServices):
             packages += "isc-dhcp-server",
 
         if "dns" in self.services:
-            packages += "bind9",
+            packages += "bind9", "bind9utils"
 
         if "firewall" in self.services:
             pass
@@ -993,21 +1037,29 @@ class Host(lmObj, HostServices):
         log(f"Configured sudo for user {user} on host '{self.lmid}'", console=True)
 
     def setup(self):
-        if not utils.isfile(utils.tmp_dir, host=self.lmid):
-            cmd("mkdir " + utils.tmp_dir, host=self.lmid)
+        self.install_dependencies()
+        self.build_dir_tree()
 
         self.config_ssh_server()
         self.config_grub()
         self.config_motd()
         self.config_sysctl()
 
-        self.build_dir_tree()
         self.build_venv()
         self.update_resources()
 
-        self.generate_dh()
-        self.config_nginx()
-        self.config_postgres()
+        if "web" in self.services:
+            self.generate_dh()
+            self.config_nginx()
+
+        if "web" in self.services or "db" in self.services:
+            self.config_postgres()
+
+        if "dhcp" in self.services:
+            self.config_dhcp()
+
+        if "dns" in self.services:
+            self.config_dns()
 
         if self.env == "dev":
             self.config_git()

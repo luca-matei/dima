@@ -40,10 +40,69 @@ notebook:
                     value: ''
 
     frame:
-        id: "apps_page"
-        title: "Apps"
+        id: "nets_page"
+        title: "Networks"
         fill: "both"
         expand: True
+
+        frame:
+            id: "net_ctrl_panel"
+            fill: "x"
+            padx: 16
+            pady: 12
+
+            label:
+                text: "Command"
+                fill: "x"
+                anchor: "NW"
+
+            frame:
+                pady: 4
+                fill: "x"
+
+                dropdown:
+                    id: "net_lmid_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "net_lmid_str"
+                        value: ''
+                        trace: "set_net_details"
+
+                dropdown:
+                    id: "net_obj_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "net_obj_str"
+                        value: ''
+                        trace: "set_net_acts"
+
+                dropdown:
+                    id: "net_act_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "net_act_str"
+                        value: ''
+                        trace: "set_net_args"
+
+                button:
+                    text: "Process"
+                    command: "send_net_cmd"
+                    padx: 16
+                    side: "left"
+
+            frame:
+                id: "net_args_panel"
+                pady: 4
+                fill: "x"
+                expand: True
+
+                frame:
+                    id: "net_args_panel_tmp"
+                    fill: "x"
+                    expand: True
 
     frame:
         id: "hosts_page"
@@ -512,6 +571,71 @@ notebook:
 
                 frame:
                     id: "web_args_panel_tmp"
+                    fill: "x"
+                    expand: True
+
+    frame:
+        id: "apps_page"
+        title: "Apps"
+        fill: "both"
+        expand: True
+
+        frame:
+            id: "app_ctrl_panel"
+            fill: "x"
+            padx: 16
+            pady: 12
+
+            label:
+                text: "Command"
+                fill: "x"
+                anchor: "NW"
+
+            frame:
+                pady: 4
+                fill: "x"
+
+                dropdown:
+                    id: "app_lmid_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "app_lmid_str"
+                        value: ''
+                        trace: "set_app_details"
+
+                dropdown:
+                    id: "app_obj_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "app_obj_str"
+                        value: ''
+                        trace: "set_app_acts"
+
+                dropdown:
+                    id: "app_act_menu"
+                    side: "left"
+
+                    text_var:
+                        id: "app_act_str"
+                        value: ''
+                        trace: "set_app_args"
+
+                button:
+                    text: "Process"
+                    command: "send_app_cmd"
+                    padx: 16
+                    side: "left"
+
+            frame:
+                id: "app_args_panel"
+                pady: 4
+                fill: "x"
+                expand: True
+
+                frame:
+                    id: "app_args_panel_tmp"
                     fill: "x"
                     expand: True
 

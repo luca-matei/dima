@@ -215,3 +215,16 @@ lm7 restart --env=prod
 lm8 restart nginx 
 lm8 restart supervisor 
 lm1 save
+lm5 save --message="Updated files"
+lm7 save --message="Updated files"
+lm10 setup 
+lm10 install dependencies 
+lm5 change state --new_state=5 --confirm=1
+lm11 create ssh_key 
+lm4 config ssh_client 
+lm11 setup 
+lm14 create ssh_key 
+lm14 ping 
+lm14 setup 
+lm14 config dhcp 
+lm1 save 

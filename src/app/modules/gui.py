@@ -39,7 +39,7 @@ class GUI:
         # Style
         self.style.theme_use("clam")
 
-        for p in ("host", "web"):
+        for p in ("net", "host", "web", "app"):
             self.lmids[p] = dima.db.execute(f"select lmid, alias from lmobjs where module=(select id from modules where name='{p.capitalize()}');")
 
             acts = dima.db.execute(f"select name, acts from command.objs where module=(select id from modules where name='{p.capitalize()}');")
@@ -47,7 +47,7 @@ class GUI:
             self.panel_acts[p] = self.panel_acts[p] = {x[0] if x[0] != None else '': [cli.acts[y] for y in x[1]] for x in acts}
 
         self.build_interface()
-        for m in ("host", "web"):
+        for m in ("net", "host", "web", "app"):
             self.set_dropdown(f"{m}_lmid_menu")
             self.set_dropdown(f"{m}_obj_menu")
 
@@ -278,6 +278,29 @@ class GUI:
 
         print(command)
 
+
+    ## NETS
+
+    def set_net_details(self, *args):
+        pass
+
+    def send_net_cmd(self, *args):
+        self.send_cmd("net")
+
+    # Dropdowns
+    def set_net_lmids(self, *args):
+        self.set_dropdown("net_lmid_menu")
+
+    def set_net_objs(self, *args):
+        self.set_dropdown("net_obj_menu")
+
+    def set_net_acts(self, *args):
+        self.set_dropdown("net_act_menu")
+
+    def set_net_args(self, *args):
+        self.set_args("net")
+
+
     ## HOSTS
 
     def set_host_details(self, *args):
@@ -354,6 +377,29 @@ class GUI:
 
     def set_web_args(self, *args):
         self.set_args("web")
+
+
+    ## APPS
+
+    def set_app_details(self, *args):
+        pass
+
+    def send_app_cmd(self, *args):
+        self.send_cmd("app")
+
+    # Dropdowns
+    def set_app_lmids(self, *args):
+        self.set_dropdown("app_lmid_menu")
+
+    def set_app_objs(self, *args):
+        self.set_dropdown("app_obj_menu")
+
+    def set_app_acts(self, *args):
+        self.set_dropdown("app_act_menu")
+
+    def set_app_args(self, *args):
+        self.set_args("app")
+
 
     ## HISTORY
 

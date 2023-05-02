@@ -34,9 +34,11 @@
         ("lm7", "Web", "portfolio"),
         ("lm8", "Host", "cepheus"),
         #("lm9", "Host", "test"),
-        ("lm10", "Host", ""),
-        ("lm11", "Host", "DNS1"),
-        ("lm12", "Host", "DNS2"),
+        ("lm10", "Host", "helios"),
+        ("lm11", "Host", "ns1"),
+        ("lm12", "Host", "ns2"),
+        ("lm13", "Net", ""),
+        ("lm14", "Host", "rasp"),
         )),
 
     ("domains", (
@@ -90,8 +92,9 @@
         ("lm8", "52:54:00:d2:01:44", "lm3", "192.168.1.5", "", "prod", 4116, 5639, "lm4", ("ssh_server", "web", "db", "firewall",)),
         #("lm9", "52:54:00:1d:9c:a7", "lm3", "192.168.1.6", "", "dev", 7686, 4338, "lm4", ()),
         ("lm10", "00:16:3e:ef:d3:66", "", "89.44.137.121", "", "prod", 7958, 4123, "", ("ssh_server", "web", "db", "firewall",)),
-        ("lm11", "00:16:3e:ad:04:8a", "", "89.44.137.137", "", "prod", 22, 5432, "", ("ssh_server", "web", "db", "firewall", "dns")),
-        ("lm12", "00:16:3e:94:29:d3", "", "89.44.137.138", "", "prod", 22, 5432, "", ("ssh_server", "web", "db", "firewall", "dns")),
+        ("lm11", "00:16:3e:ad:04:8a", "", "89.44.137.137", "", "prod", 4986, 4911, "", ("ssh_server", "firewall", "dns")),
+        ("lm12", "00:16:3e:94:29:d3", "", "89.44.137.138", "", "prod", 22, 5432, "", ("ssh_server", "firewall", "dns")),
+        ("lm14", "b8:27:eb:71:d5:09", "lm3", "192.168.1.3", "", "prod", 4387, 5432, "", ("ssh_server", "firewall", "dns", "dhcp")),
         )),
     )),
 
@@ -99,7 +102,8 @@
     ("nets", (
         ("lmobj", "dhcp", "dns", "domain", "netmask", "gateway", "lease_start", "lease_end"),
         ("id:lmid:lmobjs", "id:lmid:lmobjs", "id:lmid:lmobjs", "id:name:domains", "", "", "", ""),
-        ("lm3", "lm4", "lm4", "home.lucamatei.net", "255.255.255.0", "192.168.1.2", "192.168.1.4", "192.168.1.254"),
+        ("lm3", "lm14", "lm14", "home.lucamatei.net", "255.255.255.0", "192.168.1.2", "192.168.1.4", "192.168.1.254"),
+        ("lm13", "", "lm11", "nebula.lucamatei.net", "255.255.255.0", "89.44.137.1", "89.44.137.121", "89.44.137.138"),
         )),
     )),
 
@@ -153,18 +157,19 @@
         ("utils.nets", "ip", ("next",)),
         ("utils.nets", "dhcp", ("set", "config", "restart", "status")),
 
-        ("Net", "", ("check",)),
         ("Net", "alias", ("set", "delete")),
         ("Net", "dhcp", ("set",)),
         ("Net", "dns", ("set",)),
+        ("Net", "net", ("check",)),
 
         ("utils.hosts", "host", ("create", "register", "preseed")),
 
-        ("Host", "", ("check", "mount", "unmount", "update", "reboot", "status", "ping", "setup",)),
+        ("Host", "", ("mount", "unmount", "update", "reboot", "status", "ping", "setup",)),
         ("Host", "alias", ("set", "delete")),
         ("Host", "app", ("create",)),
         ("Host", "dependencies", ("install",)),
         ("Host", "dh", ("generate",)),
+        ("Host", "dhcp", ("config", "enable", "disable", "start", "stop", "restart", "status")),
         ("Host", "dir_tree", ("build",)),
         ("Host", "file", ("has", "send", "retrieve",)),
         ("Host", "firewall", ("config", "enable", "disable", "start", "stop", "restart")),
@@ -173,7 +178,7 @@
         ("Host", "gpg_pubkey", ("get",)),
         ("Host", "gpg_key_id", ("get",)),
         ("Host", "grub", ("config",)),
-        ("Host", "host", ("create",)),
+        ("Host", "host", ("check", "create",)),
         ("Host", "hosts_file", ("update",)),
         ("Host", "motd", ("config",)),
         ("Host", "nginx", ("config", "reload", "start", "stop", "restart")),
@@ -192,10 +197,11 @@
         ("Host", "venv", ("build",)),
         ("Host", "web", ("create",)),
 
-        ("App", "", ("check", "start", "stop", "restart", "save")),
+        ("App", "", ("save",)),
         ("App", "alias", ("set", "delete")),
+        ("App", "app", ("check",)),
 
-        ("Web", "", ("check", "start", "stop", "restart", "save", "build", "config", "default")),
+        ("Web", "", ("start", "stop", "restart", "save", "build", "config", "default")),
         ("Web", "alias", ("set", "delete")),
         ("Web", "css", ("update",)),
         ("Web", "db", ("default",)),
@@ -207,6 +213,7 @@
         ("Web", "state", ("change",)),
         ("Web", "supervisor", ("config",)),
         ("Web", "uwsgi", ("config",)),
+        ("Web", "web", ("check",)),
 
         ("Soft", "", ("check", "save",)),
         ("Soft", "alias", ("set", "delete")),
@@ -219,7 +226,7 @@
         ("id:lmid:lmobjs", "id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", ""),
         ("lm1", "lm4", 0.1, "lm4", 0.1, "dima", ""),
         #("lm2", "lm4", 0.1, "lm4", 0.1, "dima Portal", ""),
-        ("lm5", "lm6", 0.1, "lm8", 0.1, "Hello World", ""),
+        ("lm5", "lm6", 0.1, "lm10", 0.1, "Hello World", ""),
         ("lm7", "lm6", 0.1, "lm8", 0.1, "Portfolio", ""),
         )),
 
