@@ -228,3 +228,5 @@ lm14 ping
 lm14 setup 
 lm14 config dhcp 
 lm1 save 
+lm14 config dns 
+lm14 restart dns 

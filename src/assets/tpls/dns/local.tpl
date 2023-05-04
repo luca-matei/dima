@@ -1,0 +1,5 @@
+zone "%DOMAIN%" {
+    type master;
+    file "/etc/bind/db.%DOMAIN%";
+    notify no;
+};

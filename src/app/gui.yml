@@ -41,7 +41,7 @@ notebook:
 
     frame:
         id: "nets_page"
-        title: "Networks"
+        title: "Nets"
         fill: "both"
         expand: True
 

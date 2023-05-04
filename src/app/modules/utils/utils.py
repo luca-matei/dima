@@ -1,4 +1,4 @@
-import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress, crypt
+import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress, crypt, time
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox as tk_messagebox
@@ -97,7 +97,7 @@ class Utils:
         else:
             return contents
 
-    def write(self, path, content, lines=False, mode='w', owner="root", tpl=False, host=None):
+    def write(self, path, content, lines=False, mode='w', owner="root:root", tpl=False, host=None):
         if tpl:
             if lines:
                 content = self.tpl_header.split('\n') + ['\n\n'] + content
@@ -128,14 +128,14 @@ class Utils:
 
             if final_path:
                 cmd(f"sudo mv {path} {final_path}")
-                cmd(f"sudo chown {owner}:{owner} {final_path}")
+                cmd(f"sudo chown {owner} {final_path}")
 
         else:
             filename = "export" + (".ast" if is_ast else "")
             write_contents(self.tmp_dir + filename, content, lines, mode)
             dima.pools.get(dima.lmobjs[host]).send_file(self.tmp_dir + filename, path, owner=owner)
 
-    def copy(self, src, dest, owner="root", host=None):
+    def copy(self, src, dest, owner="root:root", host=None):
         """
             Copies files inside a host
         """
@@ -143,7 +143,7 @@ class Utils:
         r = " -R" if src.endswith('/') else ""
         if dest.startswith("/etc/"):
             cmd(f"sudo cp{r} {src} {dest}", host=host)
-            cmd(f"sudo chown{r} {owner}:{owner} {dest}", host=host)
+            cmd(f"sudo chown{r} {owner} {dest}", host=host)
 
         else:
             cmd(f"cp{r} {src} {dest}", host=host)

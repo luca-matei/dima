@@ -34,7 +34,14 @@ class HostServices:
                 cmd(f"sudo systemctl {action} {service} ", host=self.lmid)
                 log(f"{msg[:-3]}ed {service} for '{self.name}'", console=True)
 
-    # Nets
+    # NET
+
+    def get_iface(self):
+        return [x for x in cmd("ls /sys/class/net", catch=True, host=self.lmid).split('\n') if x.startswith(("eth", "eno", "enp"))][0]
+        return "eth0"
+
+    # DHCP
+
     def config_dhcp(self):
         if "dhcp" not in self.services:
             log(f"Host '{self.name}' isn't a DHCP server!", level=4, console=True)
@@ -63,7 +70,7 @@ class HostServices:
                 # Main config
                 dhcp_config = utils.format_tpl("dhcp/dhcpd.tpl", {
                     "domain": net.get("domain"),
-                    "dns": "8.8.8.8" #self.dns.ip
+                    "dns": f"{dima.pools.get(net.get('dns_dbid')).ip}, 8.8.8.8"
                     })
 
                 # default file
@@ -140,9 +147,7 @@ class HostServices:
     def status_dhcp(self):
         self.manage_service("status", "isc-dhcp-server")
 
-    def get_iface(self):
-        return [x for x in cmd("ls /sys/class/net", catch=True, host=self.lmid).split('\n') if x.startswith(("eth", "eno", "enp"))][0]
-        return "eth0"
+    # DNS
 
     def config_dns(self):
         # https://wiki.debian.org/Bind9#Introduction
@@ -151,28 +156,102 @@ class HostServices:
             log(f"Host '{self.name}' isn't a DNS server!", level=4, console=True)
             return
 
-        # Generate RDNC Key
-        # dnssec-keygen -a HMAC-MD5 -b 512 -n dima ns1-lucamatei-net_rdnc-key
-        # Copy the key to /etc/bind/ns1-lucamatei-net_rdnc-key
-        # Remove generated key files
+        log(f"Configuring DNS server on {self.lmid} ...", console=True)
 
-        # Bind config
-        # nano /etc/bind/named.conf
-        """
-        acl internals { 127.0.0.0/8; 192.168.0.0/24; };
-        include "/etc/bind/named.conf.options";
-        include "/etc/bind/ns1-lucamatei-net_rdnc-key";
+        # /etc/default/bind9
+        self.send_file(dima.tpls_dir + "dns/default.tpl", "/etc/default/named")
 
-        controls {
-                inet 127.0.0.1 port 953 allow { 127.0.0.1; };
-        };
-        """
+        # /etc/bind/named.conf.options
+        utils.write("/etc/bind/named.conf.options", utils.format_tpl("dns/options.tpl", {
+            "ip": self.ip,
+            }), owner="root:bind", host=self.lmid)
 
-        # nano /etc/bind/named.conf.options
-        """
-        directory "/var/cache/bind"
+        query = "select a.lmobj from host.hosts a, nets b where a.net=b.lmobj and b.dns=%s;"
+        params = self.dbid,
+        hosts = dima.db.execute(query, params)
 
-        """
+        # Zones
+        query = "select a.lmid, b.dev_host, b.prod_host, c.name from lmobjs a, project.projects b, domains c, web.webs d where a.id=b.lmobj and b.lmobj=d.lmobj and c.id=d.domain;"
+        webs = dima.db.execute(query)
+
+        web_fields = "lmid", "dev_host_id", "prod_host_id", "domain",
+        zones = {}
+
+        for w in webs:
+            web = dict(zip(web_fields, w))
+            zone_name = ".".join(web.get("domain").split(".")[-2:])
+
+            if zone_name not in utils.get_keys(zones):
+                zones[zone_name] = []
+
+            zones[zone_name].append(web)
+
+        conf_local = ""
+        for zone_name in utils.get_keys(zones):
+            zone = zones.get(zone_name)
+            domain_records = ""
+            subdomain_records = ""
+
+            conf_local += utils.format_tpl("dns/local.tpl", {"domain": zone_name})
+
+            for web in zone:
+                prod_host_ip = dima.pools.get(web.get("prod_host_id")).ip
+                dev_host_ip = dima.pools.get(web.get("dev_host_id")).ip
+
+                if web.get("domain") == zone_name:
+                    domain_records = '\n'.join([
+                        "@ IN A " + prod_host_ip,
+                        "www IN A " + prod_host_ip,
+                        "dev IN A " + dev_host_ip,
+                        "www.dev IN A " + dev_host_ip
+                        ])
+
+                else:
+                    subdomain_name = web.get("domain").replace("." + zone_name, "")
+                    subdomain_records += '\n'.join([
+                        f"{subdomain_name} IN A {prod_host_ip}",
+                        f"www.{subdomain_name} IN A {prod_host_ip}",
+                        f"dev.{subdomain_name} IN A {dev_host_ip}",
+                        f"www.dev.{subdomain_name} IN A {dev_host_ip}",
+                        ])
+
+            zone_conf = utils.format_tpl("dns/zone.tpl", {
+                "serial": int(time.time()),
+                "dns_domain": "lucamatei.net",
+                "dns_ip": self.ip,
+                "mail_domain": "lucamatei.net",
+                "prod_host_ip": prod_host_ip,
+                "domain_records": domain_records,
+                "subdomain_records": subdomain_records,
+                })
+
+            utils.write("/etc/bind/db." + zone_name, zone_conf, owner="root:bind", host=self.lmid)
+
+        # /etc/bind/named.conf.local
+        utils.write("/etc/bind/named.conf.local", conf_local, owner="root:bind", host=self.lmid)
+
+        log(f"Configured DNS server on {self.lmid} ...", console=True)
+
+        self.restart_dns()
+
+
+    def enable_dns(self):
+        self.manage_service("enable", "bind9")
+
+    def disable_dns(self):
+        self.manage_service("disable", "bind9")
+
+    def start_dns(self):
+        self.manage_service("start", "bind9")
+
+    def stop_dns(self):
+        self.manage_service("stop", "bind9")
+
+    def restart_dns(self):
+        self.manage_service("restart", "bind9")
+
+    def status_dns(self):
+        self.manage_service("status", "bind9")
 
     # Firewall
     def config_firewall(self):
@@ -301,7 +380,7 @@ class HostServices:
         # Create backup for default configs
         for cfg_file in (config_file, hba_file):
             if not utils.isfile(cfg_file + ".bak", host=self.lmid):
-                utils.copy(cfg_file, cfg_file + ".bak", owner="postgres", host=self.lmid)
+                utils.copy(cfg_file, cfg_file + ".bak", owner="postgres:postgres", host=self.lmid)
 
         if self.pg_port == 5432 or utils.confirm(f"There's already a Postgres port configured for '{self.name}'! Change it?"):
             port = self.next_port(service=True)
@@ -326,8 +405,8 @@ class HostServices:
             })
 
         # Write new config file and restart service
-        utils.write(config_file, config, owner="postgres", tpl=True, host=self.lmid)
-        utils.write(hba_file, hba, owner="postgres", tpl=True, host=self.lmid)
+        utils.write(config_file, config, owner="postgres:postgres", tpl=True, host=self.lmid)
+        utils.write(hba_file, hba, owner="postgres:postgres", tpl=True, host=self.lmid)
 
         # Update ports in dima projects and in db
         utils.write(utils.dbs.port_file, str(port), host=self.lmid)
@@ -1069,7 +1148,7 @@ class Host(lmObj, HostServices):
         if utils.isfile(path, host=self.lmid):
             log("File exists!", console=True)
 
-    def send_file(self, src_path:'str', dest_path:'str', owner:'str'="root"):
+    def send_file(self, src_path:'str', dest_path:'str', owner:'str'="root:root"):
         is_dir = src_path.endswith('/')
 
         final_path = None
@@ -1081,7 +1160,7 @@ class Host(lmObj, HostServices):
 
         if final_path:
             cmd(f"sudo mv {dest_path} {final_path}", host=self.lmid)
-            if owner != "root": cmd(f"sudo chown {owner}:{owner} {final_path}", host=self.lmid)
+            cmd(f"sudo chown {owner} {final_path}", host=self.lmid)
 
     def retrieve_file(self, src_path:'str', dest_path:'str'):
         is_dir = src_path.endswith('/')
