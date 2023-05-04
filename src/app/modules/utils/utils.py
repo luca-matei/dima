@@ -113,7 +113,7 @@ class Utils:
                     if is_ast:
                         pprint.pprint(content, stream=f)
                     else:
-                        f.write(content)
+                        f.write(content+"\n")
 
         #if host == None:
             #print("utils.write NONE!")

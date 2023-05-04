@@ -113,7 +113,7 @@ class Utils:
                     if is_ast:
                         pprint.pprint(content, stream=f)
                     else:
-                        f.write(content)
+                        f.write(content+"\n")
 
         #if host == None:
             #print("utils.write NONE!")
@@ -2480,7 +2480,7 @@ class Host(lmObj, HostServices):
                 cmd(f"sudo chmod 600 {prjct_dir}src/app/db/db_pass.txt", host=self.lmid)
 
     def install_dependencies(self):
-        packages = "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip",
+        packages = "libpam-cracklib", "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip",
 
         log(f"Installing dependencies on '{self.name}' ...", console=True)
 

@@ -230,3 +230,6 @@ lm14 config dhcp
 lm1 save 
 lm14 config dns 
 lm14 restart dns 
+lm14 status dns 
+lm1 save 
+

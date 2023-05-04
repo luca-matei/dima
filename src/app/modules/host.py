@@ -963,7 +963,7 @@ class Host(lmObj, HostServices):
                 cmd(f"sudo chmod 600 {prjct_dir}src/app/db/db_pass.txt", host=self.lmid)
 
     def install_dependencies(self):
-        packages = "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip",
+        packages = "libpam-cracklib", "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip",
 
         log(f"Installing dependencies on '{self.name}' ...", console=True)
 

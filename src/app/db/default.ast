@@ -30,7 +30,7 @@
         ("lm3", "Net", ""),
         ("lm4", "Host", "astatin"),
         ("lm5", "Web", "hello"),
-        ("lm6", "Host", ""),
+        ("lm6", "Host", "quasar"),
         ("lm7", "Web", "portfolio"),
         ("lm8", "Host", "cepheus"),
         #("lm9", "Host", "test"),
