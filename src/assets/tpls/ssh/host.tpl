@@ -5,3 +5,4 @@ Host %LMID%
     IdentityFile %PRIVKEY%
     TCPKeepAlive yes
     IdentitiesOnly yes
+    ServerAliveInterval 30

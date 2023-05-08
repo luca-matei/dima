@@ -8,8 +8,6 @@ class Net(lmObj):
 
         self.domain = dima.domains.get(self.domain_id)
 
-        #self.check()
-
     def set_dhcp(self, host=None):
         def get_opt(opts, db_opts):
             for host in db_opts:
@@ -63,6 +61,9 @@ class Net(lmObj):
 
     def set_dns(self, host=None):
         pass
+
+    def test(self):
+        log("TEST", console=True)
 
     def check(self):
         if not self.dhcp_id:

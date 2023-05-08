@@ -233,3 +233,20 @@ lm14 restart dns
 lm14 status dns 
 lm1 save 
 
+lm8 config firewall 
+
+lm8 ping 
+t
+lm10 setup 
+lm11 setup 
+lm11 ping 
+lm14 config dns 
+lm5 change state --new_state=5 --confirm=1
+lm5 update html --env=prod --global_html=1
+lm5 default db --env=prod --confirm=1
+lm7 change state --new_state=5 --confirm=1
+lm8 test 
+lm6 test 
+lm4 config ssh_client 
+lm4 config firewall 
+lm1 save

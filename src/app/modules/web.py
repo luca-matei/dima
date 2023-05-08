@@ -36,9 +36,10 @@ class Web(Project):
         else:
             self.prod_db = None
 
-        self.check_web()
+    @authorize
+    def check(self):
+        self.check_project()
 
-    def check_web(self):
         for env in ("dev", "prod"):
             port = self.env_var(env, "port")
             host_id = self.env_var(env, "host_id")
@@ -57,6 +58,13 @@ class Web(Project):
         if not utils.isfile(self.app_dir + "db/db_pass.txt", host=self.dev_host):
             self.build("dev")
 
+        self.check_db()
+
+    @authorize
+    def check_db(self):
+        self.db.check()
+
+    @authorize
     def build(self, env:'env'="dev", confirm:'bool'=False):
         """
             1. STRUCTURE
@@ -121,6 +129,7 @@ class Web(Project):
 
         log(f"Built '{domain}'", console=True)
 
+    @authorize
     def default(self, env:'env'="dev", confirm:'bool'=False):
         """
             2. DEFAULT CONTENT
@@ -159,6 +168,7 @@ class Web(Project):
 
         log(f"Set '{domain}' to 'Hello World'", console=True)
 
+    @authorize
     def default_db(self, env:"env"="dev", confirm:'bool'=False):
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
@@ -209,6 +219,7 @@ class Web(Project):
 
         log(f"Formatted '{domain}' database ...", console=True)
 
+    @authorize
     def default_html(self, confirm:'bool'=False, hello:'bool'=False):
         """
             Command only for dev environment.
@@ -252,6 +263,7 @@ class Web(Project):
 
         self.update_html(global_html=True)
 
+    @authorize
     def update_global_html(self, env:"env"="dev"):
         domain = self.env_var(env, "domain")
         db = self.env_var(env, "db")
@@ -339,6 +351,7 @@ class Web(Project):
 
         log(f"Updated Global HTML for '{domain}'", console=True)
 
+    @authorize
     def update_html(self, env:"env"="dev", section:'str'= "", global_html:'bool'=False):
         if env == "prod" and not self.css_classes:
             self.update_css(env)
@@ -439,6 +452,7 @@ class Web(Project):
         log(f"Updated HTML for '{domain}'", console=True)
         self.restart(env)
 
+    @authorize
     def update_css(self, env:"env"="dev"):
         """
             Command only for dev environment.
@@ -498,6 +512,7 @@ class Web(Project):
 
         log(f"Updated CSS for '{domain}'", console=True)
 
+    @authorize
     def generate_ssl(self, env:'env'="dev"):
         host = self.env_var(env, "host")
         ssl_dir = self.env_var(env, "ssl_dir")
@@ -518,6 +533,7 @@ class Web(Project):
 
         log(f"Generated SSL certificates for '{domain}'", console=True)
 
+    @authorize
     def change_state(self, new_state:'web_state', confirm:'bool'=False):
         if utils.isfile(self.repo_dir, host=self.prod_host):
             if not confirm:
@@ -549,6 +565,7 @@ class Web(Project):
         dima.db.execute("update web.webs set prod_state=%s where lmobj=%s", (new_state, self.dbid))
         log(f"Changed '{self.prod_domain}' state to {utils.webs.states[new_state]}.", console=True)
 
+    @authorize
     def update_js(self, env:"env"="dev"):
         # To do: add manual files
         host = self.env_var(env, "host")
@@ -566,6 +583,7 @@ class Web(Project):
 
         log(f"Updated JS for '{domain}'", console=True)
 
+    @authorize
     def update_py(self, env:"env"="dev", restart:'bool'=False):
         host = self.env_var(env, "host")
         domain = self.env_var(env, "domain")
@@ -595,6 +613,7 @@ class Web(Project):
         if restart: self.restart(env)
         log(f"Updated source code for '{domain}'", console=True)
 
+    @authorize
     def assign_port(self, env:"env"="dev"):
         log(f"Assigning {env} port {port} to '{domain}' ...", console=True)
         setattr(self, env + "_port", dima.pools.get(host_id).next_port())
@@ -607,6 +626,7 @@ class Web(Project):
         log(f"Assigned {env} port {port} to '{domain}'", console=True)
         self.config(env)
 
+    @authorize
     def config_uwsgi(self, env:'env'="dev", restart:'bool'=False):
         host = self.env_var(env, "host")
         domain = self.env_var(env, "domain")
@@ -626,6 +646,7 @@ class Web(Project):
         if restart: self.restart(env)
         log(f"Configured uWSGI for '{domain}'", console=True)
 
+    @authorize
     def config_supervisor(self, env:'env'="dev", restart:'bool'=False):
         supervisor_file = f"/etc/supervisor/conf.d/{self.lmid}.conf"
         if env == "prod" and self.prod_state == 0:
@@ -649,6 +670,7 @@ class Web(Project):
         if restart: dima.pools.get(host_id).restart_supervisor()
         log(f"Configured Supervisor for '{domain}'", console=True)
 
+    @authorize
     def config_nginx(self, env:'env'="dev", restart:'bool'=False):
         nginx_file = f"/etc/nginx/sites-enabled/{self.lmid}"
         if env == "prod" and self.prod_state == 0:
@@ -689,11 +711,13 @@ class Web(Project):
         if restart: dima.pools.get(host_id).restart_nginx()
         log(f"Configured Nginx for '{domain}'", console=True)
 
+    @authorize
     def config(self, env:'env'="dev", restart:'bool'=False):
         self.config_uwsgi(env, restart)
         self.config_supervisor(env, restart)
         self.config_nginx(env, restart)
 
+    @authorize
     def restart(self, env:'env'="dev"):
         if env == "prod" and self.prod_state != 5:
             log("No web app is running on production!", level=4, console=True)
@@ -708,12 +732,18 @@ class Web(Project):
         cmd(f"sudo supervisorctl restart {self.lmid}", host=host)
         log(f"Restarted '{domain}'", console=True)
 
+    @authorize
     def env_var(self, env, name):
         if name == "db" and env == "dev":
             return getattr(self, name)
         else:
             return getattr(self, env + "_" + name)
 
+    @authorize
     def yml2html(self, yml, lang):
         if yml.endswith(".yml"): yml = self.html_dir + yml
         return utils.yml2html(yml, lang, self.default_lang, self.global_html, self.dev_host)
+
+    @authorize
+    def test(self):
+        log("TEST", console=True)

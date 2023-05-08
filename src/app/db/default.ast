@@ -157,14 +157,14 @@
         ("utils.nets", "ip", ("next",)),
         ("utils.nets", "dhcp", ("set", "config", "restart", "status")),
 
+        ("Net", "", ("check",)),
         ("Net", "alias", ("set", "delete")),
         ("Net", "dhcp", ("set",)),
         ("Net", "dns", ("set",)),
-        ("Net", "net", ("check",)),
 
         ("utils.hosts", "host", ("create", "register", "preseed")),
 
-        ("Host", "", ("mount", "unmount", "update", "reboot", "status", "ping", "setup",)),
+        ("Host", "", ("mount", "unmount", "update", "reboot", "status", "ping", "setup", "test", "check")),
         ("Host", "alias", ("set", "delete")),
         ("Host", "app", ("create",)),
         ("Host", "dependencies", ("install",)),
@@ -179,7 +179,7 @@
         ("Host", "gpg_pubkey", ("get",)),
         ("Host", "gpg_key_id", ("get",)),
         ("Host", "grub", ("config",)),
-        ("Host", "host", ("check", "create",)),
+        ("Host", "host", ("create",)),
         ("Host", "hosts_file", ("update",)),
         ("Host", "motd", ("config",)),
         ("Host", "nginx", ("config", "reload", "start", "stop", "restart")),
@@ -200,12 +200,11 @@
 
         ("App", "", ("save",)),
         ("App", "alias", ("set", "delete")),
-        ("App", "app", ("check",)),
 
-        ("Web", "", ("start", "stop", "restart", "save", "build", "config", "default")),
+        ("Web", "", ("start", "stop", "restart", "save", "build", "config", "default", "test", "check",)),
         ("Web", "alias", ("set", "delete")),
         ("Web", "css", ("update",)),
-        ("Web", "db", ("default",)),
+        ("Web", "db", ("default", "check",)),
         ("Web", "html", ("update", "default",)),
         ("Web", "js", ("update",)),
         ("Web", "nginx", ("config",)),
@@ -214,7 +213,6 @@
         ("Web", "state", ("change",)),
         ("Web", "supervisor", ("config",)),
         ("Web", "uwsgi", ("config",)),
-        ("Web", "web", ("check",)),
 
         ("Soft", "", ("check", "save",)),
         ("Soft", "alias", ("set", "delete")),
@@ -227,7 +225,7 @@
         ("id:lmid:lmobjs", "id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", ""),
         ("lm1", "lm4", 0.1, "lm4", 0.1, "dima", ""),
         #("lm2", "lm4", 0.1, "lm4", 0.1, "dima Portal", ""),
-        ("lm5", "lm6", 0.1, "lm10", 0.1, "Hello World", ""),
+        ("lm5", "lm6", 0.1, "lm8", 0.1, "Hello World", ""),
         ("lm7", "lm6", 0.1, "lm8", 0.1, "Portfolio", ""),
         )),
 

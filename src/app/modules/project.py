@@ -12,8 +12,6 @@ class Project(lmObj):
         self.dev_host = dima.lmobjs[self.dev_host_id][0]
         self.prod_host = dima.lmobjs[self.prod_host_id][0]
 
-        self.check_project()
-
     def check_project(self):
         if not utils.isfile(self.repo_dir, host=self.dev_host):
             if utils.confirm(f"'{self.name}' project repository doesn't exist on '{self.dev_host}'! Clone it from Gitlab?"):

@@ -1,6 +1,7 @@
 class HostServices:
     pg_version = 13
 
+    @authorize
     def manage_service(self, action, service):
         messages = {
             "start": "Starting",
@@ -36,12 +37,14 @@ class HostServices:
 
     # NET
 
+    @authorize
     def get_iface(self):
-        return [x for x in cmd("ls /sys/class/net", catch=True, host=self.lmid).split('\n') if x.startswith(("eth", "eno", "enp"))][0]
+        return [x for x in cmd("ls /sys/class/net", catch=True, host=self.lmid).split('\n') if x.startswith(("eth", "eno", "enp", "ens"))][0]
         return "eth0"
 
     # DHCP
 
+    @authorize
     def config_dhcp(self):
         if "dhcp" not in self.services:
             log(f"Host '{self.name}' isn't a DHCP server!", level=4, console=True)
@@ -129,26 +132,33 @@ class HostServices:
                     "hosts": hosts_config
                     })
 
+    @authorize
     def enable_dhcp(self):
         self.manage_service("enable", "isc-dhcp-server")
 
+    @authorize
     def disable_dhcp(self):
         self.manage_service("disable", "isc-dhcp-server")
 
+    @authorize
     def start_dhcp(self):
         self.manage_service("start", "isc-dhcp-server")
 
+    @authorize
     def stop_dhcp(self):
         self.manage_service("stop", "isc-dhcp-server")
 
+    @authorize
     def restart_dhcp(self):
         self.manage_service("restart", "isc-dhcp-server")
 
+    @authorize
     def status_dhcp(self):
         self.manage_service("status", "isc-dhcp-server")
 
     # DNS
 
+    @authorize
     def config_dns(self):
         # https://wiki.debian.org/Bind9#Introduction
 
@@ -234,27 +244,33 @@ class HostServices:
 
         self.restart_dns()
 
-
+    @authorize
     def enable_dns(self):
         self.manage_service("enable", "bind9")
 
+    @authorize
     def disable_dns(self):
         self.manage_service("disable", "bind9")
 
+    @authorize
     def start_dns(self):
         self.manage_service("start", "bind9")
 
+    @authorize
     def stop_dns(self):
         self.manage_service("stop", "bind9")
 
+    @authorize
     def restart_dns(self):
         self.manage_service("restart", "bind9")
 
+    @authorize
     def status_dns(self):
         self.manage_service("status", "bind9")
 
     # Firewall
-    def config_firewall(self):
+    @authorize
+    def config_firewall(self, maintenance:'bool'=False):
         if "firewall" not in self.services:
             log(f"Host '{self.name}' isn't supposed to have a firewall!", level=4, console=True)
             return
@@ -265,33 +281,60 @@ class HostServices:
         if not utils.isfile("/etc/nft/", host=self.lmid):
             cmd("sudo mkdir /etc/nft/", host=self.lmid)
 
+        web_rule = ""
+        db_rule = ""
+        dns_rule = ""
+        ssh_rule = ""
+
+        if "web" in self.services:
+            web_rule = 'tcp dport {80, 443} limit rate 4/second ct state new counter log prefix "[nftables] New HTTP(S) Conn" accept\n'
+
+        if "db" in self.services or "web" in self.services:
+            db_rule = f'tcp dport {self.pg_port} limit rate 15/{"second" if maintenance else "minute"} ct state new counter log prefix "[nftables] New Postgres Query" accept\n'
+
+        if "dns" in self.services:
+            dns_rule = 'udp dport 53 limit rate 4/second ct state new counter log prefix "[nftables] New DNS Query" accept\n'
+
+        if "ssh_server" in self.services:
+            ssh_rule = f'tcp dport {self.ssh_port} limit rate 15/{"second" if maintenance else "minute"} ct state new counter log prefix "[nftables] New SSH Conn" accept\n'
+
         nftables = utils.format_tpl("nftables/nftables.tpl", {
             "iface": self.get_iface(),
-            "ssh_port": self.ssh_port,
+            "db_rule": db_rule,
+            "web_rule": web_rule,
+            "dns_rule": dns_rule,
+            "ssh_rule": ssh_rule,
             })
 
         utils.write("/etc/nftables.conf", nftables, host=self.lmid)
         self.send_file(dima.tpls_dir + "nftables/bogons-ipv4.tpl", "/etc/nft/bogons-ipv4.nft")
         self.send_file(dima.tpls_dir + "nftables/black-ipv4.tpl", "/etc/nft/black-ipv4.nft")
         self.manage_service("restart", "nftables")
+
         log(f"Configured Firewall for '{self.name}'", console=True)
 
+    @authorize
     def enable_firewall(self):
         self.manage_service("enable", "nftables")
 
+    @authorize
     def disable_firewall(self):
         self.manage_service("disable", "nftables")
 
+    @authorize
     def start_firewall(self):
         self.manage_service("start", "nftables")
 
+    @authorize
     def stop_firewall(self):
         self.manage_service("stop", "nftables")
 
+    @authorize
     def restart_firewall(self):
         self.manage_service("restart", "nftables")
 
     # Nginx
+    @authorize
     def config_nginx(self):
         if "web" not in self.services:
             log(f"Host '{self.name}' isn't a web server!", level=4, console=True)
@@ -302,22 +345,28 @@ class HostServices:
         cmd("sudo rm /etc/nginx/sites-enabled/default", host=self.name)
         self.manage_service("restart", "nginx")
 
+    @authorize
     def reload_nginx(self):
         self.manage_service("reload", "nginx")
 
+    @authorize
     def start_nginx(self):
         self.manage_service("start", "nginx")
 
+    @authorize
     def stop_nginx(self):
         self.manage_service("stop", "nginx")
 
+    @authorize
     def restart_nginx(self):
         self.manage_service("restart", "nginx")
 
+    @authorize
     def status_nginx(self):
         self.manage_service("status", "nginx")
 
     # Postgres
+    @authorize
     def create_pg_role(self, role:'str', password:'str'=None):
         # https://www.postgresql.org/docs/current/sql-createrole.html
         log(f"Creating '{role}' Postgres role on '{self.name}' ...", console=True)
@@ -347,6 +396,7 @@ class HostServices:
 
         log(f"Postgres role '{role}' created on '{self.name}'", console=True)
 
+    @authorize
     def create_pg_db(self, db:'str'):
         log(f"Creating '{db}' Postgres database on '{self.name}' ...", console=True)
         db_query = utils.dbs.query.format(f"create database {db} owner {db} encoding 'utf-8';")
@@ -360,6 +410,7 @@ class HostServices:
 
         log(f"Postgres database '{db}' created on '{self.name}'", console=True)
 
+    @authorize
     def config_postgres(self):
         """
         Manages /etc/postgresql/13/main/postgresql.conf
@@ -421,38 +472,49 @@ class HostServices:
 
         log(f"Configured PostgreSQL for '{self.name}'", console=True)
 
+    @authorize
     def reload_postgres(self):
         self.manage_service("reload", "postgresql")
 
+    @authorize
     def start_postgres(self):
         self.manage_service("start", "postgresql")
 
+    @authorize
     def stop_postgres(self):
         self.manage_service("stop", "postgresql")
 
+    @authorize
     def restart_postgres(self):
         self.manage_service("restart", "postgresql")
 
+    @authorize
     def status_postgres(self):
         self.manage_service("status", "postgresql")
 
     # Supervisor
+    @authorize
     def start_supervisor(self):
         self.manage_service("start", "supervisor")
 
+    @authorize
     def stop_supervisor(self):
         self.manage_service("stop", "supervisor")
 
+    @authorize
     def restart_supervisor(self):
         self.manage_service("restart", "supervisor")
 
+    @authorize
     def status_supervisor(self):
         self.manage_service("status", "supervisor")
 
     # SSH
+    @authorize
     def restart_ssh(self):
         self.manage_service("restart", "ssh")
 
+    @authorize
     def config_ssh_client(self):
         if "ssh_client" not in self.services:
             log(f"Host '{self.name}' isn't a SSH client!", level=4, console=True)
@@ -503,6 +565,7 @@ class HostServices:
 
         log(f"Configured SSH Client for '{self.name}'", console=True)
 
+    @authorize
     def config_ssh_server(self):
         if "ssh_server" not in self.services:
             log(f"Host '{self.name}' isn't a SSH server!", level=4, console=True)
@@ -536,6 +599,7 @@ class HostServices:
 
         log(f"Configured SSH Server for '{self.name}'", console=True)
 
+    @authorize
     def create_ssh_key(self, for_gitlab:'bool'=False):
         log(f"Generating SSH key to access {'Gitlab from ' if for_gitlab else ''}host '{self.name}'. This may take a while ...", console=True)
 
@@ -571,6 +635,7 @@ class HostServices:
 
             return 0
 
+    @authorize
     def delete_ssh_key(self, for_gitlab:'bool'=False):
         log(f"Removing {'Gitlab ' if for_gitlab else ''}SSH key for host '{self.name}' ...", console=True)
 
@@ -582,6 +647,7 @@ class HostServices:
         log(f"Removed {'Gitlab ' if for_gitlab else ''}SSH key for host '{self.name}'", console=True)
 
     ## GPG
+    @authorize
     def get_gpg_pubkey(self, email:'str'=None):
         log(f"Getting GPG pubkey for {email} ...", console=True)
         if not email: email = self.email
@@ -595,6 +661,7 @@ class HostServices:
             log(f"GPG pubkey for {email} saved at {pubkey_path}!", console=True)
             return utils.read(pubkey_path, host=self.lmid)
 
+    @authorize
     def get_gpg_key_id(self, email:'str'=None):
         if not email: email = self.email
         key_id = cmd(f"gpg2 --list-keys --keyid-format LONG {email}", catch=True, host=self.lmid)
@@ -606,6 +673,7 @@ class HostServices:
         else:
             return re.findall(r'\bpub   rsa4096/\w+', key_id)[0].split('/')[1]
 
+    @authorize
     def create_gpg_key(self, email:'str'=None):
         if self.env != "dev":
             log(f"'{self.name}' isn't a development machine!", level=4, console=True)
@@ -628,6 +696,7 @@ class HostServices:
 
         return key_id
 
+    @authorize
     def delete_gpg_key(self, email:'str'=None):
         if self.env != "dev":
             log(f"'{self.name}' isn't a development machine!", level=4, console=True)
@@ -674,9 +743,9 @@ class Host(lmObj, HostServices):
         self.mnt_dir = utils.mnt_dir + self.name + "/"
         self.services = [utils.hosts.services.get(x) for x in self.service_ids]
         self.email = self.lmid + "@" + utils.hosts.domain
-        self.check()
 
-    def next_port(self, service=False):
+    @authorize
+    def next_port(self, service:'bool'=False):
         if service:
             min, max = 4096, 8192
             used = [self.ssh_port, self.pg_port, 5432, 8080, 4343, 5353]
@@ -694,10 +763,12 @@ class Host(lmObj, HostServices):
 
         return port
 
+    @authorize
     def has_storage(self, capacity):
         return True
 
     # Projects
+    @authorize
     def create_project(self, lmid, module, alias, name, description):
         if gitlab.create_project(data={
             'path': lmid,
@@ -718,12 +789,14 @@ class Host(lmObj, HostServices):
 
         return 0
 
+    @authorize
     def clone_repo(self, path:'str'):
         log(f"Cloning '{path}' Gitlab repository ...", console=True)
         cmd(f"git clone git@{gitlab.domain}:{gitlab.user}/{path}.git {utils.projects_dir}{path}/", host=self.lmid)
         log(f"'{path}' cloned", console=True)
 
     # Web
+    @authorize
     def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=("static",), langs:'list'=("en",), themes:'list'=("light",), default_lang:'str'="en", default_theme:'str'="light", has_animations:'bool'=False):
 
         # To do: validate parameters
@@ -751,6 +824,7 @@ class Host(lmObj, HostServices):
 
         log(f"Couldn't create web app '{lmid}'!", level=4, console=True)
 
+    @authorize
     def generate_dh(self):
         if utils.isfile(utils.ssl_dir + "dhparam.pem", host=self.lmid):
             if utils.confirm("DH parameters are already in place! Purge them?"):
@@ -763,6 +837,7 @@ class Host(lmObj, HostServices):
         log(f"Generated DH params for '{self.name}'", console=True)
 
     # Hosts
+    @authorize
     def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):
         lmid = dima.next_lmid()
         log(f"Creating new '{lmid}' VM ...", console=True)
@@ -801,11 +876,13 @@ class Host(lmObj, HostServices):
             log(f"Couldn't create '{lmid}' VM on '{self.name}'!", level=4, console=True)
 
     # Mount
+    @authorize
     def is_mounted(self):
         if len(os.listdir(self.mnt_dir)):
             return True
         return False
 
+    @authorize
     def mount(self):
         if self.dbid == dima.host_dbid:
             log("You can't mount the host!", level=4, console=True)
@@ -820,6 +897,7 @@ class Host(lmObj, HostServices):
             else:
                 log(f"'{self.name}' is already mounted!", level=4, console=True)
 
+    @authorize
     def unmount(self):
         if self.dbid == dima.host_dbid:
             log("You can't unmount the host!", level=4, console=True)
@@ -831,6 +909,7 @@ class Host(lmObj, HostServices):
                 log(f"'{self.name}' is already unmounted!", level=4, console=True)
 
     # System
+    @authorize
     def config_sysctl(self):
         log(f"Configuring sysctl for '{self.name}' ...", console=True)
         sysctl = utils.format_tpl("sysctl.tpl", {
@@ -840,15 +919,18 @@ class Host(lmObj, HostServices):
         cmd("sudo sysctl -p", host=self.lmid)
         log(f"Configured sysctl for '{self.name}'", console=True)
 
+    @authorize
     def config_grub(self):
         log(f"Configuring GRUB for '{self.name}' ...", console=True)
         self.send_file(dima.tpls_dir + "grub.tpl", "/etc/default/grub")
         cmd("sudo update-grub", host=self.lmid)
         log(f"Configured GRUB for '{self.name}'", console=True)
 
+    @authorize
     def config_motd(self):
         self.send_file(dima.tpls_dir + "motd.tpl", "/etc/motd")
 
+    @authorize
     def update_resources(self):
         log(f"Updating resources for '{self.name}' ...", console=True)
         if self.dbid != dima.host_dbid:
@@ -859,6 +941,7 @@ class Host(lmObj, HostServices):
             pass
         log(f"Updated resources for '{self.name}'", console=True)
 
+    @authorize
     def update_hosts_file(self):
         def append_web(web):
             # Prod host
@@ -931,13 +1014,14 @@ class Host(lmObj, HostServices):
 
         hosts_file = utils.format_tpl("hosts.tpl", {
             "host": host_entry,
-            "hosts": host_entries,
-            "webs": web_entries
+            "hosts": "", #host_entries,
+            "webs": "", #web_entries
             })
         utils.write("/etc/hosts", hosts_file, host=self.lmid)
 
         log(f"Generated /etc/hosts for '{self.name}'", console=True)
 
+    @authorize
     def set_permissions(self):
         # All  -rw-rw-r--
         cmd("sudo chmod g+w -R /home/dima/", host=self.lmid)
@@ -962,6 +1046,7 @@ class Host(lmObj, HostServices):
             if utils.isfile(prjct_dir + "src/app/db/db_pass.txt", host=self.lmid):
                 cmd(f"sudo chmod 600 {prjct_dir}src/app/db/db_pass.txt", host=self.lmid)
 
+    @authorize
     def install_dependencies(self):
         packages = "libpam-cracklib", "build-essential", "python3", "python3-dev", "python3-venv", "python3-pip",
 
@@ -1007,6 +1092,7 @@ class Host(lmObj, HostServices):
 
         log(f"Installed dependencies on '{self.name}' ...", console=True)
 
+    @authorize
     def create_user(self, name:'str'):
         # https://manpages.debian.org/jessie/adduser/adduser.8.en.html
         if not cmd(f"getent passwd {name}", catch=True):
@@ -1020,6 +1106,7 @@ class Host(lmObj, HostServices):
             if not utils.confirm(f"User '{name}' already exists! Use it?"):
                 log(f"Can't create another user '{name}'!", level=4, console=True)
 
+    @authorize
     def ping(self):
         log(f"Trying to ping '{self.name}' ...", console=True)
         if self.dbid == dima.host_dbid:
@@ -1028,9 +1115,12 @@ class Host(lmObj, HostServices):
             response = cmd("echo 1", catch=True, host=self.lmid)
             if response == "1":
                 log(f"Host '{self.name}' reached!", console=True)
+                return 1
             else:
                 log(f"Couldn't reach host '{self.name}'!", level=3, console=True)
+                return 0
 
+    @authorize
     def build_dir_tree(self):
         log(f"Creating Dima's directory tree on '{self.name}' ...", console=True)
 
@@ -1065,6 +1155,7 @@ class Host(lmObj, HostServices):
 
         cmd(f"sudo chown www-data:www-data {utils.projects_dir}pids", host=self.lmid)
 
+    @authorize
     def build_venv(self):
         if utils.isfile(f"{utils.projects_dir}venv/", host=self.lmid):
             if utils.confirm(f"There's already a virtual environment on '{self.name}'! Purge it?"):
@@ -1082,6 +1173,7 @@ class Host(lmObj, HostServices):
 
         log(f"Created virtual environment for '{self.name}'", console=True)
 
+    @authorize
     def config_git(self):
         log(f"Configuring Git for '{self.name}' ...", console=True)
 
@@ -1107,6 +1199,7 @@ class Host(lmObj, HostServices):
 
         log(f"Configured Git for '{self.name}'", console=True)
 
+    @authorize
     def config_sudo(self, user:'str'="dima"):
         user = "dima"
         log(f"Configuring sudo for user {user} on host '{self.lmid}' ...", console=True)
@@ -1115,6 +1208,7 @@ class Host(lmObj, HostServices):
 
         log(f"Configured sudo for user {user} on host '{self.lmid}'", console=True)
 
+    @authorize
     def setup(self):
         self.install_dependencies()
         self.build_dir_tree()
@@ -1140,14 +1234,19 @@ class Host(lmObj, HostServices):
         if "dns" in self.services:
             self.config_dns()
 
+        if "firewall" in self.services:
+            self.config_firewall()
+
         if self.env == "dev":
             self.config_git()
             self.create_ssh_key(for_gitlab=True)
 
+    @authorize
     def has_file(self, path:'str'):
         if utils.isfile(path, host=self.lmid):
             log("File exists!", console=True)
 
+    @authorize
     def send_file(self, src_path:'str', dest_path:'str', owner:'str'="root:root"):
         is_dir = src_path.endswith('/')
 
@@ -1162,26 +1261,47 @@ class Host(lmObj, HostServices):
             cmd(f"sudo mv {dest_path} {final_path}", host=self.lmid)
             cmd(f"sudo chown {owner} {final_path}", host=self.lmid)
 
+    @authorize
     def retrieve_file(self, src_path:'str', dest_path:'str'):
         is_dir = src_path.endswith('/')
         # Handle permissions
         cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} dima@{self.lmid}:{src_path.rstrip('/')} {dest_path.rstrip('/')}", catch=True)
 
+    @authorize
     def rebuild(self):
         pass
 
+    @authorize
     def status(self):
         print("OK")
 
+    @authorize
     def update(self):
         log(f"Updating '{self.name}' ...", console=True)
         cmd("sudo apt update && sudo apt upgrade -y", host=self.lmid)
         log(f"Updated '{self.name}'", console=True)
 
+    @authorize
     def reboot(self):
         log(f"Rebooting '{self.name}' ...", console=True)
-        cmd("sudo systemctl reboot now", host=self.lmid)
-        log(f"Rebooted '{self.name}'", console=True)
+        cmd("sudo systemctl reboot", host=self.lmid)
 
+        for i in range(1, 4):
+            log(f"Waiting for 4 seconds...", console=True)
+            time.sleep(4)
+            log(f"Ping try #{i}", console=True)
+
+            if self.ping():
+                log(f"Rebooted '{self.name}'", console=True)
+                return
+
+        log(f"Lost connection with machine!", level=4, console=True)
+        task.abort()
+
+    @authorize
+    def test(self):
+        log("TEST", console=True)
+
+    @authorize
     def check(self):
         pass

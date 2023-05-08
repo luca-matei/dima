@@ -1,4 +1,4 @@
-import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress, crypt, time
+import sys, os, getpass, inspect, subprocess, string, pprint, ast, json, secrets, re, random, ipaddress, crypt, time, threading
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox as tk_messagebox
@@ -113,7 +113,7 @@ class Utils:
                     if is_ast:
                         pprint.pprint(content, stream=f)
                     else:
-                        f.write(content+"\n")
+                        f.write(content)
 
         #if host == None:
             #print("utils.write NONE!")
@@ -474,7 +474,7 @@ class Utils:
 
         if call_info:
             if not command.startswith("ssh "): logs._log(call_info, command)
-            logs._log(call_info, output.stdout, level=1)
+            if output.stdout: logs._log(call_info, output.stdout, level=1)
             if output.stderr: logs._log(call_info, output.stderr, level=4)
         else:
             if output.stderr: print(self.color("Error: ", "lred") + output.stderr)

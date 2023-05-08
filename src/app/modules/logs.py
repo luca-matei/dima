@@ -52,6 +52,9 @@ class Logs:
 
         utils.write(self.log_file, record, mode='a')
 
+        if "ssh" in message and "Connection refused" in message:
+            task.abort()
+
     def reset(self):
         # To do: save old log files
         utils.write(self.log_file, "")

@@ -10,12 +10,7 @@ table ip firewall {
         tcp flags & (fin|syn|rst|ack) != syn ct state new counter drop
         icmp type echo-request limit rate over 1/second burst 5 packets drop
 
-        # udp sport {137, 138} ip saddr 91.208.142.0/24 udp dport {137, 138} ip daddr 91.208.142.255 ct state new counter log prefix "[nftables] New Broadcast" accept
-        tcp dport {80, 443} limit rate 4/second ct state new counter log prefix "[nftables] New HTTP(S) Conn" accept
-        udp dport 53 limit rate 4/second ct state new counter log prefix "[nftables] New DNS Query" accept
-        tcp dport %SSH_PORT% limit rate 15/minute ct state new counter log prefix "[nftables] New SSH Conn" accept
-
-        ct state {established, related} counter accept
+        %DB_RULE%%WEB_RULE%%DNS_RULE%%SSH_RULE%ct state {established, related} counter accept
 
         iif "lo" accept
         iif != "lo" ip daddr 127.0.0.1/8 counter log prefix "[nftables] Dropped conns to lo not coming from lo" drop

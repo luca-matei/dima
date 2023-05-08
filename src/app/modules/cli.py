@@ -22,6 +22,7 @@ class CLI:
         elif p:
             self.skip = True
             log(f"Invalid parameter '{p}'!", level=4, console=True)
+        return {}
 
     def validate(self, command):
         # To do: Validate command
@@ -161,6 +162,7 @@ class CLI:
             utils.write(utils.src_dir + "app/history.txt", command + "\n", mode="a")
 
     def process(self, command):
+        global task
         log("Issued command: " + command)
 
         if not self.validate(command): return
@@ -205,10 +207,10 @@ class CLI:
                 return
 
             # Call the method
-            if obj == '':
-                getattr(dima.pools[lmobj_id], act)(**params)
-            else:
-                getattr(dima.pools[lmobj_id], act + '_' + obj)(**params)
+            if obj:
+                act += "_" + obj
+
+            task = Task(obj=lmobj, act=act, params=params)
 
         else:
             # act obj    ===    create net
@@ -252,7 +254,6 @@ class CLI:
 
             elif module.startswith("utils"):
                 params = self.process_args(getattr(utils, module.split('.')[1]), act, obj, args)
-
             else:
                 params = self.process_args(module, act, obj, args)
 
@@ -263,12 +264,10 @@ class CLI:
 
             # Call the method
             if obj == '':
-                getattr(dima, act)(**params)
-
-            elif module.startswith("utils"):
-                getattr(getattr(utils, module.split('.')[1]), act + '_' + obj)(**params)
-
+                module = "dima"
             else:
-                getattr(module, act + '_' + obj)(**params)
+                act += "_" + obj
+
+            task = Task(obj=module, act=act, params=params)
 
 cli = CLI()

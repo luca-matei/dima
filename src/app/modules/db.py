@@ -4,7 +4,7 @@ class Db:
         self.dbid = dbid
         self.host = host
         self.db_dir = utils.projects_dir + lmid + "/src/app/db/"
-        port_file = utils.projects_dir + "pg_port.txt"
+        self.port_file = utils.projects_dir + "pg_port.txt"
 
         if self.lmid == dima.app_lmid:
             self.dev_host = dima.host_lmid
@@ -13,20 +13,33 @@ class Db:
             self.dev_host = dima.lmobjs.get(dima.db.execute("select dev_host from project.projects where lmobj=%s;", (dbid,))[0][0])[0]
             self.host_id = dima.lmobjs.get(host)
 
-            if not utils.read(port_file, host=host):
-                dima.pools.get(self.host_id).config_postgres()
+        try:
+            self.port = int(utils.read(self.port_file, host=host))
+            self.connect()
+        except:
+            self.check()
 
-            if not cmd(utils.dbs.query.format(f"select 1 from pg_database where datname='{lmid}';"), catch=True, host=host):
-                dima.pools.get(self.host_id).create_pg_role(self.lmid)
-                dima.pools.get(self.host_id).create_pg_db(self.lmid)
+    @authorize
+    def check(self):
+        log(f"Checking '{self.lmid}' database ...", console=True)
 
-        self.port = int(utils.read(port_file, host=host))
-        self.connect()
+        if not utils.read(self.port_file, host=host):
+            dima.pools.get(self.host_id).config_postgres()
+            self.port = int(utils.read(self.port_file, host=host))
+            self.connect()
+
+        if not cmd(utils.dbs.query.format(f"select 1 from pg_database where datname='{lmid}';"), catch=True, host=host):
+            dima.pools.get(self.host_id).create_pg_role(self.lmid)
+            dima.pools.get(self.host_id).create_pg_db(self.lmid)
+            self.connect()
 
         # Check if database is empty
         if not self.execute("select count(*) from pg_catalog.pg_tables where schemaname not in ('information_schema', 'pg_catalog');")[0][0]:
             self.build()
 
+        log(f"'{self.lmid}' database checked", console=True)
+
+    @authorize
     def connect(self):
         try:
             if self.host and self.host != dima.host_lmid:
@@ -51,17 +64,21 @@ class Db:
 
         except Exception as e:
             log(e, level=4)
-            log(f"Cannot connect to '{self.lmid}' database!", level=5, console=True)
+            log(f"Cannot connect to '{self.lmid}' database!", level=4, console=True)
+            task.abort()
 
         log(self.lmid + " database connected")
 
+    @authorize
     def rebuild(self):
         self.erase()
         self.build()
 
+    @authorize
     def format_table(self, table):
         self.execute(f"truncate {table};")
 
+    @authorize
     def erase(self):
         log(f"Erasing '{self.lmid}' database ...", level=3, console=True)
 
@@ -77,6 +94,7 @@ class Db:
 
         log(f"'{self.lmid}' database erased", console=True)
 
+    @authorize
     def build(self):
         log(f"Building '{self.lmid}' database on '{self.dev_host}' ...", console=True)
         struct = utils.read(self.db_dir + "struct.ast", host=self.dev_host)
@@ -99,6 +117,7 @@ class Db:
         self.load(default_file)
         log(f"'{self.lmid}' database built on '{self.dev_host}'", console=True)
 
+    @authorize
     def load(self, file):
         """
         INSERT into scratch (name, rep_id, term_id)
@@ -203,11 +222,19 @@ class Db:
 
         log(f"Loaded '{file}'", console=True)
 
+    @authorize
     def export(self, file_path=""):
         if not file_path: file_path = f"/home/dima/tmp/{self.lmid}.db.ast"
         log(f"Exported {self.lmid} database to {file_path}", console=True)
 
+    def log(self, *args, **kwargs):
+        logs._log(self.call_info, *args, **kwargs)
+
+    @authorize
     def execute(self, query, params=()):
+        a = inspect.currentframe()
+        self.call_info = list(inspect.getframeinfo(a.f_back)[:3])
+
         data = ()
         for tries in range(2):
             try:
@@ -217,16 +244,16 @@ class Db:
                 cursor = None
 
         if cursor == None:
-            log("No database cursor!", level=5, console=True)
+            self.log("No database cursor!", level=5, console=True)
         else:
-            log(f"Query: {query}")
-            if params: log(f"Params: {params}")
+            self.log(f"Query: {query}")
+            if params: self.log(f"Params: {params}")
 
             try:
                 cursor.execute(query, params)
                 if query.startswith("select") or "returning" in query:
                     data = cursor.fetchall()
-                    log(f"Data: {data}")
+                    self.log(f"Data: {data}")
 
             except (Exception, psycopg2.Error) as e:
                 # Hitting 'restart postgres will terminate active connections'
@@ -234,13 +261,14 @@ class Db:
                     self.connect()
                     return self.execute(query, params)
 
-                log(f"Query error: {e}", level=4)
-                log(f"Database error!", level=5, console=True)
+                self.log(f"Query error: {e}", level=4)
+                self.log(f"Database error!", level=5, console=True)
 
             self.conn.commit()
             cursor.close()
         return data
 
+    @authorize
     def disconnect(self):
         self.conn.close()
         log(self.lmid + " database disconnected")

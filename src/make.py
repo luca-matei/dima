@@ -19,6 +19,7 @@ else:
         "utils/utils.py",
         "dima.py",
         "logs.py",
+        "task.py",
         "utils/dbs.py",
         "db.py",
         "utils/nets.py",
