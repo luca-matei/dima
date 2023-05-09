@@ -126,5 +126,4 @@ class HostUtils:
         dima.pools.get(from_host).retrieve_file(from_path, transfer_path)
         dima.pools.get(to_host).send_file(transfer_path, to_path)
 
-
 utils.hosts = HostUtils()

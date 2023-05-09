@@ -3,21 +3,31 @@
 flush ruleset
 
 table ip firewall {
+    set ssh_clients {
+        type ipv4_addr
+        flags timeout
+    }
+
+    set ssh_candidates {
+        type ipv4_addr . inet_service
+		flags timeout
+    }
+
     chain input {
         type filter hook input priority 0; policy drop;
 
-        ct state invalid counter drop
+        ct state vmap { established: accept, related: accept, invalid: drop }
         tcp flags & (fin|syn|rst|ack) != syn ct state new counter drop
         icmp type echo-request limit rate over 1/second burst 5 packets drop
+        icmp type { destination-unreachable, echo-reply, echo-request, source-quench, time-exceeded } accept
 
-        %DB_RULE%%WEB_RULE%%DNS_RULE%%SSH_RULE%ct state {established, related} counter accept
+        %SSH_KNOCK%
+        %CUSTOM_RULES%
 
         iif "lo" accept
         iif != "lo" ip daddr 127.0.0.1/8 counter log prefix "[nftables] Dropped conns to lo not coming from lo" drop
 
-        icmp type { destination-unreachable, echo-reply, echo-request, source-quench, time-exceeded } accept
-
-        counter log prefix "[nftables] Input Denied: " flags ip options drop
+        log prefix "[nftables] Input Denied: " flags ip options counter drop
     }
 
     chain output {

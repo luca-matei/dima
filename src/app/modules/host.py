@@ -270,7 +270,27 @@ class HostServices:
 
     # Firewall
     @authorize
-    def config_firewall(self, maintenance:'bool'=False):
+    def knock(self, service="ssh"):
+        if service == "ssh":
+            for port in self.ssh_knock:
+                cmd(f"nmap -p {port} {self.ip}")
+
+    @authorize
+    def generate_knock(self, service="ssh"):
+        log(f"Generating new port knocking sequence for '{self.name} ...'", console=True)
+        if service == "ssh":
+            self.ssh_knock = []
+            for i in range(4):
+                self.ssh_knock.append(self.next_port())
+
+            query = "update host.hosts set ssh_knock=%s where lmobj=%s;"
+            params = self.ssh_knock, self.dbid,
+            dima.db.execute(query, params)
+
+        log(f"Generated port knocking sequence for '{self.name}'", console=True)
+
+    @authorize
+    def config_firewall(self):
         if "firewall" not in self.services:
             log(f"Host '{self.name}' isn't supposed to have a firewall!", level=4, console=True)
             return
@@ -281,32 +301,30 @@ class HostServices:
         if not utils.isfile("/etc/nft/", host=self.lmid):
             cmd("sudo mkdir /etc/nft/", host=self.lmid)
 
-        web_rule = ""
-        db_rule = ""
-        dns_rule = ""
-        ssh_rule = ""
-
-        if "web" in self.services:
-            web_rule = 'tcp dport {80, 443} limit rate 4/second ct state new counter log prefix "[nftables] New HTTP(S) Conn" accept\n'
-
-        if "db" in self.services or "web" in self.services:
-            db_rule = f'tcp dport {self.pg_port} limit rate 15/{"second" if maintenance else "minute"} ct state new counter log prefix "[nftables] New Postgres Query" accept\n'
-
-        if "dns" in self.services:
-            dns_rule = 'udp dport 53 limit rate 4/second ct state new counter log prefix "[nftables] New DNS Query" accept\n'
-
         if "ssh_server" in self.services:
-            ssh_rule = f'tcp dport {self.ssh_port} limit rate 15/{"second" if maintenance else "minute"} ct state new counter log prefix "[nftables] New SSH Conn" accept\n'
+            ssh_knock = [f"tcp dport {self.ssh_knock[0]} add @ssh_candidates {{ip saddr . {self.ssh_knock[2]} timeout 1s}}"]
+            for i in range(1, len(self.ssh_knock)-1):
+                ssh_knock.append(f"tcp dport {self.ssh_knock[i]} ip saddr . tcp dport @ssh_candidates add @ssh_candidates {{ip saddr . {self.ssh_knock[i+1]} timeout 1s}}")
+            ssh_knock.append(f'tcp dport {self.ssh_knock[-1]} ip saddr . tcp dport @ssh_candidates add @ssh_clients {{ip saddr timeout 10s}} log prefix "[nftables] Successful SSH Port Knocking: "')
+            ssh_knock = ('\n' + 8*' ').join(ssh_knock)
+        else:
+            ssh_knock = ""
 
-        nftables = utils.format_tpl("nftables/nftables.tpl", {
-            "iface": self.get_iface(),
-            "db_rule": db_rule,
-            "web_rule": web_rule,
-            "dns_rule": dns_rule,
-            "ssh_rule": ssh_rule,
+
+        rule_tpls = utils.read(dima.tpls_dir + "nftables/rules.ast")
+        custom_rules = [rule_tpls.get(s) for s in ("web", "db", "dns", "ssh_server") if s in self.services]
+        custom_rules = utils.format_tpl(('\n' + 8*' ').join(custom_rules), {
+            "pg_port": self.pg_port,
+            "ssh_port": self.ssh_port,
             })
 
-        utils.write("/etc/nftables.conf", nftables, host=self.lmid)
+        nftables_conf = utils.format_tpl("nftables/nftables.tpl", {
+            "iface": self.get_iface(),
+            "ssh_knock": ssh_knock,
+            "custom_rules": custom_rules,
+            })
+
+        utils.write("/etc/nftables.conf", nftables_conf, host=self.lmid)
         self.send_file(dima.tpls_dir + "nftables/bogons-ipv4.tpl", "/etc/nft/bogons-ipv4.nft")
         self.send_file(dima.tpls_dir + "nftables/black-ipv4.tpl", "/etc/nft/black-ipv4.nft")
         self.manage_service("restart", "nftables")
@@ -734,10 +752,10 @@ class Host(lmObj, HostServices):
             # systemctl reboot
         """
 
-        query = "select mac, net, ip, client, env, ssh_port, pg_port, pm, services from host.hosts where lmobj=%s;"
+        query = "select mac, net, ip, client, env, ssh_knock, ssh_port, pg_port, pm, services from host.hosts where lmobj=%s;"
         params = dbid,
 
-        self.mac, self.net_id, self.ip, self.client_id, self.env_id, self.ssh_port, self.pg_port, self.pm_id, self.service_ids = dima.db.execute(query, params)[0]
+        self.mac, self.net_id, self.ip, self.client_id, self.env_id, self.ssh_knock, self.ssh_port, self.pg_port, self.pm_id, self.service_ids = dima.db.execute(query, params)[0]
 
         self.env = utils.hosts.envs.get(self.env_id)
         self.mnt_dir = utils.mnt_dir + self.name + "/"
@@ -1304,4 +1322,5 @@ class Host(lmObj, HostServices):
 
     @authorize
     def check(self):
-        pass
+        if not self.ssh_knock:
+            self.generate_knock("ssh")

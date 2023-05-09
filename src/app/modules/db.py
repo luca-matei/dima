@@ -167,44 +167,42 @@ class Db:
                         wheres = []    # where clause in query
 
                         for i, col in enumerate(row):
-                            if nmsps[i]:
-                                # Check if it's a list of namespaces
-                                if isinstance(col, tuple):
-                                    if col:
+                            if isinstance(col, tuple):
+                                if col:
+                                    if nmsps[i]:
                                         query = f"select {nmsps[i][0]} from {nmsps[i][2]} where {nmsps[i][1]} in %s;"
                                         params = col,
                                         values = [x[0] for x in self.execute(query, params)]
-                                        sql_list = []
+                                    else:
+                                        values = col
 
-                                        for value in values:
-                                            if isinstance(value, str):
-                                                if value:
-                                                    sql_list.append(f"'{value}'")
-                                                else:
-                                                    sql_list.append("null")
+                                    sql_list = []
+
+                                    for value in values:
+                                        if isinstance(value, str):
+                                            if value:
+                                                sql_list.append(f"'{value}'")
                                             else:
-                                                sql_list.append(str(value))
+                                                sql_list.append("null")
+                                        else:
+                                            sql_list.append(str(value))
 
-                                        new_row.append("'{" + ', '.join(sql_list) + "}'")
-                                    else:
-                                        new_row.append("'{}'")
+                                    new_row.append("'{" + ', '.join(sql_list) + "}'")
                                 else:
-                                    if col:
-                                        new_row.append(nmsps[i][2] + '.' + nmsps[i][0])                 # Table letter . Translated column
-                                        wheres.append(nmsps[i][2] + '.' + nmsps[i][1] + f"='{col}'")    # Table letter . Column to translate
-                                    else:
-                                        new_row.append("null")
+                                    new_row.append("'{}'")
+
+                            elif isinstance(col, str):
+                                if col and nmsps[i]:
+                                    new_row.append(nmsps[i][2] + '.' + nmsps[i][0])                 # Table letter . Translated column
+                                    wheres.append(nmsps[i][2] + '.' + nmsps[i][1] + f"='{col}'")    # Table letter . Column to translate
+                                elif col:
+                                    new_row.append(f"'{col}'")
+                                else:
+                                    new_row.append("null")
+                                    if nmsps[i]:
                                         tmp_nmsp_tables = [x for x in tmp_nmsp_tables if x[-1] != nmsps[i][2]]
-
-                            # Column doesn't have a namespace
                             else:
-                                if isinstance(col, str):
-                                    if col:
-                                        new_row.append(f"'{col}'")
-                                    else:
-                                        new_row.append("null")
-                                else:
-                                    new_row.append(str(col))
+                                new_row.append(str(col))
 
                         new_row = ', '.join(new_row)
                         wheres = ' and '.join(wheres)
@@ -220,7 +218,7 @@ class Db:
 
                     self.execute(f"insert into {schema[0]}.{table[0]} ({struct_row}) values {ss};", rows)
 
-        log(f"Loaded '{file}'", console=True)
+        log(f"Loaded '{file}' into '{self.lmid}'", console=True)
 
     @authorize
     def export(self, file_path=""):
@@ -246,14 +244,14 @@ class Db:
         if cursor == None:
             self.log("No database cursor!", level=5, console=True)
         else:
-            self.log(f"Query: {query}")
-            if params: self.log(f"Params: {params}")
+            self.log(f"QUERY: {query}")
+            if params: self.log(f"PARAMS: {params}")
 
             try:
                 cursor.execute(query, params)
                 if query.startswith("select") or "returning" in query:
                     data = cursor.fetchall()
-                    self.log(f"Data: {data}")
+                    self.log(f"DATA: {data}")
 
             except (Exception, psycopg2.Error) as e:
                 # Hitting 'restart postgres will terminate active connections'

@@ -10,24 +10,10 @@ class Task():
             dbid = dima.lmobjs[obj]
             module_id = dima.lmobjs[dbid][1]
 
-            def update_defence(m=False):
-                if module_id == dima.modules["Web"]:
-                    host_dbid = dima.pools.get(dbid).get(env + "_host_id")
-                    if host_dbid != dima.host_dbid:
-                        dima.pools.get(host_dbid).config_firewall(maintenance=m)
-
-                elif module_id == dima.modules["Host"]:
-                    if dbid != dima.host_dbid:
-                        dima.pools.get(dbid).config_firewall(maintenance=m)
-
-            update_defence(True)
-
             try:
                 getattr(dima.pools[dbid], act)(**params)
             except Exception as e:
                 log(e, level=4, console=True)
-
-            update_defence()
 
         elif obj.startswith("utils"):
             getattr(getattr(utils, obj.split('.')[1]), act)(**params)

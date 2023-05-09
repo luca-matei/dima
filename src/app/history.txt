@@ -250,3 +250,6 @@ lm6 test
 lm4 config ssh_client 
 lm4 config firewall 
 lm1 save
+lm6 config firewall 
+lm6 ping 
+lm1 save 
