@@ -147,7 +147,54 @@ class HostServices:
             log(f"Host '{self.name}' isn't a DNS server!", level=4, console=True)
             return
 
-        log(f"Configuring DNS server on {self.lmid} ...", console=True)
+        log(f"Configuring DNS server on '{self.lmid}' ...", console=True)
+
+        zones = {}
+        conf_local = []
+
+        for dbid, web in [(i, w) for i, w in dima.pools.items() if isinstance(w, Web)]:
+            print(web.domain.name)
+            zone_name = ".".join(web.domain.name.split(".")[-2:])
+
+            if zone_name not in utils.get_keys(zones):
+                zones[zone_name] = []
+
+            if web.domain.dns.dbid == self.dbid:
+                zones[zone_name].append(web)
+
+        for zone_name, webs in zones.items():
+            if not webs:
+                continue
+
+            web_records = []
+            mail_records = []
+            for web in webs:
+                dev_host_ip = dima.pools.get(web.dev_host_id).ip
+                prod_host_ip = dima.pools.get(web.prod_host_id).ip
+
+                subdomain_name = web.domain.name.replace(zone_name, "").strip('.')
+                if subdomain_name:
+                    web_records.append(f"{subdomain_name} IN A {prod_host_ip}")
+                else:
+                    web_records.append("@ IN A " + prod_host_ip)
+
+                web_records.append(f"www.{subdomain_name}".strip('.') + f" IN A {prod_host_ip}")
+                web_records.append(f"dev.{subdomain_name}".strip('.') + f" IN A {dev_host_ip}")
+                web_records.append(f"www.dev.{subdomain_name}".strip('.') + f" IN A {dev_host_ip}")
+
+            conf_local.append(utils.format_tpl("dns/local.tpl", {"domain": zone_name}))
+            zone_conf = utils.format_tpl("dns/zone.tpl", {
+                "serial": int(time.time()),
+                "dns_domain": "lucamatei.net",
+                "dns_ip": dima.domains.get(dima.domains.get(zone_name)).dns.ip,
+                "mail_domain": "lucamatei.net",
+                "mail_ip": dima.domains.get(dima.domains.get(zone_name)).mail.ip,
+                "prod_host_ip": prod_host_ip,
+                "web_records": '\n'.join(web_records),
+                "mail_records": '\n'.join(mail_records),
+                })
+
+            utils.write("/etc/bind/db." + zone_name, zone_conf, owner="root:bind", host=self.lmid)
 
         # /etc/default/bind9
         self.send_file(dima.tpls_dir + "dns/default.tpl", "/etc/default/named")
@@ -157,70 +204,8 @@ class HostServices:
             "ip": self.ip,
             }), owner="root:bind", host=self.lmid)
 
-        query = "select a.lmobj from host.hosts a, nets b where a.net=b.lmobj and b.dns=%s;"
-        params = self.dbid,
-        hosts = dima.db.execute(query, params)
-
-        # Zones
-        query = "select a.lmid, b.dev_host, b.prod_host, c.name from lmobjs a, project.projects b, domains c, web.webs d where a.id=b.lmobj and b.lmobj=d.lmobj and c.id=d.domain;"
-        webs = dima.db.execute(query)
-
-        web_fields = "lmid", "dev_host_id", "prod_host_id", "domain",
-        zones = {}
-
-        for w in webs:
-            web = dict(zip(web_fields, w))
-            zone_name = ".".join(web.get("domain").split(".")[-2:])
-
-            if zone_name not in utils.get_keys(zones):
-                zones[zone_name] = []
-
-            zones[zone_name].append(web)
-
-        conf_local = ""
-        for zone_name in utils.get_keys(zones):
-            zone = zones.get(zone_name)
-            domain_records = ""
-            subdomain_records = ""
-
-            conf_local += utils.format_tpl("dns/local.tpl", {"domain": zone_name})
-
-            for web in zone:
-                prod_host_ip = dima.pools.get(web.get("prod_host_id")).ip
-                dev_host_ip = dima.pools.get(web.get("dev_host_id")).ip
-
-                if web.get("domain") == zone_name:
-                    domain_records = '\n'.join([
-                        "@ IN A " + prod_host_ip,
-                        "www IN A " + prod_host_ip,
-                        "dev IN A " + dev_host_ip,
-                        "www.dev IN A " + dev_host_ip
-                        ])
-
-                else:
-                    subdomain_name = web.get("domain").replace("." + zone_name, "")
-                    subdomain_records += '\n'.join([
-                        f"{subdomain_name} IN A {prod_host_ip}",
-                        f"www.{subdomain_name} IN A {prod_host_ip}",
-                        f"dev.{subdomain_name} IN A {dev_host_ip}",
-                        f"www.dev.{subdomain_name} IN A {dev_host_ip}",
-                        ])
-
-            zone_conf = utils.format_tpl("dns/zone.tpl", {
-                "serial": int(time.time()),
-                "dns_domain": "lucamatei.net",
-                "dns_ip": self.ip,
-                "mail_domain": "lucamatei.net",
-                "mail_ip": self.ip,
-                "prod_host_ip": prod_host_ip,
-                "domain_records": domain_records,
-                "subdomain_records": subdomain_records,
-                })
-
-            utils.write("/etc/bind/db." + zone_name, zone_conf, owner="root:bind", host=self.lmid)
-
         # /etc/bind/named.conf.local
-        utils.write("/etc/bind/named.conf.local", conf_local, owner="root:bind", host=self.lmid)
+        utils.write("/etc/bind/named.conf.local", '\n'.join(conf_local), owner="root:bind", host=self.lmid)
 
         log(f"Configured DNS server on {self.lmid} ...", console=True)
 
@@ -253,8 +238,10 @@ class HostServices:
     # Firewall
     @authorize
     def knock(self):
-        for port in self.knock_seq:
-            cmd(f"sudo nmap -p {port} {self.ip}")
+        if (datetime.now() - self.last_knock).total_seconds() > utils.hosts.knocking_grace:
+            self.last_knock = datetime.now()
+            for port in self.knock_seq:
+                cmd(f"sudo nmap -p {port} {self.ip}")
 
     @authorize
     def generate_knock_seq(self):
@@ -294,7 +281,7 @@ class HostServices:
             tpls = rule_tpls.get("guarded_ports")
 
             if not self.knock_seq:
-                self.generate_knock()
+                self.generate_knock_seq()
 
             knocking_rules = [tpls[0]]  # First Knock
 
@@ -349,7 +336,7 @@ class HostServices:
         utils.write("/etc/nftables.conf", nftables_conf, host=self.lmid)
         self.send_file(dima.tpls_dir + "nftables/bogons-ipv4.tpl", "/etc/nft/bogons-ipv4.nft")
         self.send_file(dima.tpls_dir + "nftables/black-ipv4.tpl", "/etc/nft/black-ipv4.nft")
-        self.manage_service("restart", "nftables")
+        #self.manage_service("restart", "nftables")
         self.reset_knock()
 
         log(f"Configured Firewall for '{self.name}'", console=True)
@@ -435,7 +422,11 @@ class HostServices:
         if not password:
             password = utils.new_pass(64)
 
-        cmd(utils.dbs.query.format(f"alter role {role} with password '{password}';"), host=self.lmid)
+        output = cmd(utils.dbs.query.format(f"alter role {role} with password '{password}';"), catch=True, host=self.lmid)
+
+        if "does not exist" in output:
+            self.create_pg_role(role, password)
+            self.create_pg_db(role)
 
         if role.startswith("lm"):
             utils.write(utils.projects_dir + role + "/src/app/db/db_pass.txt", password, host=self.lmid)
@@ -502,13 +493,10 @@ class HostServices:
             })
 
         # Allow remote access
-        hba = utils.format_tpl("pg/pg_hba.tpl", {
-            "remote_auth": "" if self.dbid == dima.host_dbid else f"host all all {dima.pools.get(dima.host_dbid).ip}/32 scram-sha-256"
-            })
+        self.send_file(dima.tpls_dir + "pg/pg_hba.tpl", hba_file, owner="postgres:postgres")
 
         # Write new config file and restart service
         utils.write(config_file, config, owner="postgres:postgres", tpl=True, host=self.lmid)
-        utils.write(hba_file, hba, owner="postgres:postgres", tpl=True, host=self.lmid)
 
         # Update ports in dima projects and in db
         utils.write(utils.dbs.port_file, str(port), host=self.lmid)
@@ -782,8 +770,16 @@ class Host(lmObj, HostServices):
             # echo "dima ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dima
 
             # nano /etc/ssh/sshd_config
-            # systemctl restart ssh
             # systemctl reboot
+
+            Run Setup
+
+            CHANGE INTERFACE NAME TO ENS3
+            # nano /etc/network/interfaces
+            # nano /etc/nftables.conf
+            # systemctl reboot
+
+            Run Setup
         """
 
         query = "select mac, net, ip, client, env, knock_seq, ssh_port, pg_port, pm, services from host.hosts where lmobj=%s;"
@@ -802,7 +798,7 @@ class Host(lmObj, HostServices):
     def next_port(self, service:'bool'=False):
         if service:
             min, max = 4096, 8192
-            used = [self.ssh_port, self.pg_port, 5432, 8080, 4343, 5353] + self.ssh_knock
+            used = [self.ssh_port, self.pg_port, 5432, 8080, 4343, 5353] + self.knock_seq
 
         else:
             min, max = 16384, 32768
@@ -897,7 +893,7 @@ class Host(lmObj, HostServices):
         lmid = dima.next_lmid()
         log(f"Creating new '{lmid}' VM ...", console=True)
 
-        ip = utils.nets.get_free_ip(self.net_id)
+        ip = dima.pools.get(self.net_id).get_ip()
         ssh.create_ssh_key(lmid)
         ssh_port = self.next_port(service=True)
         utils.hosts.preseed_host(lmid, self.net_id, ip, ssh_port, host=self.lmid)
@@ -1310,6 +1306,7 @@ class Host(lmObj, HostServices):
             final_path = dest_path
             dest_path = utils.tmp_dir + 'restricted' + ('/' if is_dir else '')
 
+        self.knock()
         cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path.rstrip('/')} dima@{self.lmid}:{dest_path.rstrip('/')}", catch=True)
 
         if final_path:
@@ -1320,6 +1317,7 @@ class Host(lmObj, HostServices):
     def retrieve_file(self, src_path:'str', dest_path:'str'):
         is_dir = src_path.endswith('/')
         # Handle permissions
+        self.knock()
         cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} dima@{self.lmid}:{src_path.rstrip('/')} {dest_path.rstrip('/')}", catch=True)
 
     @authorize
@@ -1360,4 +1358,4 @@ class Host(lmObj, HostServices):
     @authorize
     def check(self):
         if not self.knock_seq:
-            self.generate_knock()
+            self.generate_knock_seq()

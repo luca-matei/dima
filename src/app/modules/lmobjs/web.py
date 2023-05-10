@@ -79,7 +79,7 @@ class Web(Project):
 
         if utils.isfile(self.repo_dir, host=host):
             if not confirm:
-                if not utils.confirm(f"Are you sure you want to rebuild '{domain}'?"):
+                if not utils.confirm(f"Are you sure you want to rebuild '{domain.name}'?"):
                     log("Aborted", console=True)
                     return
 
@@ -92,7 +92,7 @@ class Web(Project):
                 # db_pass = utils.read(db_pass_path, host=self.prod_host)
                 cmd(f"rm -r " + self.repo_dir, host=host)
 
-        log(f"Building '{domain}' ...", console=True)
+        log(f"Building '{domain.name}' ...", console=True)
 
         dir_tree = (
             "src/",
@@ -128,7 +128,7 @@ class Web(Project):
         self.default(env)
         self.generate_ssl(env)
 
-        log(f"Built '{domain}'", console=True)
+        log(f"Built '{domain.name}'", console=True)
 
     @authorize
     def default(self, env:'env'="dev", confirm:'bool'=False):
@@ -142,11 +142,11 @@ class Web(Project):
         domain = self.env_var(env, "domain")
 
         if not confirm:
-            if not utils.confirm(f"Are you sure you want to format '{domain}'?"):
+            if not utils.confirm(f"Are you sure you want to format '{domain.name}'?"):
                 log("Aborted", console=True)
                 return
 
-        log(f"Setting '{domain}' to 'Hello World' ...", console=True)
+        log(f"Setting '{domain.name}' to 'Hello World' ...", console=True)
 
         settings = {
             "lmid": self.lmid,
@@ -167,7 +167,7 @@ class Web(Project):
         dima.pools.get(host_id).restart_supervisor()
         dima.pools.get(host_id).restart_nginx()
 
-        log(f"Set '{domain}' to 'Hello World'", console=True)
+        log(f"Set '{domain.name}' to 'Hello World'", console=True)
 
     @authorize
     def default_db(self, env:"env"="dev", confirm:'bool'=False):
@@ -175,11 +175,11 @@ class Web(Project):
         domain = self.env_var(env, "domain")
 
         if not confirm:
-            if not utils.confirm(f"Are you sure you want to format '{domain}' database?"):
+            if not utils.confirm(f"Are you sure you want to format '{domain.name}' database?"):
                 log("Aborted", console=True)
                 return
 
-        log(f"Formatting '{domain}' database ...", console=True)
+        log(f"Formatting '{domain.name}' database ...", console=True)
 
         if env == "dev":
             host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
@@ -218,7 +218,7 @@ class Web(Project):
         params = modules
         db.execute(query, params)
 
-        log(f"Formatted '{domain}' database ...", console=True)
+        log(f"Formatted '{domain.name}' database ...", console=True)
 
     @authorize
     def default_html(self, confirm:'bool'=False, hello:'bool'=False):
@@ -269,7 +269,7 @@ class Web(Project):
         domain = self.env_var(env, "domain")
         db = self.env_var(env, "db")
 
-        log(f"Updating Global HTML for '{domain}' ...", console=True)
+        log(f"Updating Global HTML for '{domain.name}' ...", console=True)
 
         self.global_html = {}
         var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
@@ -329,7 +329,7 @@ class Web(Project):
             db.execute(query, params)
 
             app_header = utils.format_tpl(self.yml2html("app-header.yml", lang), {
-                "domain": domain,
+                "domain": domain.name,
                 })
 
             app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
@@ -344,13 +344,13 @@ class Web(Project):
                 "name": self.name,
                 "hide_all": self.yml2html("hide-all.yml", lang),
                 "app_header": app_header,
-                "domain": self.domain.name,
+                "domain": domain.name,
                 "app_footer": app_footer,
                 "top_button": self.yml2html("top-button.yml", lang),
                 "cookies_notice": self.yml2html("cookies-notice.yml", lang),
                 })
 
-        log(f"Updated Global HTML for '{domain}'", console=True)
+        log(f"Updated Global HTML for '{domain.name}'", console=True)
 
     @authorize
     def update_html(self, env:"env"="dev", section:'str'= "", global_html:'bool'=False):
@@ -365,7 +365,7 @@ class Web(Project):
             db.format_table("fractions")
             self.update_global_html(env)
 
-        log(f"Updating HTML for '{domain}' ...", console=True)
+        log(f"Updating HTML for '{domain.name}' ...", console=True)
         method_ids = dict(db.execute("select name, id from methods;"))
 
         # Erase current html
@@ -448,7 +448,7 @@ class Web(Project):
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
 
-        log(f"Updated HTML for '{domain}'", console=True)
+        log(f"Updated HTML for '{domain.name}'", console=True)
         self.restart(env)
 
     @authorize
@@ -465,7 +465,7 @@ class Web(Project):
             for i in range(len(classes)):
                 yield ''.join(random.SystemRandom().choice(string.ascii_letters) for _ in range(8))
 
-        log(f"Updating CSS for '{domain}' ...", console=True)
+        log(f"Updating CSS for '{domain.name}' ...", console=True)
 
         scss = utils.join_modules(
             ("palettes.scss",
@@ -509,7 +509,7 @@ class Web(Project):
         else:
             utils.write(self.repo_dir + "src/assets/css/app.css", css, host=host)
 
-        log(f"Updated CSS for '{domain}'", console=True)
+        log(f"Updated CSS for '{domain.name}'", console=True)
 
     @authorize
     def generate_ssl(self, env:'env'="dev"):
@@ -527,14 +527,14 @@ class Web(Project):
         # Production certificates
         #log(f"Generating Let's Encrypt SSL certs for {self.domain.dev.name}. This may take a while ...", console=True)
 
-        log(f"Generating SSL certificates for '{domain}'. This may take a while ...", console=True)
-        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain}"', host=host)
+        log(f"Generating SSL certificates for '{domain.name}'. This may take a while ...", console=True)
+        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain.name}"', host=host)
 
-        query = f"update domains set ssl_due=%s where name=%s;"
-        params = datetime.now() + timedelta(3*365/12-3), self.domain,
+        query = f"update domains set ssl_due=%s where id=%s;"
+        params = datetime.now() + timedelta(3*365/12-3), domain.dbid,
         dima.db.execute(query, params)
 
-        log(f"Generated SSL certificates for '{domain}'", console=True)
+        log(f"Generated SSL certificates for '{domain.name}'", console=True)
 
     @authorize
     def change_state(self, new_state:'web_state', confirm:'bool'=False):
@@ -573,7 +573,7 @@ class Web(Project):
         # To do: add manual files
         host = self.env_var(env, "host")
         domain = self.env_var(env, "domain")
-        log(f"Updating JS for '{domain}' ...", console=True)
+        log(f"Updating JS for '{domain.name}' ...", console=True)
 
         cmd(f"rm {self.repo_dir}src/assets/js/*.js", host=host)
         src_js_dir = utils.src_dir + "assets/web/assets/js/"
@@ -584,7 +584,7 @@ class Web(Project):
                 host=host
                 )
 
-        log(f"Updated JS for '{domain}'", console=True)
+        log(f"Updated JS for '{domain.name}'", console=True)
 
     @authorize
     def update_py(self, env:"env"="dev", restart:'bool'=False):
@@ -592,7 +592,7 @@ class Web(Project):
         domain = self.env_var(env, "domain")
 
         # Joins .py files from main host and sends the result on the remote host
-        log(f"Updating source code for '{domain}' ...", console=True)
+        log(f"Updating source code for '{domain.name}' ...", console=True)
         utils.join_modules((
             "utils/utils.py",
             "app.py",
@@ -614,11 +614,11 @@ class Web(Project):
             file_host = host)
 
         if restart: self.restart(env)
-        log(f"Updated source code for '{domain}'", console=True)
+        log(f"Updated source code for '{domain.name}'", console=True)
 
     @authorize
     def assign_port(self, env:"env"="dev"):
-        log(f"Assigning {env} port {port} to '{domain}' ...", console=True)
+        log(f"Assigning {env} port to '{domain.name}' ...", console=True)
         setattr(self, env + "_port", dima.pools.get(host_id).next_port())
         port = self.env_var(env, "port")
 
@@ -626,7 +626,8 @@ class Web(Project):
         params = port, self.dbid,
         dima.db.execute(query, params)
 
-        log(f"Assigned {env} port {port} to '{domain}'", console=True)
+        log(f"Assigned {env} port to '{domain.name}'", console=True)
+        print(port)
         self.config(env)
 
     @authorize
@@ -635,7 +636,7 @@ class Web(Project):
         domain = self.env_var(env, "domain")
         port = self.env_var(env, "port")
 
-        log(f"Configuring uWSGI for '{domain}' ...", console=True)
+        log(f"Configuring uWSGI for '{domain.name}' ...", console=True)
 
         uwsgi_config = utils.format_tpl("web/app/uwsgi.tpl", {
             "port": str(port),
@@ -647,7 +648,7 @@ class Web(Project):
         utils.write(self.app_dir + "uwsgi.ini", uwsgi_config, host=host)
 
         if restart: self.restart(env)
-        log(f"Configured uWSGI for '{domain}'", console=True)
+        log(f"Configured uWSGI for '{domain.name}'", console=True)
 
     @authorize
     def config_supervisor(self, env:'env'="dev", restart:'bool'=False):
@@ -662,7 +663,7 @@ class Web(Project):
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
 
-        log(f"Configuring Supervisor for '{domain}' ...", console=True)
+        log(f"Configuring Supervisor for '{domain.name}' ...", console=True)
         supervisor_config = utils.format_tpl("web/app/supervisor.tpl", {
             "lmid": self.lmid,
             "projects_dir": utils.projects_dir,
@@ -671,7 +672,7 @@ class Web(Project):
         utils.write(supervisor_file, supervisor_config, host=host)
 
         if restart: dima.pools.get(host_id).restart_supervisor()
-        log(f"Configured Supervisor for '{domain}'", console=True)
+        log(f"Configured Supervisor for '{domain.name}'", console=True)
 
     @authorize
     def config_nginx(self, env:'env'="dev", restart:'bool'=False):
@@ -690,7 +691,7 @@ class Web(Project):
         ssl_dir = self.env_var(env, "ssl_dir")
         port = self.env_var(env, "port")
 
-        log(f"Configuring Nginx for '{domain}' ...", console=True)
+        log(f"Configuring Nginx for '{domain.name}' ...", console=True)
 
         manual = self.app_dir + "manual/nginx.tpl"
         if utils.isfile(manual, host=self.dev_host, quiet=True):
@@ -699,7 +700,7 @@ class Web(Project):
             tpl = "web/app/nginx.tpl"
 
         nginx_config = utils.format_tpl(tpl, {
-            "domain": domain,
+            "domain": domain.name,
             "ssl_dir": ssl_dir,
             "dima_ssl_dir": utils.ssl_dir,
             "ocsp": "off" if env == "đev" else "on",
@@ -712,7 +713,7 @@ class Web(Project):
         utils.write(nginx_file, nginx_config, host=host)
 
         if restart: dima.pools.get(host_id).restart_nginx()
-        log(f"Configured Nginx for '{domain}'", console=True)
+        log(f"Configured Nginx for '{domain.name}'", console=True)
 
     @authorize
     def config(self, env:'env'="dev", restart:'bool'=False):
@@ -729,16 +730,21 @@ class Web(Project):
         host = self.env_var(env, "host")
         domain = self.env_var(env, "domain")
 
-        log(f"Restarting '{domain}' ...", console=True)
+        log(f"Restarting '{domain.name}' ...", console=True)
         # To do: Save log file
         cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;", host=host)
         cmd(f"sudo supervisorctl restart {self.lmid}", host=host)
-        log(f"Restarted '{domain}'", console=True)
+        log(f"Restarted '{domain.name}'", console=True)
 
     @authorize
     def env_var(self, env, name):
         if name == "db" and env == "dev":
             return getattr(self, name)
+        elif name == "domain":
+            if env == "dev":
+                return self.domain.dev
+            else:
+                return self.domain
         else:
             return getattr(self, env + "_" + name)
 

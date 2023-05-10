@@ -1,103 +1,3 @@
-status
-lm1 save
-lm6 mount
-lm6 unmount
-lm4 restart
-lm6 restart nginx
-lm6 mount
-lm6 unmount
-lm6 status
-lm6 restart nginx
-lm7 update css
-lm5 update css
-lm7 update global_html
-lm6 unmount
-lm7 update css
-lm1 save
-lm4 config git
-lm7 update global_html
-lm4 check
-lm8 restart nginx
-lm4 restart nginx
-lm6 config grub
-lm1 save
-lm7 config nginx
-lm4 generate dh
-lm6 mount
-lm7 update html
-lm7 update global_html
-lm7 update css
-lm1 save
-lm7 save
-lm7 update html
-lm7 update css
-lm1 save
-lm6 mount
-lm7 update html
-lm7 update global_html
-lm7 update css
-lm6 mount
-lm7 update py
-lm1 save
-lm2 check
-lm7 update py --env=prod --restart=0
-lm7 update css --env=prod
-lm7 default db --env=prod --confirm=1
-lm7 config --env=prod
-lm7 config --env=dev --restart=0
-lm7 config --env=dev --restart=1
-lm7 update html --env=dev --section= --global_html=1
-lm7 update html --env=prod --section= --global_html=1
-lm7 config --env=prod --restart=1
-lm8 mount
-lm7 config
-lm7 save --message="Updated files"
-lm1 save
-lm7 default --env=prod --confirm=1
-lm8 restart nginx
-lm8 restart supervisor
-lm8 config nginx
-lm7 update html --env=prod --section= --global_html=1
-lm8 update resources
-lm1 save
-lm8 update
-lm6 update
-lm6 mount
-lm7 update html --env=dev --section= --global_html=1
-lm7 update html --env=dev --section= --global_html=0
-lm7 update css --env=dev
-lm7 save --message="Updated files"
-lm1 save
-lm7 update html --env=dev --section= --global_html=1
-lm7 update html --env=dev --section= --global_html=0
-lm7 update css --env=dev
-lm7 update html --env=dev --global_html=1
-lm7 update html --env=dev
-lm7 save --message="Updated files"
-lm1 save
-lm7 update html --env=dev --global_html=1
-lm7 update css --env=dev
-lm7 update js --env=dev
-lm7 update html --env=dev
-lm7 update html --env=dev --global_html=1
-lm7 save --message="Updated files"
-lm7 update css --env=dev
-lm7 update html --env=dev
-lm7 update html --env=dev --global_html=1
-:(
-lm6 mount
-lm7 update css --env=dev
-lm7 update html --env=dev --global_html=1
-lm7 update html --env=dev
-lm7 save --message="Updated files"
-lm1 save
-lm7 update js --env=dev
-lm7 update html --env=dev --global_html=1
-lm7 update css --env=dev
-lm7 save --message="Updated files"
-lm1 save
-lm7 update js --env=dev
-lm7 update css --env=dev
 lm7 save --message="Updated files"
 lm1 save
 lm7 update html --env=dev
@@ -296,4 +196,32 @@ lm14 config firewall
 lm1 save 
 lm6 ping 
 lm14 config dhcp 
+lm1 save --message="Updated files"
+lm14 config dns lm14 restart dns 
+lm14 config dns 
+lm8 setup 
+lm8 ping 
+lm11 setup 
+lm11 config firewall 
+lm11 ping 
+lm11 reboot 
+lm11 setup 
+lm10 ping 
+lm10 setup 
+lm11 ping 
+lm5 change state --new_state=5 --confirm=1
+lm7 change state --new_state=5 --confirm=1
+lm10 ping 
+lm8 ping 
+lm5 change state --new_state=5 --confirm=1
+lm10 config postgres 
+lm6 config postgres 
+lm8 config postgres 
+lm5 change state --new_state=5 --confirm=1
+lm14 config dns 
+lm11 config dns 
+lm11 ping 
+lm14 ping 
+lm14 config dns 
+lm10 ping 
 lm1 save --message="Updated files"

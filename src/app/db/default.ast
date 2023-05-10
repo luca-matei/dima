@@ -54,7 +54,7 @@
         ("home.lucamatei.net", "", "lm14", "lm14", "lm14"),
         ("nebula.lucamatei.net", "", "", "lm11", "lm12"),
 
-        ("hello.lucamatei.net", "", "lm14", "lm14", "lm14"),
+        ("hello.lucamatei.net", "", "", "lm11", "lm14"),
         ("dev.hello.lucamatei.net", "", "lm14", "lm14", "lm14"),
 
         ("digitalmarmot.com", "", "lm14", "lm14", "lm14"),
@@ -65,7 +65,7 @@
         ("gitlab.lucamatei.net", "", "lm14", "lm14", "lm14"),
         ("qr.lucamatei.net", "", "lm14", "lm14", "lm14"),
 
-        ("lucamatei.eu", "", "lm14", "lm14", "lm14"),
+        ("lucamatei.eu", "", "", "lm11", "lm14"),
         ("dev.lucamatei.eu", "", "lm14", "lm14", "lm14"),
 
         ("lucamatei.org", "", "lm14", "lm14", "lm14"),
@@ -110,8 +110,8 @@
         ("lm6", "52:54:00:e5:85:a8", "lm3", "192.168.1.4", "", "dev", (6009, 4718, 6015, 6266), 4828, 8005, "lm4", ("ssh_server", "ssh_client", "web", "db", "firewall",)),
         ("lm8", "52:54:00:d2:01:44", "lm3", "192.168.1.5", "", "prod", (20353, 24571, 21917, 27358), 4116, 5639, "lm4", ("ssh_server", "web", "db", "firewall",)),
         #("lm9", "52:54:00:1d:9c:a7", "lm3", "192.168.1.6", "", "dev", (), 7686, 4338, "lm4", ()),
-        ("lm10", "00:16:3e:ef:d3:66", "", "89.44.137.121", "", "prod", (), 7958, 4123, "", ("ssh_server", "web", "db", "firewall",)),
-        ("lm11", "00:16:3e:ad:04:8a", "", "89.44.137.137", "", "prod", (), 4986, 4911, "", ("ssh_server", "firewall", "dns")),
+        ("lm10", "00:16:3e:ef:d3:66", "", "89.44.137.121", "", "prod", (7850, 5971, 6820, 4702), 7958, 4123, "", ("ssh_server", "web", "db", "firewall",)),
+        ("lm11", "00:16:3e:ad:04:8a", "", "89.44.137.137", "", "prod", (7013, 7252, 7249, 7398), 4986, 4911, "", ("ssh_server", "firewall", "dns")),
         ("lm12", "00:16:3e:94:29:d3", "", "89.44.137.138", "", "prod", (), 22, 5432, "", ("ssh_server", "firewall", "mail")),
         ("lm14", "b8:27:eb:71:d5:09", "lm3", "192.168.1.3", "", "prod", (4741, 7467, 6736, 6640), 4387, 5432, "", ("ssh_server", "firewall", "dns", "dhcp", "mail")),
         )),
@@ -244,8 +244,8 @@
         ("id:lmid:lmobjs", "id:lmid:lmobjs", "", "id:lmid:lmobjs", "", "", ""),
         ("lm1", "lm4", 0.1, "lm4", 0.1, "dima", ""),
         #("lm2", "lm4", 0.1, "lm4", 0.1, "dima Portal", ""),
-        ("lm5", "lm6", 0.1, "lm8", 0.1, "Hello World", ""),
-        ("lm7", "lm6", 0.1, "lm8", 0.1, "Portfolio", ""),
+        ("lm5", "lm6", 0.1, "lm10", 0.1, "Hello World", ""),
+        ("lm7", "lm6", 0.1, "lm10", 0.1, "Portfolio", ""),
         )),
 
     ("langs", (
