@@ -47,7 +47,7 @@
         "ip inet",
         "client int",
         "env smallint",
-        "ssh_knock int[]",
+        "knock_seq int[]",
         "ssh_port int",
         "pg_port int",
         "pm int",

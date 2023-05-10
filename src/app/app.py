@@ -467,8 +467,11 @@ class Utils:
             self.write(self.tmp_dir + "script.sh", command)
             command = f"ssh {host} 'bash -s' < {self.tmp_dir}script.sh"
 
-            # Knock to open SSH port
-            dima.pools.get(dima.lmobjs.get(host)).knock("ssh")
+            # Knock to open guarded ports
+            pool = dima.pools.get(dima.lmobjs.get(host))
+            if (datetime.now() - pool.last_knock).total_seconds() > utils.hosts.knock_grace:
+                pool.last_knock = datetime.now()
+                pool.knock()
 
         output = subprocess.run([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
@@ -550,7 +553,7 @@ class Dima:
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
-        #self.db.rebuild()
+        self.db.rebuild()
 
         self.load_database()
 
@@ -913,7 +916,7 @@ class Db:
     def connect(self):
         try:
             if self.host and self.host != dima.host_lmid:
-                ip = dima.pools.get(dima.lmobjs.get(self.host)).ip
+                ip = dima.pools.get(self.host_id).ip
             else:
                 ip = "127.0.0.1"
 
@@ -921,14 +924,9 @@ class Db:
                 # Password file exists
                 password = utils.read(self.db_dir + "db_pass.txt", host=self.host)
             else:
-                # Password file has been removed
-                if utils.confirm(f"Couldn't find password for database '{self.lmid}' on host '{self.host}'! Purge database? Manual intervention is required otherwise!"):
-                    dima.pools.get(self.host_id).create_pg_role(self.lmid)
-                    dima.pools.get(self.host_id).create_pg_db(self.lmid)
+                log(f"Couldn't find password for database '{self.lmid}' on host '{self.host}'! Changing it ...", level=3, console=True)
 
-                    password = utils.read(self.db_dir + "db_pass.txt", host=self.host)
-                else:
-                    log(f"Required manual intervention for database '{self.lmid}' on '{self.host}' to change password!", level=5, console=True)
+                password = dima.pools.get(self.host_id).reset_pg_pass(self.lmid)
 
             self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={ip} password={password} port={self.port}")
 
@@ -936,6 +934,7 @@ class Db:
             log(e, level=4)
             log(f"Cannot connect to '{self.lmid}' database!", level=4, console=True)
             task.abort()
+            return
 
         log(self.lmid + " database connected")
 
@@ -1355,6 +1354,7 @@ class HostUtils:
     envs = {}
     services = {}
     domain = None
+    knock_grace = 30
 
     def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):
         self.__doc__ = Host.create_host.__doc__
@@ -1853,24 +1853,27 @@ class HostServices:
 
     # Firewall
     @authorize
-    def knock(self, service="ssh"):
-        if service == "ssh":
-            for port in self.ssh_knock:
-                cmd(f"nmap -p {port} {self.ip}")
+    def knock(self):
+        for port in self.knock_seq:
+            cmd(f"sudo nmap -p {port} {self.ip}")
 
     @authorize
-    def generate_knock(self, service="ssh"):
+    def generate_knock_seq(self):
         log(f"Generating new port knocking sequence for '{self.name} ...'", console=True)
-        if service == "ssh":
-            self.ssh_knock = []
-            for i in range(4):
-                self.ssh_knock.append(self.next_port())
+        self.knock_seq = []
+        for i in range(4):
+            self.knock_seq.append(self.next_port(True))
 
-            query = "update host.hosts set ssh_knock=%s where lmobj=%s;"
-            params = self.ssh_knock, self.dbid,
-            dima.db.execute(query, params)
+        query = "update host.hosts set knock_seq=%s where lmobj=%s;"
+        params = self.knock_seq, self.dbid,
+        dima.db.execute(query, params)
 
         log(f"Generated port knocking sequence for '{self.name}'", console=True)
+        print(self.knock_seq)
+
+    @authorize
+    def reset_knock(self):
+        self.last_knock = datetime(1945, 5, 8)
 
     @authorize
     def config_firewall(self):
@@ -1884,33 +1887,40 @@ class HostServices:
         if not utils.isfile("/etc/nft/", host=self.lmid):
             cmd("sudo mkdir /etc/nft/", host=self.lmid)
 
-        if "ssh_server" in self.services:
-            ssh_knock = [f"tcp dport {self.ssh_knock[0]} add @ssh_candidates {{ip saddr . {self.ssh_knock[2]} timeout 1s}}"]
-            for i in range(1, len(self.ssh_knock)-1):
-                ssh_knock.append(f"tcp dport {self.ssh_knock[i]} ip saddr . tcp dport @ssh_candidates add @ssh_candidates {{ip saddr . {self.ssh_knock[i+1]} timeout 1s}}")
-            ssh_knock.append(f'tcp dport {self.ssh_knock[-1]} ip saddr . tcp dport @ssh_candidates add @ssh_clients {{ip saddr timeout 10s}} log prefix "[nftables] Successful SSH Port Knocking: "')
-            ssh_knock = ('\n' + 8*' ').join(ssh_knock)
+        if "ssh_server" in self.services or "db" in self.services:
+            if not self.knock_seq:
+                self.generate_knock()
+
+            knocking_rules = [f"tcp dport {self.knock_seq[0]} add @candidates {{ip saddr . {self.knock_seq[1]} timeout 1s}}"]
+
+            for i in range(1, len(self.knock_seq)-1):
+                knocking_rules.append(f"tcp dport {self.knock_seq[i]} ip saddr . tcp dport @candidates add @candidates {{ip saddr . {self.knock_seq[i+1]} timeout 1s}}")
+
+            knocking_rules.append(f'tcp dport {self.knock_seq[-1]} ip saddr . tcp dport @candidates add @clients {{ip saddr timeout {utils.hosts.knock_grace}s}} log prefix "[nftables] Successful Port Knocking: "')
+
+            knocking_rules = ('\n' + 8*' ').join(knocking_rules)
         else:
-            ssh_knock = ""
+            knocking_rules = ""
 
 
         rule_tpls = utils.read(dima.tpls_dir + "nftables/rules.ast")
-        custom_rules = [rule_tpls.get(s) for s in ("web", "db", "dns", "ssh_server") if s in self.services]
+        custom_rules = [rule_tpls.get(s) for s in ("web", "dns", "ssh_server", "db") if s in self.services]
         custom_rules = utils.format_tpl(('\n' + 8*' ').join(custom_rules), {
-            "pg_port": self.pg_port,
             "ssh_port": self.ssh_port,
+            "pg_port": self.pg_port,
             })
 
         nftables_conf = utils.format_tpl("nftables/nftables.tpl", {
             "iface": self.get_iface(),
-            "ssh_knock": ssh_knock,
-            "custom_rules": custom_rules,
+            "knock": knocking_rules,
+            "service_rules": custom_rules,
             })
 
         utils.write("/etc/nftables.conf", nftables_conf, host=self.lmid)
         self.send_file(dima.tpls_dir + "nftables/bogons-ipv4.tpl", "/etc/nft/bogons-ipv4.nft")
         self.send_file(dima.tpls_dir + "nftables/black-ipv4.tpl", "/etc/nft/black-ipv4.nft")
         self.manage_service("restart", "nftables")
+        self.reset_knock()
 
         log(f"Configured Firewall for '{self.name}'", console=True)
 
@@ -1985,7 +1995,17 @@ class HostServices:
             cmd(role_query, host=self.lmid)
 
         cmd(utils.dbs.query.format(f"grant {role} to dima;"), host=self.lmid)
-        cmd(utils.dbs.query.format(f"alter role {role} with password '{password}';"))
+        self.reset_pg_pass(role, password)
+
+        log(f"Postgres role '{role}' created on '{self.name}'", console=True)
+
+    @authorize
+    def reset_pg_pass(self, role:'str', password:'str'=None):
+        log(f"Resetting database password for '{role}' on '{self.name}' ...", console=True)
+        if not password:
+            password = utils.new_pass(64)
+
+        cmd(utils.dbs.query.format(f"alter role {role} with password '{password}';"), host=self.lmid)
 
         if role.startswith("lm"):
             utils.write(utils.projects_dir + role + "/src/app/db/db_pass.txt", password, host=self.lmid)
@@ -1995,7 +2015,6 @@ class HostServices:
             utils.write(utils.tmp_dir + "db_pass.txt.tmp", password)
             log(f"Password stored in {utils.tmp_dir}db_pass.txt.tmp!", console=True)
 
-        log(f"Postgres role '{role}' created on '{self.name}'", console=True)
 
     @authorize
     def create_pg_db(self, db:'str'):
@@ -2040,7 +2059,8 @@ class HostServices:
 
             dima.db.execute("update host.hosts set pg_port=%s where lmobj=%s;", (port, self.dbid))
 
-            log(f"Assigned Postgres port {port} to '{self.name}'", console=True)
+            log(f"Assigned new Postgres port to '{self.name}'", console=True)
+            print(port)
 
         else:
             port = self.pg_port
@@ -2182,7 +2202,8 @@ class HostServices:
 
             dima.db.execute("update host.hosts set ssh_port=%s where lmobj=%s;", (port, self.dbid))
 
-            log(f"Assigned SSH port {port} to '{self.name}'", console=True)
+            log(f"Assigned new SSH port to '{self.name}'", console=True)
+            print(port)
 
         else:
             port = self.ssh_port
@@ -2335,21 +2356,23 @@ class Host(lmObj, HostServices):
             # systemctl reboot
         """
 
-        query = "select mac, net, ip, client, env, ssh_knock, ssh_port, pg_port, pm, services from host.hosts where lmobj=%s;"
+        query = "select mac, net, ip, client, env, knock_seq, ssh_port, pg_port, pm, services from host.hosts where lmobj=%s;"
         params = dbid,
 
-        self.mac, self.net_id, self.ip, self.client_id, self.env_id, self.ssh_knock, self.ssh_port, self.pg_port, self.pm_id, self.service_ids = dima.db.execute(query, params)[0]
+        self.mac, self.net_id, self.ip, self.client_id, self.env_id, self.knock_seq, self.ssh_port, self.pg_port, self.pm_id, self.service_ids = dima.db.execute(query, params)[0]
 
         self.env = utils.hosts.envs.get(self.env_id)
         self.mnt_dir = utils.mnt_dir + self.name + "/"
         self.services = [utils.hosts.services.get(x) for x in self.service_ids]
         self.email = self.lmid + "@" + utils.hosts.domain
 
+        self.reset_knock()
+
     @authorize
     def next_port(self, service:'bool'=False):
         if service:
             min, max = 4096, 8192
-            used = [self.ssh_port, self.pg_port, 5432, 8080, 4343, 5353]
+            used = [self.ssh_port, self.pg_port, 5432, 8080, 4343, 5353] + self.ssh_knock
 
         else:
             min, max = 16384, 32768
@@ -2905,8 +2928,8 @@ class Host(lmObj, HostServices):
 
     @authorize
     def check(self):
-        if not self.ssh_knock:
-            self.generate_knock("ssh")
+        if not self.knock_seq:
+            self.generate_knock()
 
 class ProjectUtils:
     langs = {}

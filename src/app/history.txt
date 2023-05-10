@@ -253,3 +253,38 @@ lm1 save
 lm6 config firewall 
 lm6 ping 
 lm1 save 
+lm8 config firewall 
+lm8 ping 
+lm14 config dns 
+lm7 change state --new_state=5 --confirm=1
+lm6 config firewall 
+lm8 config firewall 
+lm14 config firewall 
+lm14 ping 
+lm6 ping 
+lm6 config firewall 
+lm8 config firewall 
+lm8 ping 
+lm14 ping 
+lm4 ping 
+lm14 start dns 
+lm7 change state --new_state=5 --confirm=1
+lm8 config postgres 
+lm6 config postgres 
+lm6 config firewall 
+lm6 ping 
+lm8 config firewall 
+lm14 config firewall 
+lm14 ping 
+lm8 ping 
+lm7 change state --new_state=5 --confirm=1
+lm14 reboot 
+lm6 config firewall 
+lm8 config firewall 
+lm14 config firewall 
+lm6 restart supervisor 
+lm8 restart supervisor 
+lm7 change state --new_state=5 --confirm=1
+lm8 ping 
+lm7 default db --env=prod
+lm1 save --message="Updated files"

@@ -467,8 +467,11 @@ class Utils:
             self.write(self.tmp_dir + "script.sh", command)
             command = f"ssh {host} 'bash -s' < {self.tmp_dir}script.sh"
 
-            # Knock to open SSH port
-            dima.pools.get(dima.lmobjs.get(host)).knock("ssh")
+            # Knock to open guarded ports
+            pool = dima.pools.get(dima.lmobjs.get(host))
+            if (datetime.now() - pool.last_knock).total_seconds() > utils.hosts.knock_grace:
+                pool.last_knock = datetime.now()
+                pool.knock()
 
         output = subprocess.run([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 

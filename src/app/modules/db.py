@@ -43,7 +43,7 @@ class Db:
     def connect(self):
         try:
             if self.host and self.host != dima.host_lmid:
-                ip = dima.pools.get(dima.lmobjs.get(self.host)).ip
+                ip = dima.pools.get(self.host_id).ip
             else:
                 ip = "127.0.0.1"
 
@@ -51,14 +51,9 @@ class Db:
                 # Password file exists
                 password = utils.read(self.db_dir + "db_pass.txt", host=self.host)
             else:
-                # Password file has been removed
-                if utils.confirm(f"Couldn't find password for database '{self.lmid}' on host '{self.host}'! Purge database? Manual intervention is required otherwise!"):
-                    dima.pools.get(self.host_id).create_pg_role(self.lmid)
-                    dima.pools.get(self.host_id).create_pg_db(self.lmid)
+                log(f"Couldn't find password for database '{self.lmid}' on host '{self.host}'! Changing it ...", level=3, console=True)
 
-                    password = utils.read(self.db_dir + "db_pass.txt", host=self.host)
-                else:
-                    log(f"Required manual intervention for database '{self.lmid}' on '{self.host}' to change password!", level=5, console=True)
+                password = dima.pools.get(self.host_id).reset_pg_pass(self.lmid)
 
             self.conn = psycopg2.connect(f"dbname={self.lmid} user={self.lmid} host={ip} password={password} port={self.port}")
 
@@ -66,6 +61,7 @@ class Db:
             log(e, level=4)
             log(f"Cannot connect to '{self.lmid}' database!", level=4, console=True)
             task.abort()
+            return
 
         log(self.lmid + " database connected")
 

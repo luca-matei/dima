@@ -3,12 +3,12 @@
 flush ruleset
 
 table ip firewall {
-    set ssh_clients {
+    set clients {
         type ipv4_addr
         flags timeout
     }
 
-    set ssh_candidates {
+    set candidates {
         type ipv4_addr . inet_service
 		flags timeout
     }
@@ -21,11 +21,11 @@ table ip firewall {
         icmp type echo-request limit rate over 1/second burst 5 packets drop
         icmp type { destination-unreachable, echo-reply, echo-request, source-quench, time-exceeded } accept
 
-        %SSH_KNOCK%
-        %CUSTOM_RULES%
-
         iif "lo" accept
         iif != "lo" ip daddr 127.0.0.1/8 counter log prefix "[nftables] Dropped conns to lo not coming from lo" drop
+
+        %KNOCK%
+        %SERVICE_RULES%
 
         log prefix "[nftables] Input Denied: " flags ip options counter drop
     }

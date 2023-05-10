@@ -1,6 +1,6 @@
 {
 "web": 'tcp dport {80, 443} limit rate 4/second ct state new counter log prefix "[nftables] New HTTP(S) Conn" accept',
-"db": 'tcp dport %PG_PORT% limit rate 15/minute ct state new counter log prefix "[nftables] New Postgres Query" accept',
 "dns": 'udp dport 53 limit rate 4/second ct state new counter log prefix "[nftables] New DNS Query" accept',
-"ssh_server": 'tcp dport %SSH_PORT% ip saddr @ssh_clients counter log prefix "[nftables] New SSH Conn" accept\ntcp dport %SSH_PORT% counter reject with tcp reset',
+"db": 'tcp dport %PG_PORT% ip saddr @clients counter log prefix "[nftables] New Postgres Query" accept\n        tcp dport %PG_PORT% counter reject with tcp reset',
+"ssh_server": 'tcp dport %SSH_PORT% ip saddr @clients counter log prefix "[nftables] New SSH Conn" accept\n        tcp dport %SSH_PORT% counter reject with tcp reset',
 }
