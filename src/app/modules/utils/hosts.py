@@ -39,9 +39,9 @@ class HostUtils:
             "ip": ip,
             "netmask": net.netmask,
             "gateway": net.gateway,
-            "dns": dima.pools.get(net.dns_id).ip,
+            "dns": net.domain.dns.ip,
             "hostname": hostname,
-            "domain_name": net.domain,
+            "domain_name": net.domain.name,
             "root_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),
             "username": "dima",
             "user_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),
@@ -93,32 +93,6 @@ class HostUtils:
             cmd("sudo rm -r " + iso_dir, host=host)
 
         log(f"Preseeded ISO image for '{hostname}' stored at '{tmp_iso}'", console=True)
-
-    def register_host(self, mode=None):
-        # This host can only be a PM
-        opts = {
-            1: "Create ISO image",
-            2: "Create install script",
-            }
-
-        lmid = dima.next_lmid()
-        alias = None
-
-        while alias != "":
-            alias = input("Preferred hostname (Press Enter to skip): ")
-            if dima.check_alias(alias):
-                break
-
-        hostname = alias if alias else lmid
-
-        mode = utils.select_opt(opts)
-
-        if mode == 1:
-            ip = utils.nets.get_free_ip(dima.net_dbid)
-            self.preseed_host(hostname, dima.net_dbid, ip)
-
-        elif mode == 2:
-            pass
 
     def transfer_file(self, from_path, to_path, from_host, to_host):
         transfer_path = utils.tmp_dir + "transfer/"

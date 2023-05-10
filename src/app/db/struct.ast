@@ -13,14 +13,16 @@
 
 ("domains", (
     "id serial primary key",
-    "name varchar unique"
+    "name varchar unique",
+    "ssl_due date",
+    "dhcp int",
+    "dns int",
+    "mail int",
     )),
 
 ("nets", (
     "id serial primary key",
     "lmobj int",
-    "dhcp int",
-    "dns int",
     "domain int not null",
     "netmask inet not null",
     "gateway inet not null",
@@ -93,6 +95,11 @@
         "code varchar",
         )),
 
+    ("options", (
+        "id serial primary key",
+        "name varchar",
+        )),
+
     ("apps", (
         "id serial primary key",
         "lmobj int",
@@ -123,15 +130,13 @@
         "domain int",
         "dev_port int",
         "prod_port int",
-        "dev_ssl_due date",
-        "prod_ssl_due date",
         "prod_state int",
         "modules smallint[]",
         "langs smallint[]",
         "themes smallint[]",
         "default_lang smallint",
         "default_theme smallint",
-        "has_animations boolean",
+        "options smallint[]",
         )),
     )),
 )

@@ -51,16 +51,16 @@ class Dima:
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
-        self.db.rebuild()
+        #self.db.rebuild()
 
         self.load_database()
 
         log("Phase 5: Checking services ...")
-        self.check()
+        #self.check()
         #ssh.check()
         gitlab.get_token()
 
-        log("Phase 6: Creating object pools ...")
+        log("Phase 6.1: Creating object pools ...")
         for kind in (self.modules["Net"], self.modules["Host"], self.modules["Soft"], self.modules["App"], self.modules["Web"]):
             for dbid in utils.get_keys(self.lmobjs):
                 if isinstance(dbid, int) and self.lmobjs[dbid][1] == kind:
@@ -72,6 +72,14 @@ class Dima:
             self.pools.get(dbid).check()
         """
 
+        log("Phase 6.2: Referencing DHCP, DNS, Mail servers for domains ...")
+        for dbid, domain in self.domains.items():
+            if isinstance(dbid, int):
+                self.domains.get(dbid).dhcp = self.pools.get(domain.dhcp_id)
+                self.domains.get(dbid).dns = self.pools.get(domain.dns_id)
+                self.domains.get(dbid).mail = self.pools.get(domain.mail_id)
+
+
     def load_database(self):
         log("Phase 4.1: Loading modules ...")
         for m in self.db.execute("select id, name from modules;"):
@@ -79,8 +87,8 @@ class Dima:
             self.modules[m[1]] = m[0]   # utils.dbs = 1
 
         log("Phase 4.2: Loading domains ...")
-        for d in self.db.execute("select id, name from domains;"):
-            self.domains[d[0]] = d[1]
+        for d in sorted(self.db.execute("select id, name from domains;"), key=lambda d: len(d[1]), reverse=True):
+            self.domains[d[0]] = Domain(d[0])
             self.domains[d[1]] = d[0]
 
         log("Phase 4.3.1: Loading host environments ...")
@@ -93,15 +101,20 @@ class Dima:
             utils.hosts.services[s[0]] = s[1]
             utils.hosts.services[s[1]] = s[0]
 
-        log("Phase 4.4: Loading project languages ...")
+        log("Phase 4.4.1: Loading project languages ...")
         for l in self.db.execute("select id, code from project.langs;"):
             utils.projects.langs[l[0]] = l[1]    # 1 = en
             utils.projects.langs[l[1]] = l[0]    # en = 1
 
-        log("Phase 4.5: Loading project themes ...")
+        log("Phase 4.4.2: Loading project themes ...")
         for t in self.db.execute("select id, code from project.themes;"):
             utils.projects.themes[t[0]] = t[1]   # 1 = light
             utils.projects.themes[t[1]] = t[0]   # light = 1
+
+        log("Phase 4.4.3: Loading project options ...")
+        for o in self.db.execute("select id, name from project.options;"):
+            utils.projects.options[o[0]] = o[1]   # 1 = animations
+            utils.projects.options[o[1]] = o[0]   # animations = 1
 
         log("Phase 4.6: Loading web modules ...")
         for m in self.db.execute("select id, name from web.modules;"):
@@ -221,8 +234,8 @@ class Dima:
             log("Main network not registered!", level=3, console=True)
             self.net_dbid = self.insert_lmobj(self.net_lmid, "Net", None)
 
-            query = "insert into nets (lmobj, dhcp, dns, pm, domain, netmask, gateway, lease_start, lease_end) values (%s, %s, %s, %s, %s, %s, %s, %s, %s);"
-            params = self.net_dbid, None, None, None, domain_id, netmask, gateway, str(network[4]), str(network[-2]),
+            query = "insert into nets (lmobj, domain, netmask, gateway, lease_start, lease_end) values (%s, %s, %s, %s, %s, %s);"
+            params = self.net_dbid, domain_id, netmask, gateway, str(network[4]), str(network[-2]),
 
             self.db.execute(query, params)
             reload = True

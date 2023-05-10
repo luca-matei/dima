@@ -2,13 +2,13 @@ class Web(Project):
     def __init__(self, dbid):
         Project.__init__(self, dbid)
 
-        query = "select a.name, b.dev_port, b.prod_port, b.dev_ssl_due, b.prod_ssl_due, b.prod_state, b.modules, b.langs, b.themes, b.default_lang, b.default_theme, b.has_animations from domains a, web.webs b where b.domain=a.id and b.lmobj=%s;"
+        query = "select domain, dev_port, prod_port, prod_state, modules, langs, themes, default_lang, default_theme, options from web.webs where lmobj=%s;"
         params = dbid,
-        self.prod_domain, self.dev_port, self.prod_port, self.dev_ssl_due, self.prod_ssl_due, self.prod_state, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.has_animations = dima.db.execute(query, params)[0]
+        self.domain_id, self.dev_port, self.prod_port, self.prod_state, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.option_ids = dima.db.execute(query, params)[0]
 
         self.global_html = {}
         self.css_classes = {}
-        self.dev_domain = "dev." + self.prod_domain
+        self.domain = dima.domains.get(self.domain_id)
         self.modules = {}
         for m_id in self.module_ids:
             m_name = utils.webs.modules[m_id]
@@ -24,9 +24,10 @@ class Web(Project):
         self.themes = [utils.projects.themes[t] for t in self.theme_ids]
         self.default_lang = utils.projects.langs[self.default_lang_id]
         self.default_theme = utils.projects.themes[self.default_theme_id]
+        self.options = [utils.projects.options[o] for o in self.option_ids]
 
-        self.prod_ssl_dir = utils.ssl_dir + self.prod_domain + '/'
-        self.dev_ssl_dir = utils.ssl_dir + self.dev_domain + '/'
+        self.prod_ssl_dir = utils.ssl_dir + self.domain.name + '/'
+        self.dev_ssl_dir = utils.ssl_dir + self.domain.dev.name + '/'
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
 
@@ -227,7 +228,7 @@ class Web(Project):
         # To do: Copy img dir from default assets for http pages
 
         if not confirm:
-            if not utils.confirm(f"Are you sure you want to format '{self.dev_domain}' HTML?"):
+            if not utils.confirm(f"Are you sure you want to format '{self.domain.dev.name}' HTML?"):
                 log("Aborted", console=True)
                 return
 
@@ -237,7 +238,7 @@ class Web(Project):
         dest_img = self.repo_dir + "src/assets/img/"
 
         if hello:
-            log(f"Setting '{self.dev_domain}' to 'Hello World' ...", console=True)
+            log(f"Setting '{self.domain.dev.name}' to 'Hello World' ...", console=True)
             cmd(f"rm -r " + dest_html, host=self.dev_host)
             cmd(f"rm -r " + dest_img, host=self.dev_host)
 
@@ -248,18 +249,18 @@ class Web(Project):
                 dima.pools.get(self.dev_host_id).send_file(src_html, dest_html)
                 dima.pools.get(self.dev_host_id).send_file(src_img, dest_img)
 
-            log(f"Set '{self.dev_domain}' to 'Hello World.'", console=True)
+            log(f"Set '{self.domain.dev.name}' to 'Hello World.'", console=True)
 
         else:
             # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
-            log(f"Setting '{self.dev_domain}' Global HTML to 'Hello World' ...", console=True)
+            log(f"Setting '{self.domain.dev.name}' Global HTML to 'Hello World' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
             if self.dev_host_id == dima.host_dbid:
                 utils.copy(src_html + "*.yml", dest_html)
             else:
                 dima.pools.get(self.dev_host_id).send_file(dest_html + "*.yml", dest_html)
 
-            log(f"Set '{self.dev_domain}' Global HTML to 'Hello World'", console=True)
+            log(f"Set '{self.domain.dev.name}' Global HTML to 'Hello World'", console=True)
 
         self.update_html(global_html=True)
 
@@ -333,7 +334,7 @@ class Web(Project):
 
             app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
                 "copyright_year": datetime.now().year,
-                "copyright_name": '.'.join(self.prod_domain.split(".")[-2:]),
+                "copyright_name": '.'.join(self.domain.name.split(".")[-2:]),
                 })
 
             self.global_html[lang]["app-wrapper"] = "<!doctype html>" + utils.format_tpl(self.yml2html("app-wrapper.yml", lang), {
@@ -343,7 +344,7 @@ class Web(Project):
                 "name": self.name,
                 "hide_all": self.yml2html("hide-all.yml", lang),
                 "app_header": app_header,
-                "domain": self.prod_domain,
+                "domain": self.domain.name,
                 "app_footer": app_footer,
                 "top_button": self.yml2html("top-button.yml", lang),
                 "cookies_notice": self.yml2html("cookies-notice.yml", lang),
@@ -412,9 +413,7 @@ class Web(Project):
                     else:
                         aside = ""
 
-                    # FORMAT TITLE
-                    #if self.has_domain_in_title:
-                        #title += " | " + self.domain
+                    # To do: format title
 
                     description = meta["description"].get(lang, meta["description"][self.default_lang])
                     og_url = ""
@@ -514,6 +513,10 @@ class Web(Project):
 
     @authorize
     def generate_ssl(self, env:'env'="dev"):
+        """
+            Certificates will be created on Dima's host and pasted to designated server
+        """
+
         host = self.env_var(env, "host")
         ssl_dir = self.env_var(env, "ssl_dir")
         domain = self.env_var(env, "domain")
@@ -522,13 +525,13 @@ class Web(Project):
             cmd("sudo mkdir " + ssl_dir, host=host)
 
         # Production certificates
-        #log(f"Generating Let's Encrypt SSL certs for {self.dev_domain}. This may take a while ...", console=True)
+        #log(f"Generating Let's Encrypt SSL certs for {self.domain.dev.name}. This may take a while ...", console=True)
 
         log(f"Generating SSL certificates for '{domain}'. This may take a while ...", console=True)
         cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain}"', host=host)
 
-        query = f"update web.webs set {env}_ssl_due=%s where lmobj=%s;"
-        params = datetime.now() + timedelta(3*365/12-3), self.dbid,
+        query = f"update domains set ssl_due=%s where name=%s;"
+        params = datetime.now() + timedelta(3*365/12-3), self.domain,
         dima.db.execute(query, params)
 
         log(f"Generated SSL certificates for '{domain}'", console=True)
@@ -537,11 +540,11 @@ class Web(Project):
     def change_state(self, new_state:'web_state', confirm:'bool'=False):
         if utils.isfile(self.repo_dir, host=self.prod_host):
             if not confirm:
-                if not utils.confirm(f"Are you sure you want to change current production state for '{self.prod_domain}' to {utils.webs.states[new_state]}?"):
+                if not utils.confirm(f"Are you sure you want to change current production state for '{self.domain.name}' to {utils.webs.states[new_state]}?"):
                     log("Aborted", console=True)
                     return
 
-        log(f"Changing '{self.prod_domain}' state to {utils.webs.states[new_state]} ...", console=True)
+        log(f"Changing '{self.domain.name}' state to {utils.webs.states[new_state]} ...", console=True)
         self.prod_state = new_state
 
         if new_state == 1:
@@ -563,7 +566,7 @@ class Web(Project):
             self.build("prod", confirm=True)
 
         dima.db.execute("update web.webs set prod_state=%s where lmobj=%s", (new_state, self.dbid))
-        log(f"Changed '{self.prod_domain}' state to {utils.webs.states[new_state]}.", console=True)
+        log(f"Changed '{self.domain.name}' state to {utils.webs.states[new_state]}.", console=True)
 
     @authorize
     def update_js(self, env:"env"="dev"):

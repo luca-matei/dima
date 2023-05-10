@@ -51,86 +51,67 @@ class HostServices:
             return
 
         log(f"Configuring DHCP server on '{self.name}' ...", console=True)
-        query = "select a.lmid, b.lmobj, b.dns, c.name, b.netmask, b.gateway, b.lease_start, b.lease_end from lmobjs a, nets b, domains c where a.id = b.lmobj and c.id=b.domain and b.dhcp=%s;"
+
+        # Create subnets and hosts directory
+        if not utils.isfile("/etc/dhcp/dhcp.d/", host=self.lmid):
+            cmd("sudo mkdir /etc/dhcp/dhcp.d/", host=self.lmid)
+
+        net_ids = []
+
+        query = "select lmobj, domain from nets;"
         params = self.dbid,
-        nets = dima.db.execute(query, params)
-        print(nets)
+        for net_id, domain_id in dima.db.execute(query, params):
+            domain = dima.domains.get(domain_id)
+            if domain.dhcp and domain.dhcp.dbid == self.dbid:
+                net_ids.append(net_id)
 
-        if not nets:
-            log("There are no networks managed by this DHCP server!", level=4, console=True)
-            return
+        subnets_config = []
+        hosts_config = []
 
-        net_fields = "lmid", "dbid", "dns_dbid", "domain", "netmask", "gateway", "lease_start", "lease_end",
-        host_fields = "lmid", "mac", "ip",
+        for net_id in net_ids:
+            net = dima.pools.get(net_id)
 
-        for n in nets:
-            net = dict(zip(net_fields, n))
-            net_obj = ipaddress.ip_network(net.get("gateway") + "/" + net.get("netmask"), strict=False)
-            subnet = str(net_obj).split('/')[0]
-            broadcast = str(net_obj[-1])
+            # Write subnets file
+            subnets_config.append(utils.format_tpl("dhcp/subnet.tpl", {
+                "subnet": net.ip,
+                "netmask": net.netmask,
+                "gateway": net.gateway,
+                "broadcast": net.broadcast,
+                "lease_start": net.lease_start,
+                "lease_end": net.lease_end,
+                "domain": net.domain.name,
+                "dns": f"{net.domain.dns.ip}, 8.8.8.8"
+                }))
 
-            if net.get("dbid") == dima.net_dbid:
-                # Main config
-                dhcp_config = utils.format_tpl("dhcp/dhcpd.tpl", {
-                    "domain": net.get("domain"),
-                    "dns": f"{dima.pools.get(net.get('dns_dbid')).ip}, 8.8.8.8"
-                    })
+            query = "select lmobj from host.hosts where net=%s;"
+            params = net_id,
+            host_ids = [x[0] for x in dima.db.execute(query, params)]
 
-                # default file
-                init_config = utils.format_tpl("dhcp/default.tpl", {
-                    "interfaces": self.get_iface(),
-                    })
+            # Write hosts file
+            for host_id in host_ids:
+                host = dima.pools.get(host_id)
+                hosts_config.append(utils.format_tpl("dhcp/host.tpl", {
+                    "lmid": host.lmid,
+                    "mac": host.mac,
+                    "ip": host.ip
+                    }))
 
-                # Create subnets and hosts directory
-                if not utils.isfile("/etc/dhcp/dhcp.d/", host=self.lmid):
-                    cmd("sudo mkdir /etc/dhcp/dhcp.d/", host=self.lmid)
+        # /etc/default/isc-dhcp-server
+        init_config = utils.format_tpl("dhcp/default.tpl", {
+            "interfaces": self.get_iface(),
+            })
 
-                # Write subnets file
-                subnets_config = utils.format_tpl("dhcp/subnet.tpl", {
-                    "subnet": subnet,
-                    "netmask": net.get("netmask"),
-                    "gateway": net.get("gateway"),
-                    "broadcast": broadcast,
-                    "lease_start": net.get("lease_start"),
-                    "lease_end": net.get("lease_end")
-                    })
+        subnets_config = '\n\n'.join(subnets_config)
+        hosts_config = '\n\n'.join(hosts_config)
 
-                # Write hosts file
-                query = "select a.lmid, b.mac, b.ip from lmobjs a, host.hosts b where a.id=b.lmobj and b.net=%s;"
-                params = net.get("dbid"),
-                hosts = dima.db.execute(query, params)
+        self.send_file(dima.tpls_dir + "dhcp/dhcpd.tpl", '/etc/dhcp/dhcpd.conf')
+        utils.write("/etc/default/isc-dhcp-server", init_config, host=self.lmid)
+        utils.write("/etc/dhcp/dhcp.d/subnets.conf", subnets_config, host=self.lmid)
+        utils.write('/etc/dhcp/dhcp.d/hosts.conf', hosts_config, host=self.lmid)
 
-                hosts_config = ""
-                for h in hosts:
-                    host = dict(zip(host_fields, h))
-                    host_config = utils.format_tpl("dhcp/host.tpl", {
-                        "lmid": host.get("lmid"),
-                        "mac": host.get("mac"),
-                        "ip": host.get("ip")
-                        })
+        log(f"Configured DHCP server on '{self.name}'", console=True)
 
-                    hosts_config += host_config + '\n\n'
-
-                utils.write('/etc/dhcp/dhcpd.conf', dhcp_config, host=self.lmid)
-                utils.write("/etc/default/isc-dhcp-server", init_config, host=self.lmid)
-                utils.write("/etc/dhcp/dhcp.d/subnets.conf", subnets_config, host=self.lmid)
-                utils.write('/etc/dhcp/dhcp.d/hosts.conf', hosts_config, host=self.lmid)
-
-                self.restart_dhcp()
-
-            else:
-                query = "select a.lmid, b.mac, b.ip from lmobjs a, host.hosts b where a.id=b.lmobj and a.net=%s;"
-                params = net.get("dbid"),
-                hosts = dima.db.execute(query, params)
-
-                hosts_config = '\n'.join(['<host mac="{}" ip="{}"/>'.format(host.get('mac'), host.get('ip')) for host in hosts])
-
-                net_xml = utils.format_tpl("dhcp/net.tpl", {
-                    "lmid": net.get("lmid"),
-                    "netmask": net.get("netmask"),
-                    "gateway": net.get("gateway"),
-                    "hosts": hosts_config
-                    })
+        self.restart_dhcp()
 
     @authorize
     def enable_dhcp(self):
@@ -230,6 +211,7 @@ class HostServices:
                 "dns_domain": "lucamatei.net",
                 "dns_ip": self.ip,
                 "mail_domain": "lucamatei.net",
+                "mail_ip": self.ip,
                 "prod_host_ip": prod_host_ip,
                 "domain_records": domain_records,
                 "subdomain_records": subdomain_records,
@@ -869,9 +851,7 @@ class Host(lmObj, HostServices):
 
     # Web
     @authorize
-    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=("static",), langs:'list'=("en",), themes:'list'=("light",), default_lang:'str'="en", default_theme:'str'="light", has_animations:'bool'=False):
-
-        # To do: validate parameters
+    def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=("static",), langs:'list'=("en",), themes:'list'=("light",), default_lang:'str'="en", default_theme:'str'="light", options:'list'=()):
 
         #if dima.domains.get(domain):
             #log("Domain already exists!", level=4, console=True)
@@ -885,8 +865,11 @@ class Host(lmObj, HostServices):
             lang_ids = [x for x in [utils.projects.langs.get(l, 0) for l in langs] if x]
             theme_ids = [x for x in [utils.projects.themes.get(t, 0) for t in themes] if x]
 
-            query = "insert into web.webs (lmobj, domain, dev_port, prod_port, dev_ssl_due, prod_ssl_due, prod_state, modules, langs, themes, default_lang, default_theme, has_animations) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
-            params = dima.lmobjs[lmid], domain, self.next_port(), self.next_port(), None, None, 0, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], has_animations,
+            domain_id = -1
+            option_ids = 3,
+
+            query = "insert into web.webs (lmobj, domain, dev_port, prod_port, prod_state, modules, langs, themes, default_lang, default_theme, options) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
+            params = dima.lmobjs[lmid], domain_id, self.next_port(), self.next_port(), 0, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], option_ids,
 
             if dima.db.execute(query, params)[0][0]:
                 log(f"{name if name else (alias if alias else lmid)} web app created!", console=True)

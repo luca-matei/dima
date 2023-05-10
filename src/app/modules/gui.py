@@ -344,15 +344,15 @@ class GUI:
         lmid = self.widgets["web_lmid_str"].get()
         pool = dima.pools[dima.lmobjs[lmid]]
 
-        try: dssl_date = utils.format_date(pool.dev_ssl_due, "%d %b %Y")
+        try: dssl_date = utils.format_date(pool.domain.dev.ssl_due, "%d %b %Y")
         except: dssl_date = "NaN"
 
-        try: pssl_date = utils.format_date(pool.prod_ssl_due, "%d %b %Y")
+        try: pssl_date = utils.format_date(pool.domain.ssl_due, "%d %b %Y")
         except: pssl_date = "NaN"
 
         self.widgets["web_id_str"].set(pool.lmid)
-        self.widgets["web_ddomain_str"].set(f"{pool.dev_domain}:{pool.dev_port}")
-        self.widgets["web_pdomain_str"].set(f"{pool.prod_domain}:{pool.prod_port}")
+        self.widgets["web_ddomain_str"].set(f"{pool.domain.dev.name}:{pool.dev_port}")
+        self.widgets["web_pdomain_str"].set(f"{pool.domain.name}:{pool.prod_port}")
         self.widgets["web_dlang_str"].set(pool.default_lang)
         self.widgets["web_dtheme_str"].set(pool.default_theme)
 

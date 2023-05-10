@@ -294,3 +294,6 @@ lm6 ping
 lm7 change state --new_state=5 --confirm=1
 lm14 config firewall 
 lm1 save 
+lm6 ping 
+lm14 config dhcp 
+lm1 save --message="Updated files"

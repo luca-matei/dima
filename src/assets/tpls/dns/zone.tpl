@@ -9,9 +9,10 @@ $TTL 86400
 
 @       IN    NS     ns1.%DNS_DOMAIN%.
 @       IN    NS     ns2.%DNS_DOMAIN%.
-;@       IN    MX     mail.%MAIL_DOMAIN%.
+@       IN    MX     mail.%MAIL_DOMAIN%.
 
 ns1        IN    A      %DNS_IP%
 ns2        IN    A      %DNS_IP%
+mail       IN    A      %MAIL_IP%
 %DOMAIN_RECORDS%
 %SUBDOMAIN_RECORDS%

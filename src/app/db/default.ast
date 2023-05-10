@@ -20,6 +20,10 @@
         ("Web",),
         ("App",),
         ("Soft",),
+        ("Domain",),
+        ("DNS",),
+        ("Mail",),
+        ("DHCP",),
         )),
 
     ("lmobjs", (
@@ -42,21 +46,36 @@
         )),
 
     ("domains", (
-        ("name",),
-        ("",),
-        ("lucamatei.net",),
-        ("home.lucamatei.net",),
-        ("nebula.lucamatei.net",),
-        ("hello.lucamatei.net",),
-        ("dima.lucamatei.net",),
-        ("accounts.lucamatei.net",),
-        ("gitlab.lucamatei.net",),
-        ("qr.lucamatei.net",),
-        ("lucamatei.eu",),
-        ("lucamatei.org",),
-        ("lucamatei.xyz",),
-        ("lucamatei.shop",),
-        ("lucamatei.store",),
+        ("name", "ssl_due", "dhcp", "dns", "mail"),
+        ("", "", "id:lmid:lmobjs", "id:lmid:lmobjs", "id:lmid:lmobjs"),
+        ("lucamatei.net", "", "lm14", "lm14", "lm14"),
+        ("dev.lucamatei.net", "", "lm14", "lm14", "lm14"),
+
+        ("home.lucamatei.net", "", "lm14", "lm14", "lm14"),
+        ("nebula.lucamatei.net", "", "", "lm11", "lm12"),
+
+        ("hello.lucamatei.net", "", "lm14", "lm14", "lm14"),
+        ("dev.hello.lucamatei.net", "", "lm14", "lm14", "lm14"),
+
+        ("digitalmarmot.com", "", "lm14", "lm14", "lm14"),
+        ("dev.digitalmarmot.com", "", "lm14", "lm14", "lm14"),
+        ("dima.digitalmarmot.com", "", "lm14", "lm14", "lm14"),
+        ("dev.dima.digitalmarmot.com", "", "lm14", "lm14", "lm14"),
+
+        ("gitlab.lucamatei.net", "", "lm14", "lm14", "lm14"),
+        ("qr.lucamatei.net", "", "lm14", "lm14", "lm14"),
+
+        ("lucamatei.eu", "", "lm14", "lm14", "lm14"),
+        ("dev.lucamatei.eu", "", "lm14", "lm14", "lm14"),
+
+        ("lucamatei.org", "", "lm14", "lm14", "lm14"),
+        ("dev.lucamatei.org", "", "lm14", "lm14", "lm14"),
+
+        ("lucamatei.xyz", "", "lm14", "lm14", "lm14"),
+        ("dev.lucamatei.xyz", "", "lm14", "lm14", "lm14"),
+
+        ("lucamatei.shop", "", "lm14", "lm14", "lm14"),
+        ("lucamatei.store", "", "lm14", "lm14", "lm14"),
         )),
 
     )),
@@ -100,10 +119,10 @@
 
 ("public", (
     ("nets", (
-        ("lmobj", "dhcp", "dns", "domain", "netmask", "gateway", "lease_start", "lease_end"),
-        ("id:lmid:lmobjs", "id:lmid:lmobjs", "id:lmid:lmobjs", "id:name:domains", "", "", "", ""),
-        ("lm3", "lm14", "lm14", "home.lucamatei.net", "255.255.255.0", "192.168.1.2", "192.168.1.4", "192.168.1.254"),
-        ("lm13", "", "lm11", "nebula.lucamatei.net", "255.255.255.0", "89.44.137.1", "89.44.137.121", "89.44.137.138"),
+        ("lmobj", "domain", "netmask", "gateway", "lease_start", "lease_end"),
+        ("id:lmid:lmobjs", "id:name:domains", "", "", "", ""),
+        ("lm3", "home.lucamatei.net", "255.255.255.0", "192.168.1.2", "192.168.1.4", "192.168.1.254"),
+        ("lm13", "nebula.lucamatei.net", "255.255.255.0", "89.44.137.1", "89.44.137.121", "89.44.137.138"),
         )),
     )),
 
@@ -243,6 +262,12 @@
         ("dark",),
         )),
 
+    ("options", (
+        ("name",),
+        ("",),
+        ("animations",),
+    )),
+
     ("apps", (
         ("lmobj", "port"),
         ("id:lmid:lmobjs", ""),
@@ -268,12 +293,12 @@
     )),
 
     ("webs", (
-        ("lmobj", "domain", "dev_port", "prod_port", "dev_ssl_due", "prod_ssl_due", "prod_state", "modules", "langs", "themes", "default_lang", "default_theme", "has_animations"),
-        ("id:lmid:lmobjs", "id:name:domains", "", "", "", "", "", "id[]:name:web.modules", "id[]:code:project.langs", "id[]:code:project.themes", "id:code:project.langs", "id:code:project.themes", ""),
+        ("lmobj", "domain", "dev_port", "prod_port", "prod_state", "modules", "langs", "themes", "default_lang", "default_theme", "options"),
+        ("id:lmid:lmobjs", "id:name:domains", "", "", "", "id[]:name:web.modules", "id[]:code:project.langs", "id[]:code:project.themes", "id:code:project.langs", "id:code:project.themes", "id[]:name:project.options"),
 
-        #("lm2", "dima.lucamatei.net", 19062, 16863, "", "", 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
-        ("lm5", "hello.lucamatei.net", 19353, 18532, "", "", 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
-        ("lm7", "lucamatei.eu", 19845, 19680, "", "", 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", True),
+        #("lm2", "dima.lucamatei.net", 19062, 16863, 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
+        ("lm5", "hello.lucamatei.net", 19353, 18532, 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
+        ("lm7", "lucamatei.eu", 19845, 19680, 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
         )),
     )),
 )
