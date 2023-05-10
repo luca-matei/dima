@@ -288,3 +288,9 @@ lm7 change state --new_state=5 --confirm=1
 lm8 ping 
 lm7 default db --env=prod
 lm1 save --message="Updated files"
+lm14 ping 
+lm6 config firewall 
+lm6 ping 
+lm7 change state --new_state=5 --confirm=1
+lm14 config firewall 
+lm1 save 

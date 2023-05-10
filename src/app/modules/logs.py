@@ -20,6 +20,7 @@ class Logs:
 
     def _log(self, call_info, message, console=False, level=2):
         # Web apps have console = False
+        message = str(message).strip('\n')
 
         if level not in range(1, 6):
             self.create_record(call_info, 3, "Log level set incorrectly!")
@@ -42,7 +43,6 @@ class Logs:
         if type(call_info) == list and len(call_info) == 4: host = f" {call_info[3]}:"
         else: host = ""
         filename, lineno, function = call_info[:3]
-        message = str(message).strip('\n')
 
         # function == "execute" and "Data" in message and
         if level == 2 and len(message) > 256:

@@ -26,6 +26,7 @@ table ip firewall {
 
         %KNOCK%
         %SERVICE_RULES%
+        %EMAIL_RULES%
 
         log prefix "[nftables] Input Denied: " flags ip options counter drop
     }

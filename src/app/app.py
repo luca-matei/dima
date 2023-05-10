@@ -469,7 +469,7 @@ class Utils:
 
             # Knock to open guarded ports
             pool = dima.pools.get(dima.lmobjs.get(host))
-            if (datetime.now() - pool.last_knock).total_seconds() > utils.hosts.knock_grace:
+            if (datetime.now() - pool.last_knock).total_seconds() > utils.hosts.knocking_grace:
                 pool.last_knock = datetime.now()
                 pool.knock()
 
@@ -785,6 +785,7 @@ class Logs:
 
     def _log(self, call_info, message, console=False, level=2):
         # Web apps have console = False
+        message = str(message).strip('\n')
 
         if level not in range(1, 6):
             self.create_record(call_info, 3, "Log level set incorrectly!")
@@ -807,7 +808,6 @@ class Logs:
         if type(call_info) == list and len(call_info) == 4: host = f" {call_info[3]}:"
         else: host = ""
         filename, lineno, function = call_info[:3]
-        message = str(message).strip('\n')
 
         # function == "execute" and "Data" in message and
         if level == 2 and len(message) > 256:
@@ -1354,7 +1354,8 @@ class HostUtils:
     envs = {}
     services = {}
     domain = None
-    knock_grace = 30
+    knock_grace = 1  # One knock
+    knocking_grace = 30  # After successful knocking
 
     def create_host(self, env:'str'="dev", alias:'str'=None, mem:'int'=1024, cpus:'int'=1, disk:'int'=5):
         self.__doc__ = Host.create_host.__doc__
@@ -1887,33 +1888,64 @@ class HostServices:
         if not utils.isfile("/etc/nft/", host=self.lmid):
             cmd("sudo mkdir /etc/nft/", host=self.lmid)
 
+        rule_tpls = utils.read(dima.tpls_dir + "nftables/rules.ast")
+        spaces = '\n' + 8*' '
+
+        # Configure Port Knocking
         if "ssh_server" in self.services or "db" in self.services:
+            tpls = rule_tpls.get("guarded_ports")
+
             if not self.knock_seq:
                 self.generate_knock()
 
-            knocking_rules = [f"tcp dport {self.knock_seq[0]} add @candidates {{ip saddr . {self.knock_seq[1]} timeout 1s}}"]
+            knocking_rules = [tpls[0]]  # First Knock
 
             for i in range(1, len(self.knock_seq)-1):
-                knocking_rules.append(f"tcp dport {self.knock_seq[i]} ip saddr . tcp dport @candidates add @candidates {{ip saddr . {self.knock_seq[i+1]} timeout 1s}}")
+                knocking_rules.append(utils.format_tpl(tpls[1], {
+                    'knock': self.knock_seq[i],
+                    'next_knock': self.knock_seq[i+1]
+                    }))
 
-            knocking_rules.append(f'tcp dport {self.knock_seq[-1]} ip saddr . tcp dport @candidates add @clients {{ip saddr timeout {utils.hosts.knock_grace}s}} log prefix "[nftables] Successful Port Knocking: "')
+            knocking_rules.append(tpls[2])  # Last Knock
 
-            knocking_rules = ('\n' + 8*' ').join(knocking_rules)
+            accept_rule = {
+                "ssh_server_port": self.ssh_port,
+                "ssh_server_message": "[nftables New SSH Conn]",
+                "db_port": self.pg_port,
+                "db_message": "[nftables New Postgres Conn]",
+            }
+
+            for s in ("ssh_server", "db"):
+                if s in self.services:
+                    knocking_rules.append(utils.format_tpl(tpls[3] + spaces + tpls[4], {
+                        "port": accept_rule.get(s + "_port"),
+                        "message": accept_rule.get(s + "_message"),
+                        }))
+
+            knocking_rules = utils.format_tpl(spaces.join(knocking_rules), {
+                '1st_knock': self.knock_seq[0],
+                '2nd_knock': self.knock_seq[1],
+                'knock_grace': utils.hosts.knock_grace,
+                'knocking_grace': utils.hosts.knocking_grace,
+                'last_knock': self.knock_seq[-1],
+                })
         else:
             knocking_rules = ""
 
+        # Configure email
+        if "mail" in self.services:
+            # CRITICAL: DROP 25, 2525, 143, 110 PORTS. SECURITY AT RISK
+            email_rules = spaces.join(rule_tpls.get("mail"))
+        else:
+            email_rules = ""
 
-        rule_tpls = utils.read(dima.tpls_dir + "nftables/rules.ast")
-        custom_rules = [rule_tpls.get(s) for s in ("web", "dns", "ssh_server", "db") if s in self.services]
-        custom_rules = utils.format_tpl(('\n' + 8*' ').join(custom_rules), {
-            "ssh_port": self.ssh_port,
-            "pg_port": self.pg_port,
-            })
+        service_rules = spaces.join([rule_tpls.get(s) for s in ("web", "dns") if s in self.services])
 
         nftables_conf = utils.format_tpl("nftables/nftables.tpl", {
             "iface": self.get_iface(),
             "knock": knocking_rules,
-            "service_rules": custom_rules,
+            "service_rules": service_rules,
+            "email_rules": email_rules,
             })
 
         utils.write("/etc/nftables.conf", nftables_conf, host=self.lmid)

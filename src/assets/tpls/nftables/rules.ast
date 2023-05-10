@@ -1,6 +1,20 @@
 {
 "web": 'tcp dport {80, 443} limit rate 4/second ct state new counter log prefix "[nftables] New HTTP(S) Conn" accept',
+
 "dns": 'udp dport 53 limit rate 4/second ct state new counter log prefix "[nftables] New DNS Query" accept',
-"db": 'tcp dport %PG_PORT% ip saddr @clients counter log prefix "[nftables] New Postgres Query" accept\n        tcp dport %PG_PORT% counter reject with tcp reset',
-"ssh_server": 'tcp dport %SSH_PORT% ip saddr @clients counter log prefix "[nftables] New SSH Conn" accept\n        tcp dport %SSH_PORT% counter reject with tcp reset',
+
+"guarded_ports": [
+    'tcp dport %1ST_KNOCK% add @candidates {ip saddr . %2ND_KNOCK% timeout %KNOCK_GRACE%s}',
+    'tcp dport %KNOCK% ip saddr . tcp dport @candidates add @candidates {ip saddr . %NEXT_KNOCK% timeout %KNOCK_GRACE%s}',
+    'tcp dport %LAST_KNOCK% ip saddr . tcp dport @candidates add @clients {ip saddr timeout %KNOCKING_GRACE%s} log prefix "[nftables] Successful Port Knocking: "',
+    'tcp dport %PORT% ip saddr @clients counter log prefix "%MESSAGE%" accept',
+    'tcp dport %PORT% counter reject with tcp reset',
+],
+
+"mail": [
+    'udp dport {25, 465, 587, 2525} counter log prefix "[nftables] New SMTP signal" accept',
+    'udp dport {143, 993} counter log prefix "[nftables] New IMAP signal" accept',
+    'udp dport {110, 995} counter log prefix "[nftables] New POP3 signal" accept'
+]
+
 }

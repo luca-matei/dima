@@ -469,7 +469,7 @@ class Utils:
 
             # Knock to open guarded ports
             pool = dima.pools.get(dima.lmobjs.get(host))
-            if (datetime.now() - pool.last_knock).total_seconds() > utils.hosts.knock_grace:
+            if (datetime.now() - pool.last_knock).total_seconds() > utils.hosts.knocking_grace:
                 pool.last_knock = datetime.now()
                 pool.knock()
 
