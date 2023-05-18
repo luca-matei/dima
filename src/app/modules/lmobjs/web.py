@@ -765,6 +765,8 @@ class Web(Project):
     def env_var(self, env, name):
         if name == "db" and env == "dev":
             return getattr(self, name)
+        elif name == "domain" and env == "prod":
+            return getattr(self, name)
         else:
             return getattr(self, env + "_" + name)
 

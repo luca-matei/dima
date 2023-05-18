@@ -2844,7 +2844,7 @@ class Host(lmObj, HostServices):
         if src_path.startswith("/etc/"):
             start_path = tmp_path
             cmd(f"sudo cp{' -r' if is_dir else ''} {src_path} {start_path}")
-            cmd(f"sudo chown dima:dima {final_path}")
+            cmd(f"sudo chown dima:dima {start_path}")
         else:
             start_path = src_path
 
@@ -3877,6 +3877,8 @@ class Web(Project):
     @authorize
     def env_var(self, env, name):
         if name == "db" and env == "dev":
+            return getattr(self, name)
+        elif name == "domain" and env == "prod":
             return getattr(self, name)
         else:
             return getattr(self, env + "_" + name)
