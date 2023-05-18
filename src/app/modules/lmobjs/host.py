@@ -142,8 +142,9 @@ class HostServices:
         time.sleep(5)
 
     @authorize
-    def config_dns(self, acme:'list'=[]):
+    def config_dns(self, acme:'hidden'=[]):
         # https://wiki.debian.org/Bind9#Introduction
+        print(acme)
 
         if "dns" not in self.services:
             log(f"Host '{self.name}' isn't a DNS server!", level=4, console=True)
@@ -1327,7 +1328,7 @@ class Host(lmObj, HostServices):
         is_dir = src_path.endswith('/')
         tmp_path = utils.tmp_dir + "restricted" + ('/' if is_dir else '')
 
-        if utils.isfile(tmp_path):
+        if utils.isfile(tmp_path, quiet=True):
             cmd(f"sudo rm{' -r' if is_dir else ''} {tmp_path}")
 
         if src_path.startswith("/etc/"):
@@ -1349,7 +1350,7 @@ class Host(lmObj, HostServices):
             cmd(f"sudo mv {dest_path} {final_path}", host=self.lmid)
             cmd(f"sudo chown {owner} {final_path}", host=self.lmid)
 
-        if utils.isfile(tmp_path):
+        if utils.isfile(tmp_path, quiet=True):
             cmd(f"sudo rm{' -r' if is_dir else ''} {tmp_path}")
 
     @authorize

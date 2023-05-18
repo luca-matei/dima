@@ -126,6 +126,9 @@ class CLI:
                     if args[a] not in range(1, len(utils.webs.states) + 1):
                         return self.invalid(p=a, pt="web_state")
 
+                elif arg_type == "hidden":
+                    continue
+
                 # Remove extra quotes
                 elif args[a].startswith("'"):
                     args[a] = args[a].strip("'")

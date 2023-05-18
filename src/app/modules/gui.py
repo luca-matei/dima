@@ -214,6 +214,12 @@ class GUI:
 
         widgets = {}
         for p, v in params.items():
+            arg_type = v[0]
+            value = v[1]
+
+            if arg_type == "hidden":
+                continue
+
             self.cmd_args[p] = "NaN"
             text = p.capitalize().replace("_", " ") + (" *" if p in param_pos else "")
 
@@ -224,23 +230,23 @@ class GUI:
             label = self.create_label(frame, text=text)
             label.pack(side=tk.LEFT, padx=[0, 4])
 
-            if v[0] == "str":
+            if arg_type == "str":
                 widgets[p + "_var"] = tk.StringVar(frame)
                 widgets[p] = ttk.Entry(frame, textvariable = widgets[p + "_var"])
 
-                if v[1] and v[1] != inspect._empty:
-                    widgets[p + "_var"].set(v[1])
+                if value and value != inspect._empty:
+                    widgets[p + "_var"].set(value)
 
-            elif v[0] == "bool":
+            elif arg_type == "bool":
                 widgets[p + "_var"] = tk.IntVar(frame)
                 widgets[p] = ttk.Checkbutton(frame, variable=widgets[p + "_var"])
 
-            elif v[0] == "env":
+            elif arg_type == "env":
                 widgets[p + "_var"] = tk.StringVar(frame)
                 opts = [k for k, v in utils.hosts.envs.items() if isinstance(k, str)]
-                widgets[p] = ttk.OptionMenu(frame, widgets[p + "_var"], v[1], *opts)
+                widgets[p] = ttk.OptionMenu(frame, widgets[p + "_var"], value, *opts)
 
-            elif v[0] == "web_state":
+            elif arg_type == "web_state":
                 widgets[p + "_var"] = tk.StringVar(frame)
                 opts = [s[1] for s in sorted(utils.webs.states.items(), key = lambda e: e[0])]
                 current_state = utils.webs.states.get(dima.pools.get(dima.lmobjs.get(lmid)).state)

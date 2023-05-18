@@ -332,7 +332,7 @@ class Web(Project):
 
             app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
                 "copyright_year": datetime.now().year,
-                "copyright_name": '.'.join(utils.nets.get_zone_name(domain)),
+                "copyright_name": utils.nets.get_zone_name(domain),
                 })
 
             self.global_html[lang]["app-wrapper"] = "<!doctype html>" + utils.format_tpl(self.yml2html("app-wrapper.yml", lang), {

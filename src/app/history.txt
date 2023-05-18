@@ -203,3 +203,38 @@ lm6 ping --env=prod --restart=1
 lm7 config --env=dev --restart=1
 lm1 save --env=prod --restart=1
 lm1 save --message="Updated files"
+lm7 update html --env=dev --global_html=1
+lm7 generate ssl 
+lm6 ping 
+lm2 default --env=dev --confirm=1
+lm14 config dns 
+lm14 ping 
+lm2 config --env=dev
+lm2 config --env=dev --restart=1
+lm2 generate ssl 
+lm11 add acme ZzT9NgSSql0R717JQQZs9sLDunpB4ALW3SA6dLhV9uY dima.digitalmarmot.com
+lm11 config dns
+lm11 add acme i6L99lqz8REZeU3V6PCyPNXvnd2KYy21UJibofYA_Ks www.dima.digitalmarmot.com
+lm11 add acme unmWcWD3vGzZCz-bmT99k2FXpkxbaeDv1nTt9x3Ihhc dev.dima.digitalmarmot.com
+lm11 add acme FpoH6ShVH9b6UIaB5Th1L1IuJ3fhh2tt1aerrtlWdRw www.dev.dima.digitalmarmot.com
+lm11 config dns
+lm2 generate ssl 
+lm11 add acme 5EHjubr48DCyFbQfFNJCQ5PGugVsiELKW0O0afkKszI dima.digitalmarmot.com
+lm11 add acme frb9Oqmg9SyPPRvGfatsirGCFGUL2s6k0DHQGy91inY www.dima.digitalmarmot.com
+lm11 config dns
+lm11 add acme sWAWjA90uVyhQidui0OGVXx_e2eSyBpQwlIjxcRcA4Q dev.dima.digitalmarmot.com
+lm11 add acme lRkLxYBRSMUW5hR4BMff2-5Lr5Yften0LMDExaVmO_o www.dev.dima.digitalmarmot.com
+lm2 generate ssl 
+lm11 add acme 6C2XVjimj-fC-0C00YShwezPV_V5Lodn89s-t7aUy-w dima.digitalmarmot.com
+lm11 config dns
+lm11 add acme xavKZia-fp3Gye3qSXoz2M3dKhCwyZpUNqUuCPXAuoY www.dima.digitalmarmot.com
+lm11 add acme 78rdjYeuLZzOelBVx2tdYpaS6_70su-MoIh5lpuyaVg dev.dima.digitalmarmot.com
+lm11 add acme I4EzNku8jPx9_pW46Myen6CvsrJZ2GMoqRIqlV8Ld8o www.dev.dima.digitalmarmot.com
+lm11 config dns
+lm2 config --env=dev --restart=1
+lm11 add acme JZNyJ2DcxqITjYCyha8NjJ9M9Pn39ogd2kJjSzG5Rds www.dima.digitalmarmot.com
+lm2 check --env=dev
+lm2 restart --env=dev
+lm2 update html --env=dev --global_html=1
+lm1 save --env=dev --global_html=1
+lm1 save --message="Updated files"
