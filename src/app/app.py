@@ -2327,7 +2327,7 @@ class Host(lmObj, HostServices):
         else:
             min, max = 16384, 32768
             used = []
-            for ports in dima.db.execute("select a.dev_port, a.prod_port, b.port from web.webs a, project.apps b;"):
+            for ports in dima.db.execute("select a.port, b.port from web.webs a, project.apps b;"):
                 used.extend(ports)
 
         port = random.randint(min, max)
@@ -2385,7 +2385,6 @@ class Host(lmObj, HostServices):
             lang_ids = [x for x in [utils.projects.langs.get(l, 0) for l in langs] if x]
             theme_ids = [x for x in [utils.projects.themes.get(t, 0) for t in themes] if x]
 
-            domain_id = -1
             option_ids = 3,
 
             query = "insert into web.webs (lmobj, domain, ssl_due, port, state, modules, langs, themes, default_lang, default_theme, options) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
@@ -2394,7 +2393,6 @@ class Host(lmObj, HostServices):
             if dima.db.execute(query, params)[0][0]:
                 log(f"{name if name else (alias if alias else lmid)} web app created!", console=True)
                 dima.create_pool(dbid)
-                self.update_hosts_file()
                 return 1
 
         log(f"Couldn't create web app '{lmid}'!", level=4, console=True)
@@ -3197,7 +3195,7 @@ class Web(Project):
 
             elif env == "dev":
                 # To do: Remove everything but .git
-                return
+                pass
 
             elif env == "prod":
                 # To do: Backup the database
@@ -3213,7 +3211,7 @@ class Web(Project):
             )
 
         if env == "dev":
-            dir_tree.extend((
+            dir_tree += (
                 "docs/",
                 "src/app/html/",
                 "src/assets/",
@@ -3224,7 +3222,7 @@ class Web(Project):
                     "src/assets/js/",
                 "LICENSE",
                 "README.md",
-            ))
+            )
 
         utils.create_dir_tree(dir_tree, root=self.repo_dir, host=host)
 
@@ -3238,7 +3236,7 @@ class Web(Project):
                 )
 
         self.default(env)
-        self.generate_ssl(env)
+        self.generate_ssl()
 
         log(f"Built '{domain}'", console=True)
 
@@ -3762,8 +3760,8 @@ class Web(Project):
     def assign_port(self):
         log(f"Assigning port to '{self.domain}' ...", console=True)
 
-        port = dima.pools.get(host_id).next_port()
-        query = f"update web.webs set port=%s where lmobj=%s return 1;"
+        port = dima.pools.get(self.dev_host_id).next_port()
+        query = f"update web.webs set port=%s where lmobj=%s returning 1;"
         params = port, self.dbid,
         dima.db.execute(query, params)
 
@@ -4015,10 +4013,8 @@ class CLI:
                         return self.invalid(p=a, pt='boolean')
 
                 elif arg_type == "list":
-                    if arg.startswith(("(", "[")) and arg.endswith((")", "]")):
-                        args[a] = arg[1:-1].split(',')
-                    else:
-                        return self.invalid(p=a, pt='list')
+                    args[a] = arg.split(',')
+                
                 elif arg_type == "env":
                     envs = utils.get_keys(utils.hosts.envs)
                     # dev, test, prod
@@ -4420,12 +4416,16 @@ class GUI:
             label = self.create_label(frame, text=text)
             label.pack(side=tk.LEFT, padx=[0, 4])
 
-            if arg_type == "str":
+            if arg_type in ("str", "list"):
                 widgets[p + "_var"] = tk.StringVar(frame)
                 widgets[p] = ttk.Entry(frame, textvariable = widgets[p + "_var"])
 
                 if value and value != inspect._empty:
+                    if arg_type == "list":
+                        value = ', '.join(value)
+                    print(value)
                     widgets[p + "_var"].set(value)
+
 
             elif arg_type == "bool":
                 widgets[p + "_var"] = tk.IntVar(frame)

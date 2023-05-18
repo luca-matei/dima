@@ -102,10 +102,8 @@ class CLI:
                         return self.invalid(p=a, pt='boolean')
 
                 elif arg_type == "list":
-                    if arg.startswith(("(", "[")) and arg.endswith((")", "]")):
-                        args[a] = arg[1:-1].split(',')
-                    else:
-                        return self.invalid(p=a, pt='list')
+                    args[a] = arg.split(',')
+                
                 elif arg_type == "env":
                     envs = utils.get_keys(utils.hosts.envs)
                     # dev, test, prod

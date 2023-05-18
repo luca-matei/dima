@@ -238,3 +238,24 @@ lm2 restart --env=dev
 lm2 update html --env=dev --global_html=1
 lm1 save --env=dev --global_html=1
 lm1 save --message="Updated files"
+lm6 create web --domain=lucamatei.xyz --name=XYZ --alias=xyz --modules=('static',) --langs=('en',) --themes=('light',) --default_lang=en --default_theme=light
+lm6 create web --domain=lucamatei.xyz --name=XYZ --alias=xyz --modules=static --langs=en --themes=light --default_lang=en --default_theme=light
+lm9 check --env=dev
+lm9 build --env=dev --confirm=1
+lm9 build --message="Updated files"
+lm9 build --env=dev
+lm14 config dns 
+lm9 generate ssl 
+lm11 add acme lynrxDiWjJ_vP0Y6Ja4py38ejNxSRR3rVu66uwfpUHw lucamatei.xyz
+lm11 config dns
+lm11 add acme 1ewy8z0_1OOaKjo8KZ5YmN48cUv0C1RjnCK05JekTEY www.lucamatei.xyz
+lm11 add acme -R4CFBsEBCRwyx-3yD18BJ9GBDmk-9BjcQCgwO1cN4k dev.lucamatei.xyz
+lm11 add acme zfYvr7rKUyCy4QorUJSFIbjXsIcjyokdEWuLFZazhgc www.dev.lucamatei.xyz
+lm11 config dns
+lm2 build --env=dev --confirm=1
+lm2 generate ssl 
+lm9 generate ssl 
+lm11 add acme dQiK8tM7n5G15rim80Ee48UtpPYUkg6HIes1VS_TE6s dev.lucamatei.xyz
+lm11 config dns
+lm11 add acme 5BDltQfZcPBn4MTfPoJSgXPzQ72vgSeULj2DbNo48rE www.dev.lucamatei.xyz
+lm1 save 

@@ -816,7 +816,7 @@ class Host(lmObj, HostServices):
         else:
             min, max = 16384, 32768
             used = []
-            for ports in dima.db.execute("select a.dev_port, a.prod_port, b.port from web.webs a, project.apps b;"):
+            for ports in dima.db.execute("select a.port, b.port from web.webs a, project.apps b;"):
                 used.extend(ports)
 
         port = random.randint(min, max)
@@ -874,7 +874,6 @@ class Host(lmObj, HostServices):
             lang_ids = [x for x in [utils.projects.langs.get(l, 0) for l in langs] if x]
             theme_ids = [x for x in [utils.projects.themes.get(t, 0) for t in themes] if x]
 
-            domain_id = -1
             option_ids = 3,
 
             query = "insert into web.webs (lmobj, domain, ssl_due, port, state, modules, langs, themes, default_lang, default_theme, options) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
@@ -883,7 +882,6 @@ class Host(lmObj, HostServices):
             if dima.db.execute(query, params)[0][0]:
                 log(f"{name if name else (alias if alias else lmid)} web app created!", console=True)
                 dima.create_pool(dbid)
-                self.update_hosts_file()
                 return 1
 
         log(f"Couldn't create web app '{lmid}'!", level=4, console=True)

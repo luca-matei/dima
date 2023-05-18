@@ -83,7 +83,7 @@ class Web(Project):
 
             elif env == "dev":
                 # To do: Remove everything but .git
-                return
+                pass
 
             elif env == "prod":
                 # To do: Backup the database
@@ -99,7 +99,7 @@ class Web(Project):
             )
 
         if env == "dev":
-            dir_tree.extend((
+            dir_tree += (
                 "docs/",
                 "src/app/html/",
                 "src/assets/",
@@ -110,7 +110,7 @@ class Web(Project):
                     "src/assets/js/",
                 "LICENSE",
                 "README.md",
-            ))
+            )
 
         utils.create_dir_tree(dir_tree, root=self.repo_dir, host=host)
 
@@ -124,7 +124,7 @@ class Web(Project):
                 )
 
         self.default(env)
-        self.generate_ssl(env)
+        self.generate_ssl()
 
         log(f"Built '{domain}'", console=True)
 
@@ -648,8 +648,8 @@ class Web(Project):
     def assign_port(self):
         log(f"Assigning port to '{self.domain}' ...", console=True)
 
-        port = dima.pools.get(host_id).next_port()
-        query = f"update web.webs set port=%s where lmobj=%s return 1;"
+        port = dima.pools.get(self.dev_host_id).next_port()
+        query = f"update web.webs set port=%s where lmobj=%s returning 1;"
         params = port, self.dbid,
         dima.db.execute(query, params)
 

@@ -230,12 +230,16 @@ class GUI:
             label = self.create_label(frame, text=text)
             label.pack(side=tk.LEFT, padx=[0, 4])
 
-            if arg_type == "str":
+            if arg_type in ("str", "list"):
                 widgets[p + "_var"] = tk.StringVar(frame)
                 widgets[p] = ttk.Entry(frame, textvariable = widgets[p + "_var"])
 
                 if value and value != inspect._empty:
+                    if arg_type == "list":
+                        value = ', '.join(value)
+                    print(value)
                     widgets[p + "_var"].set(value)
+
 
             elif arg_type == "bool":
                 widgets[p + "_var"] = tk.IntVar(frame)

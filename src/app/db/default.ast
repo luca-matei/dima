@@ -37,7 +37,7 @@
         ("lm6", "Host", "quasar"),
         ("lm7", "Web", "portfolio"),
         ("lm8", "Host", "cepheus"),
-        #("lm9", "Web", "xyz"),
+        ("lm9", "Web", "xyz"),
         ("lm10", "Host", "helios"),
         ("lm11", "Host", "dns"),
         ("lm12", "Host", "mail"),
@@ -99,7 +99,7 @@
         ("lucamatei.net", "lm16", "lm15", "lm12", "lm14"),
         ("lucamatei.eu", "lm16", "lm15", "lm12", "lm14"),
         #("lucamatei.org", "lm16", "lm15", "lm12", "lm14"),
-        #("lucamatei.xyz", "lm16", "lm15", "lm12", "lm14"),
+        ("lucamatei.xyz", "lm16", "lm15", "lm12", "lm14"),
         #("lucamatei.ro", "lm16", "lm15", "lm12", "lm14"),
         #("lucamatei.blog", "lm16", "lm15", "lm12", "lm14"),
         #("lucamatei.shop", "lm16", "lm15", "lm12", "lm14"),
@@ -242,6 +242,7 @@
         ("lm2", "lm6", 0.1, "lm8", 0.1, "dima Portal", ""),
         ("lm5", "lm6", 0.1, "lm10", 0.1, "Hello World", ""),
         ("lm7", "lm6", 0.1, "lm10", 0.1, "Portfolio", ""),
+        ("lm9", "lm6", 0.1, "lm10", 0.1, "XYZ", ""),
         )),
 
     ("langs", (
@@ -295,6 +296,7 @@
         ("lm2", "dima.digitalmarmot.com", "", 16863, 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
         ("lm5", "hello.lucamatei.net", "", 18532, 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
         ("lm7", "lucamatei.eu", "", 19680, 5, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
+        ("lm9", "lucamatei.xyz", "", 29636, 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
         )),
     )),
 )
