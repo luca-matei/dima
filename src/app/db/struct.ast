@@ -11,24 +11,35 @@
     "alias varchar unique"
     )),
 
-("domains", (
-    "id serial primary key",
-    "name varchar unique",
-    "ssl_due date",
-    "dhcp int",
-    "dns int",
-    "mail int",
+("net", (
+    ("dnss", (
+        "id serial primary key",
+        "lmobj int",
+        "glue varchar",
+        "master int",
+        "slaves int[]",
     )),
 
-("nets", (
-    "id serial primary key",
-    "lmobj int",
-    "domain int not null",
-    "netmask inet not null",
-    "gateway inet not null",
-    "lease_start inet not null",
-    "lease_end inet not null",
-    )),
+    ("zones", (
+        "id serial primary key",
+        "name varchar unique",
+        "pub_dns int",
+        "priv_dns int",
+        "pub_mail int",
+        "priv_mail int",
+        )),
+
+    ("nets", (
+        "id serial primary key",
+        "lmobj int",
+        "domain varchar not null",
+        "dhcp int",
+        "netmask inet not null",
+        "gateway inet not null",
+        "lease_start inet not null",
+        "lease_end inet not null",
+        )),
+)),
 
 ("host", (
     ("envs", (
@@ -127,10 +138,10 @@
     ("webs", (
         "id serial primary key",
         "lmobj int",
-        "domain int",
-        "dev_port int",
-        "prod_port int",
-        "prod_state int",
+        "domain varchar",
+        "ssl_due date",
+        "port int",
+        "state int",
         "modules smallint[]",
         "langs smallint[]",
         "themes smallint[]",

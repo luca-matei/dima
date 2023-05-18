@@ -1,5 +1,5 @@
-zone "%DOMAIN%" {
+zone "%ZONE%" {
     type master;
-    file "/etc/bind/db.%DOMAIN%";
+    file "/etc/bind/db.%ZONE%";
     notify no;
 };

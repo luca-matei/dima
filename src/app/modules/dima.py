@@ -17,7 +17,6 @@ class Dima:
     domain = None
 
     modules = {}
-    domains = {}
     lmobjs = {}
     pools = {}
 
@@ -61,7 +60,7 @@ class Dima:
         gitlab.get_token()
 
         log("Phase 6.1: Creating object pools ...")
-        for kind in (self.modules["Net"], self.modules["Host"], self.modules["Soft"], self.modules["App"], self.modules["Web"]):
+        for kind in (self.modules["Net"], self.modules["Host"], self.modules["DNS"], self.modules["Soft"], self.modules["App"], self.modules["Web"]):
             for dbid in utils.get_keys(self.lmobjs):
                 if isinstance(dbid, int) and self.lmobjs[dbid][1] == kind:
                     self.create_pool(dbid)
@@ -72,13 +71,6 @@ class Dima:
             self.pools.get(dbid).check()
         """
 
-        log("Phase 6.2: Referencing DHCP, DNS, Mail servers for domains ...")
-        for dbid, domain in self.domains.items():
-            if isinstance(dbid, int):
-                self.domains.get(dbid).dhcp = self.pools.get(domain.dhcp_id)
-                self.domains.get(dbid).dns = self.pools.get(domain.dns_id)
-                self.domains.get(dbid).mail = self.pools.get(domain.mail_id)
-
 
     def load_database(self):
         log("Phase 4.1: Loading modules ...")
@@ -86,10 +78,10 @@ class Dima:
             self.modules[m[0]] = m[1]   # 1 = utils.dbs
             self.modules[m[1]] = m[0]   # utils.dbs = 1
 
-        log("Phase 4.2: Loading domains ...")
-        for d in sorted(self.db.execute("select id, name from domains;"), key=lambda d: len(d[1]), reverse=True):
-            self.domains[d[0]] = Domain(d[0])
-            self.domains[d[1]] = d[0]
+        log("Phase 4.2: Loading zones ...")
+        cols = "pub_dns", "priv_dns", "pub_mail", "priv_mail",
+        for z in self.db.execute(f"select name, {', '.join(cols)} from net.zones;"):
+            utils.nets.zones[z[0]] = dict(zip(cols, z[1:]))
 
         log("Phase 4.3.1: Loading host environments ...")
         for e in self.db.execute("select id, name from host.envs;"):
@@ -224,17 +216,17 @@ class Dima:
         # To do: validate registration details
 
         for d in (self.domain, 'home.' + self.domain):
-            domain_id = self.db.execute("select id from domains where name=%s;", (d,))[0][0]
+            domain_id = self.db.execute("select id from net.domains where name=%s;", (d,))[0][0]
 
             if not domain_id:
-                domain_id = self.db.execute("insert into domains (name) values (%s) returning id;", (d,))[0][0]
+                domain_id = self.db.execute("insert into net.domains (name) values (%s) returning id;", (d,))[0][0]
                 reload = True
 
         if not self.net_dbid:
             log("Main network not registered!", level=3, console=True)
             self.net_dbid = self.insert_lmobj(self.net_lmid, "Net", None)
 
-            query = "insert into nets (lmobj, domain, netmask, gateway, lease_start, lease_end) values (%s, %s, %s, %s, %s, %s);"
+            query = "insert into net.nets (lmobj, domain, netmask, gateway, lease_start, lease_end) values (%s, %s, %s, %s, %s, %s);"
             params = self.net_dbid, domain_id, netmask, gateway, str(network[4]), str(network[-2]),
 
             self.db.execute(query, params)

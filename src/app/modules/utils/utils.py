@@ -235,7 +235,7 @@ class Utils:
     def format_tpl(self, tpl:'str', keys:'dict'):
         tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl) if tpl.endswith(".tpl") else tpl
 
-        reps = {"%" + k.upper() + "%": v for k, v in keys.items()}
+        reps = {"%" + k.upper() + "%": str(v) for k, v in keys.items()}
         return self.replace_multiple(tpl, reps)
 
     def confirm(self, question=""):
@@ -392,11 +392,13 @@ class Utils:
                 f_placeholder = attrs.get('placeholder', "")
                 f_heading = attrs.get('heading')
                 required = attrs.get('required')
-                f_minlen = f_data.get('minlen')
-                f_maxlen = f_data.get('maxlen')
+                disabled = attrs.get('disabled')
+                minlen = f_data.get('minlen')
+                maxlen = f_data.get('maxlen')
 
-                f_minlen = f" minlength={f_minlen}" if f_minlen else ""
-                f_maxlen = f" maxlength={f_maxlen}" if f_maxlen else ""
+                f_minlen = f" minlength={minlen}" if minlen else ""
+                f_maxlen = f" maxlength={maxlen}" if maxlen else ""
+                f_disabled = " disabled" if disabled else ""
 
                 if f_placeholder:
                     if type(f_placeholder) == list:
@@ -419,9 +421,9 @@ class Utils:
                     tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"lmgrow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
 
                 if tag == "lminput":
-                    tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}>""")
+                    tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}{f_disabled}>""")
                 else:
-                    tag_html.append(f"""<textarea{f_placeholder}{f_minlen}{f_maxlen}></textarea>""")
+                    tag_html.append(f"""<textarea{f_placeholder}{f_minlen}{f_maxlen}{f_disabled}></textarea>""")
 
                 if attrs.get("counter"):
                     tag_html.append(f"<span class='lmforms-counter'>0 / {f_data.get('maxlen')}</span>")

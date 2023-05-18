@@ -243,7 +243,7 @@ class GUI:
             elif v[0] == "web_state":
                 widgets[p + "_var"] = tk.StringVar(frame)
                 opts = [s[1] for s in sorted(utils.webs.states.items(), key = lambda e: e[0])]
-                current_state = utils.webs.states.get(dima.pools.get(dima.lmobjs.get(lmid)).prod_state)
+                current_state = utils.webs.states.get(dima.pools.get(dima.lmobjs.get(lmid)).state)
                 widgets[p] = ttk.OptionMenu(frame, widgets[p + "_var"], current_state, *opts)
 
             widgets[p].pack(side=tk.LEFT, padx=[0, 8])
@@ -342,23 +342,18 @@ class GUI:
 
     def set_web_details(self, *args):
         lmid = self.widgets["web_lmid_str"].get()
-        pool = dima.pools[dima.lmobjs[lmid]]
+        pool = dima.pools.get(dima.lmobjs.get(lmid))
 
-        try: dssl_date = utils.format_date(pool.domain.dev.ssl_due, "%d %b %Y")
-        except: dssl_date = "NaN"
-
-        try: pssl_date = utils.format_date(pool.domain.ssl_due, "%d %b %Y")
-        except: pssl_date = "NaN"
+        try: ssl_date = utils.format_date(pool.ssl_due, "%d %b %Y")
+        except: ssl_date = "NaN"
 
         self.widgets["web_id_str"].set(pool.lmid)
-        self.widgets["web_ddomain_str"].set(f"{pool.domain.dev.name}:{pool.dev_port}")
-        self.widgets["web_pdomain_str"].set(f"{pool.domain.name}:{pool.prod_port}")
+        self.widgets["web_domain_str"].set(f"{pool.domain}:{pool.port}")
         self.widgets["web_dlang_str"].set(pool.default_lang)
         self.widgets["web_dtheme_str"].set(pool.default_theme)
 
         self.widgets["web_alias_str"].set(pool.alias)
-        self.widgets["web_dssl_str"].set(dssl_date)
-        self.widgets["web_pssl_str"].set(pssl_date)
+        self.widgets["web_ssl_str"].set(ssl_date)
         self.widgets["web_langs_str"].set(', '.join([utils.projects.langs[l] for l in pool.lang_ids]))
         self.widgets["web_themes_str"].set(', '.join(pool.themes))
 

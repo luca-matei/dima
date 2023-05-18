@@ -225,3 +225,43 @@ lm14 ping
 lm14 config dns 
 lm10 ping 
 lm1 save --message="Updated files"
+lm6 mount 
+lm11 ping 
+lm14 ping 
+lm10 ping 
+lm5 change state --new_state=5 --confirm=1
+lm10 update resources 
+lm7 change state 
+lm7 change state --new_state=5 --confirm=1
+lm11 ping 
+lm14 ping 
+lm6 mount 
+lm7 update html --env=dev --global_html=1
+lm7 update html --env=dev
+lm7 update css --env=dev
+lm7 save --message="Updated files"
+lm7 change state --new_state=5 --confirm=1
+lm7 restart --env=prod
+lm10 restart nginx 
+lm10 ping 
+lm10 mount 
+lm10 unmount 
+lm11 ping 
+lm10 send file --src_path=/etc/letsencrypt/live/lucamatei.eu/fullchain.pem --dest_path=/etc/nginx/lmssl/lucamatei.eu/pubkey.pem --owner=root:root
+lm10 mount 
+lm7 config nginx --env=prod --restart=1
+lm7 config nginx --env=dev --restart=1
+lm7 update html --env=dev
+lm7 update html --env=prod
+lm10 ping 
+lm10 config nginx 
+lm7 config nginx --env=prod --restart=1
+lm10 restart supervisor 
+lm7 update html --env=prod
+lm7 update html --env=dev
+lm7 restart --env=dev
+lm7 restart --env=prod
+lm14 ping 
+lm14 config dns 
+lm11 config dns 
+lm1 save 

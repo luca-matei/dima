@@ -1,4 +1,9 @@
 class NetUtils:
+    zones = {}
+
+    def get_zone(self, domain:'str'):
+        return '.'.join(domain.split(".")[-2:])
+
     def in_subnets(self):
         subnets = []
 

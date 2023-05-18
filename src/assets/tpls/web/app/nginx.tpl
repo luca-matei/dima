@@ -1,6 +1,35 @@
 server {
     listen 80;
-    server_name %DOMAIN% www.%DOMAIN%;
+    server_name %DOMAIN%;
+    return 301 https://%DOMAIN%$request_uri;
+}
+
+server {
+    listen 80;
+    listen 443 ssl http2;
+    server_name www.%DOMAIN%;
+    keepalive_timeout 70;
+
+    ssl_certificate      %SSL_DIR%pubkey.pem; # fullchain.pem
+    ssl_certificate_key  %SSL_DIR%privkey.pem; # privkey.pem
+    ssl_protocols TLSv1.3;
+
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256";
+
+    ssl_session_timeout 30m;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+
+    ssl_dhparam %DIMA_SSL_DIR%dhparam.pem;
+    ssl_ecdh_curve secp521r1:secp384r1;
+
+    ssl_stapling %OCSP%;
+    ssl_stapling_verify %OCSP%;
+    ssl_trusted_certificate %SSL_DIR%pubkey.pem; # fullchain.pem
+    resolver 1.1.1.1 1.0.0.1 [2606:4700:4700::1111] [2606:4700:4700::1001] valid=300s;
+    resolver_timeout 5s;
+
     return 301 https://%DOMAIN%$request_uri;
 }
 

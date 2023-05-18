@@ -201,22 +201,6 @@
     }
 }
 
-.lmtpl-notice {
-    p {
-        margin: 0;
-        padding: 8px;
-        text-align: center;
-        a  {
-            color: var(--ts-2-1);
-            border-bottom: 1px solid var(--ts-2-1);
-            &:hover {
-                color: var(--tp-1-1);
-                border-bottom-color: var(--tp-1-1);
-            }
-        }
-    }
-}
-
 .lmtpl-sign {
     color: $blue-1;
     font-size: 2rem;
@@ -335,5 +319,18 @@
     font-size: 1.32rem;
     &>a {
         margin-right: 8px;
+    }
+}
+
+.lmtpl-alert {
+    background-color: $orange-1;
+    font-size: 0.8rem;
+    border-radius: $bd-r;
+    color: #000;
+
+    &>span, p {
+        display: inline-block;
+        margin: 0;
+        padding: 8px 12px;
     }
 }

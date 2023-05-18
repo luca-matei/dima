@@ -41,7 +41,7 @@ class HostUtils:
             "gateway": net.gateway,
             "dns": net.domain.dns.ip,
             "hostname": hostname,
-            "domain_name": net.domain.name,
+            "domain_name": net.domain,
             "root_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),
             "username": "dima",
             "user_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),

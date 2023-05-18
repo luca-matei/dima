@@ -2,15 +2,15 @@ class Net(lmObj):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
-        query = "select netmask, domain, gateway, lease_start, lease_end from nets where lmobj=%s;"
+        query = "select netmask, domain, dhcp, gateway, lease_start, lease_end from net.nets where lmobj=%s;"
         params = dbid,
-        self.netmask, self.domain_id, self.gateway, self.lease_start, self.lease_end = dima.db.execute(query, params)[0]
+        self.netmask, self.domain, self.dhcp_id, self.gateway, self.lease_start, self.lease_end = dima.db.execute(query, params)[0]
 
         self.obj = ipaddress.ip_network(self.gateway + '/' + self.netmask, strict=False)
         self.ip = str(self.obj[0])
         self.broadcast = self.obj[-1]
 
-        self.domain = dima.domains.get(self.domain_id)
+        self.dns_id = utils.nets.zones[utils.nets.get_zone(self.domain)].get("priv_dns" if self.domain.startswith("home.") else "pub_dns")
 
     def get_ip(self):
         # Get machine's ips
@@ -36,9 +36,5 @@ class Net(lmObj):
 
     def check(self):
         if not self.dhcp_id:
-            log(f"Net {self.name} doesn't have a DHCP server set!", level=3, console=True)
+            log(f"Net '{self.name}' doesn't have a DHCP server set!", level=3, console=True)
             self.set_dhcp()
-
-        if not self.dns_id:
-            log(f"Net {self.name} doesn't have a DNS set!", level=3, console=True)
-            self.set_dns()

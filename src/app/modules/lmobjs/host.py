@@ -56,20 +56,16 @@ class HostServices:
         if not utils.isfile("/etc/dhcp/dhcp.d/", host=self.lmid):
             cmd("sudo mkdir /etc/dhcp/dhcp.d/", host=self.lmid)
 
-        net_ids = []
-
-        query = "select lmobj, domain from nets;"
+        query = "select lmobj from net.nets where dhcp=%s;"
         params = self.dbid,
-        for net_id, domain_id in dima.db.execute(query, params):
-            domain = dima.domains.get(domain_id)
-            if domain.dhcp and domain.dhcp.dbid == self.dbid:
-                net_ids.append(net_id)
+        net_ids = [n[0] for n in dima.db.execute(query, params)]
 
         subnets_config = []
         hosts_config = []
 
         for net_id in net_ids:
             net = dima.pools.get(net_id)
+            dns = dima.pools.get(net.dns_id)
 
             # Write subnets file
             subnets_config.append(utils.format_tpl("dhcp/subnet.tpl", {
@@ -79,8 +75,8 @@ class HostServices:
                 "broadcast": net.broadcast,
                 "lease_start": net.lease_start,
                 "lease_end": net.lease_end,
-                "domain": net.domain.name,
-                "dns": f"{net.domain.dns.ip}, 8.8.8.8"
+                "domain": net.domain,
+                "dns": f"{dima.pools.get(dns.master_id).ip}, 8.8.8.8"
                 }))
 
             query = "select lmobj from host.hosts where net=%s;"
@@ -149,47 +145,55 @@ class HostServices:
 
         log(f"Configuring DNS server on '{self.lmid}' ...", console=True)
 
-        zones = {}
         conf_local = []
 
-        for dbid, web in [(i, w) for i, w in dima.pools.items() if isinstance(w, Web)]:
-            print(web.domain.name)
-            zone_name = ".".join(web.domain.name.split(".")[-2:])
+        for zone_name, zone in utils.nets.zones.items():
+            pub_master = dima.pools.get(zone.get("pub_dns"))
+            priv_master = dima.pools.get(zone.get("priv_dns"))
 
-            if zone_name not in utils.get_keys(zones):
-                zones[zone_name] = []
-
-            if web.domain.dns.dbid == self.dbid:
-                zones[zone_name].append(web)
-
-        for zone_name, webs in zones.items():
-            if not webs:
+            if self.dbid == pub_master.master_id:
+                public = True
+                master = pub_master
+                mail = dima.pools.get(zone.get("pub_mail"))
+            elif self.dbid == priv_master.master_id:
+                public = False
+                master = priv_master
+                mail = dima.pools.get(zone.get("priv_mail"))
+            else:
                 continue
+
+            web_ids = []
+            for lmobj, domain in dima.db.execute("select lmobj, domain from web.webs;"):
+                if domain.endswith(zone_name):
+                    web_ids.append(lmobj)
 
             web_records = []
             mail_records = []
-            for web in webs:
-                dev_host_ip = dima.pools.get(web.dev_host_id).ip
-                prod_host_ip = dima.pools.get(web.prod_host_id).ip
+            for web_id in web_ids:
+                web = dima.pools.get(web_id)
+                subdomain_name = web.domain.replace(zone_name, "").strip('.')
 
-                subdomain_name = web.domain.name.replace(zone_name, "").strip('.')
-                if subdomain_name:
-                    web_records.append(f"{subdomain_name} IN A {prod_host_ip}")
+                if public:
+                    host_ip = dima.pools.get(web.prod_host_id).ip
+                    if subdomain_name:
+                        web_records.append(f"{subdomain_name} IN A {host_ip}")
+                    else:
+                        web_records.append("@ IN A " + host_ip)
+
+                    web_records.append(f"www.{subdomain_name}".strip('.') + f" IN A {host_ip}")
+
                 else:
-                    web_records.append("@ IN A " + prod_host_ip)
+                    host_ip = dima.pools.get(web.dev_host_id).ip
+                    web_records.append(f"dev.{subdomain_name}".strip('.') + f" IN A {host_ip}")
+                    web_records.append(f"www.dev.{subdomain_name}".strip('.') + f" IN A {host_ip}")
 
-                web_records.append(f"www.{subdomain_name}".strip('.') + f" IN A {prod_host_ip}")
-                web_records.append(f"dev.{subdomain_name}".strip('.') + f" IN A {dev_host_ip}")
-                web_records.append(f"www.dev.{subdomain_name}".strip('.') + f" IN A {dev_host_ip}")
-
-            conf_local.append(utils.format_tpl("dns/local.tpl", {"domain": zone_name}))
+            conf_local.append(utils.format_tpl("dns/local.tpl", {"zone": zone_name}))
             zone_conf = utils.format_tpl("dns/zone.tpl", {
+                "zone": zone_name,
                 "serial": int(time.time()),
-                "dns_domain": "lucamatei.net",
-                "dns_ip": dima.domains.get(dima.domains.get(zone_name)).dns.ip,
-                "mail_domain": "lucamatei.net",
-                "mail_ip": dima.domains.get(dima.domains.get(zone_name)).mail.ip,
-                "prod_host_ip": prod_host_ip,
+                "glue": master.glue,
+                "dns_ip": self.ip,  # Create NS records when you'll have multiple NSs
+                "mail_ip": mail.ip,
                 "web_records": '\n'.join(web_records),
                 "mail_records": '\n'.join(mail_records),
                 })
@@ -864,8 +868,8 @@ class Host(lmObj, HostServices):
             domain_id = -1
             option_ids = 3,
 
-            query = "insert into web.webs (lmobj, domain, dev_port, prod_port, prod_state, modules, langs, themes, default_lang, default_theme, options) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
-            params = dima.lmobjs[lmid], domain_id, self.next_port(), self.next_port(), 0, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], option_ids,
+            query = "insert into web.webs (lmobj, domain, ssl_due, port, state, modules, langs, themes, default_lang, default_theme, options) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
+            params = dima.lmobjs[lmid], domain, None, self.next_port(), 1, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], option_ids,
 
             if dima.db.execute(query, params)[0][0]:
                 log(f"{name if name else (alias if alias else lmid)} web app created!", console=True)
@@ -943,6 +947,7 @@ class Host(lmObj, HostServices):
                 cmd("mkdir " + self.mnt_dir)
 
             if not self.is_mounted():
+                self.knock()
                 cmd(f"sshfs -p {self.ssh_port} -o allow_other,identityfile={utils.ssh_dir}{self.lmid} dima@{self.ip}:/home/dima {self.mnt_dir}")
                 log(f"'{self.name}' mounted at {utils.now()}", console=True)
             else:
@@ -984,6 +989,9 @@ class Host(lmObj, HostServices):
     @authorize
     def update_resources(self):
         log(f"Updating resources for '{self.name}' ...", console=True)
+        if not utils.isfile(utils.res_dir, host=self.lmid):
+            cmd(f"mkdir {utils.res_dir}", host=self.lmid)
+
         if self.dbid != dima.host_dbid:
             cmd(f"rm -r {utils.res_dir}web/", host=self.lmid)
             self.send_file(utils.res_dir + "web/", utils.res_dir + "web/")
@@ -1048,14 +1056,14 @@ class Host(lmObj, HostServices):
             hosts = []
 
             # Web apps
-            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj;"
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, net.domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj;"
             db_webs = [list(h) for h in dima.db.execute(query, params)]
 
             for web in db_webs:
                 append_web(web)
         else:
             host_entries = ""
-            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj and c.name=%s;"
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, net.domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj and c.name=%s;"
             #params = utils.webs.assets_domain,
             #web = list(dima.db.execute(query, params)[0])
 

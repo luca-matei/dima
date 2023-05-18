@@ -235,7 +235,7 @@ class Utils:
     def format_tpl(self, tpl:'str', keys:'dict'):
         tpl = self.read(self.get_src_dir() + "assets/tpls/" + tpl) if tpl.endswith(".tpl") else tpl
 
-        reps = {"%" + k.upper() + "%": v for k, v in keys.items()}
+        reps = {"%" + k.upper() + "%": str(v) for k, v in keys.items()}
         return self.replace_multiple(tpl, reps)
 
     def confirm(self, question=""):
@@ -392,11 +392,13 @@ class Utils:
                 f_placeholder = attrs.get('placeholder', "")
                 f_heading = attrs.get('heading')
                 required = attrs.get('required')
-                f_minlen = f_data.get('minlen')
-                f_maxlen = f_data.get('maxlen')
+                disabled = attrs.get('disabled')
+                minlen = f_data.get('minlen')
+                maxlen = f_data.get('maxlen')
 
-                f_minlen = f" minlength={f_minlen}" if f_minlen else ""
-                f_maxlen = f" maxlength={f_maxlen}" if f_maxlen else ""
+                f_minlen = f" minlength={minlen}" if minlen else ""
+                f_maxlen = f" maxlength={maxlen}" if maxlen else ""
+                f_disabled = " disabled" if disabled else ""
 
                 if f_placeholder:
                     if type(f_placeholder) == list:
@@ -419,9 +421,9 @@ class Utils:
                     tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"lmgrow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
 
                 if tag == "lminput":
-                    tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}>""")
+                    tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}{f_disabled}>""")
                 else:
-                    tag_html.append(f"""<textarea{f_placeholder}{f_minlen}{f_maxlen}></textarea>""")
+                    tag_html.append(f"""<textarea{f_placeholder}{f_minlen}{f_maxlen}{f_disabled}></textarea>""")
 
                 if attrs.get("counter"):
                     tag_html.append(f"<span class='lmforms-counter'>0 / {f_data.get('maxlen')}</span>")
@@ -516,7 +518,6 @@ class Dima:
     domain = None
 
     modules = {}
-    domains = {}
     lmobjs = {}
     pools = {}
 
@@ -560,7 +561,7 @@ class Dima:
         gitlab.get_token()
 
         log("Phase 6.1: Creating object pools ...")
-        for kind in (self.modules["Net"], self.modules["Host"], self.modules["Soft"], self.modules["App"], self.modules["Web"]):
+        for kind in (self.modules["Net"], self.modules["Host"], self.modules["DNS"], self.modules["Soft"], self.modules["App"], self.modules["Web"]):
             for dbid in utils.get_keys(self.lmobjs):
                 if isinstance(dbid, int) and self.lmobjs[dbid][1] == kind:
                     self.create_pool(dbid)
@@ -571,13 +572,6 @@ class Dima:
             self.pools.get(dbid).check()
         """
 
-        log("Phase 6.2: Referencing DHCP, DNS, Mail servers for domains ...")
-        for dbid, domain in self.domains.items():
-            if isinstance(dbid, int):
-                self.domains.get(dbid).dhcp = self.pools.get(domain.dhcp_id)
-                self.domains.get(dbid).dns = self.pools.get(domain.dns_id)
-                self.domains.get(dbid).mail = self.pools.get(domain.mail_id)
-
 
     def load_database(self):
         log("Phase 4.1: Loading modules ...")
@@ -585,10 +579,10 @@ class Dima:
             self.modules[m[0]] = m[1]   # 1 = utils.dbs
             self.modules[m[1]] = m[0]   # utils.dbs = 1
 
-        log("Phase 4.2: Loading domains ...")
-        for d in sorted(self.db.execute("select id, name from domains;"), key=lambda d: len(d[1]), reverse=True):
-            self.domains[d[0]] = Domain(d[0])
-            self.domains[d[1]] = d[0]
+        log("Phase 4.2: Loading zones ...")
+        cols = "pub_dns", "priv_dns", "pub_mail", "priv_mail",
+        for z in self.db.execute(f"select name, {', '.join(cols)} from net.zones;"):
+            utils.nets.zones[z[0]] = dict(zip(cols, z[1:]))
 
         log("Phase 4.3.1: Loading host environments ...")
         for e in self.db.execute("select id, name from host.envs;"):
@@ -723,17 +717,17 @@ class Dima:
         # To do: validate registration details
 
         for d in (self.domain, 'home.' + self.domain):
-            domain_id = self.db.execute("select id from domains where name=%s;", (d,))[0][0]
+            domain_id = self.db.execute("select id from net.domains where name=%s;", (d,))[0][0]
 
             if not domain_id:
-                domain_id = self.db.execute("insert into domains (name) values (%s) returning id;", (d,))[0][0]
+                domain_id = self.db.execute("insert into net.domains (name) values (%s) returning id;", (d,))[0][0]
                 reload = True
 
         if not self.net_dbid:
             log("Main network not registered!", level=3, console=True)
             self.net_dbid = self.insert_lmobj(self.net_lmid, "Net", None)
 
-            query = "insert into nets (lmobj, domain, netmask, gateway, lease_start, lease_end) values (%s, %s, %s, %s, %s, %s);"
+            query = "insert into net.nets (lmobj, domain, netmask, gateway, lease_start, lease_end) values (%s, %s, %s, %s, %s, %s);"
             params = self.net_dbid, domain_id, netmask, gateway, str(network[4]), str(network[-2]),
 
             self.db.execute(query, params)
@@ -1151,6 +1145,11 @@ class Db:
         log(self.lmid + " database disconnected")
 
 class NetUtils:
+    zones = {}
+
+    def get_zone(self, domain:'str'):
+        return '.'.join(domain.split(".")[-2:])
+
     def in_subnets(self):
         subnets = []
 
@@ -1378,7 +1377,7 @@ class HostUtils:
             "gateway": net.gateway,
             "dns": net.domain.dns.ip,
             "hostname": hostname,
-            "domain_name": net.domain.name,
+            "domain_name": net.domain,
             "root_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),
             "username": "dima",
             "user_pass": crypt.crypt("test", salt=crypt.mksalt(method=crypt.METHOD_SHA512, rounds=1048576)),
@@ -1469,15 +1468,15 @@ class Net(lmObj):
     def __init__(self, dbid):
         lmObj.__init__(self, dbid)
 
-        query = "select netmask, domain, gateway, lease_start, lease_end from nets where lmobj=%s;"
+        query = "select netmask, domain, dhcp, gateway, lease_start, lease_end from net.nets where lmobj=%s;"
         params = dbid,
-        self.netmask, self.domain_id, self.gateway, self.lease_start, self.lease_end = dima.db.execute(query, params)[0]
+        self.netmask, self.domain, self.dhcp_id, self.gateway, self.lease_start, self.lease_end = dima.db.execute(query, params)[0]
 
         self.obj = ipaddress.ip_network(self.gateway + '/' + self.netmask, strict=False)
         self.ip = str(self.obj[0])
         self.broadcast = self.obj[-1]
 
-        self.domain = dima.domains.get(self.domain_id)
+        self.dns_id = utils.nets.zones[utils.nets.get_zone(self.domain)].get("priv_dns" if self.domain.startswith("home.") else "pub_dns")
 
     def get_ip(self):
         # Get machine's ips
@@ -1503,12 +1502,8 @@ class Net(lmObj):
 
     def check(self):
         if not self.dhcp_id:
-            log(f"Net {self.name} doesn't have a DHCP server set!", level=3, console=True)
+            log(f"Net '{self.name}' doesn't have a DHCP server set!", level=3, console=True)
             self.set_dhcp()
-
-        if not self.dns_id:
-            log(f"Net {self.name} doesn't have a DNS set!", level=3, console=True)
-            self.set_dns()
 
 class HostServices:
     pg_version = 13
@@ -1568,20 +1563,16 @@ class HostServices:
         if not utils.isfile("/etc/dhcp/dhcp.d/", host=self.lmid):
             cmd("sudo mkdir /etc/dhcp/dhcp.d/", host=self.lmid)
 
-        net_ids = []
-
-        query = "select lmobj, domain from nets;"
+        query = "select lmobj from net.nets where dhcp=%s;"
         params = self.dbid,
-        for net_id, domain_id in dima.db.execute(query, params):
-            domain = dima.domains.get(domain_id)
-            if domain.dhcp and domain.dhcp.dbid == self.dbid:
-                net_ids.append(net_id)
+        net_ids = [n[0] for n in dima.db.execute(query, params)]
 
         subnets_config = []
         hosts_config = []
 
         for net_id in net_ids:
             net = dima.pools.get(net_id)
+            dns = dima.pools.get(net.dns_id)
 
             # Write subnets file
             subnets_config.append(utils.format_tpl("dhcp/subnet.tpl", {
@@ -1591,8 +1582,8 @@ class HostServices:
                 "broadcast": net.broadcast,
                 "lease_start": net.lease_start,
                 "lease_end": net.lease_end,
-                "domain": net.domain.name,
-                "dns": f"{net.domain.dns.ip}, 8.8.8.8"
+                "domain": net.domain,
+                "dns": f"{dima.pools.get(dns.master_id).ip}, 8.8.8.8"
                 }))
 
             query = "select lmobj from host.hosts where net=%s;"
@@ -1661,47 +1652,55 @@ class HostServices:
 
         log(f"Configuring DNS server on '{self.lmid}' ...", console=True)
 
-        zones = {}
         conf_local = []
 
-        for dbid, web in [(i, w) for i, w in dima.pools.items() if isinstance(w, Web)]:
-            print(web.domain.name)
-            zone_name = ".".join(web.domain.name.split(".")[-2:])
+        for zone_name, zone in utils.nets.zones.items():
+            pub_master = dima.pools.get(zone.get("pub_dns"))
+            priv_master = dima.pools.get(zone.get("priv_dns"))
 
-            if zone_name not in utils.get_keys(zones):
-                zones[zone_name] = []
-
-            if web.domain.dns.dbid == self.dbid:
-                zones[zone_name].append(web)
-
-        for zone_name, webs in zones.items():
-            if not webs:
+            if self.dbid == pub_master.master_id:
+                public = True
+                master = pub_master
+                mail = dima.pools.get(zone.get("pub_mail"))
+            elif self.dbid == priv_master.master_id:
+                public = False
+                master = priv_master
+                mail = dima.pools.get(zone.get("priv_mail"))
+            else:
                 continue
+
+            web_ids = []
+            for lmobj, domain in dima.db.execute("select lmobj, domain from web.webs;"):
+                if domain.endswith(zone_name):
+                    web_ids.append(lmobj)
 
             web_records = []
             mail_records = []
-            for web in webs:
-                dev_host_ip = dima.pools.get(web.dev_host_id).ip
-                prod_host_ip = dima.pools.get(web.prod_host_id).ip
+            for web_id in web_ids:
+                web = dima.pools.get(web_id)
+                subdomain_name = web.domain.replace(zone_name, "").strip('.')
 
-                subdomain_name = web.domain.name.replace(zone_name, "").strip('.')
-                if subdomain_name:
-                    web_records.append(f"{subdomain_name} IN A {prod_host_ip}")
+                if public:
+                    host_ip = dima.pools.get(web.prod_host_id).ip
+                    if subdomain_name:
+                        web_records.append(f"{subdomain_name} IN A {host_ip}")
+                    else:
+                        web_records.append("@ IN A " + host_ip)
+
+                    web_records.append(f"www.{subdomain_name}".strip('.') + f" IN A {host_ip}")
+
                 else:
-                    web_records.append("@ IN A " + prod_host_ip)
+                    host_ip = dima.pools.get(web.dev_host_id).ip
+                    web_records.append(f"dev.{subdomain_name}".strip('.') + f" IN A {host_ip}")
+                    web_records.append(f"www.dev.{subdomain_name}".strip('.') + f" IN A {host_ip}")
 
-                web_records.append(f"www.{subdomain_name}".strip('.') + f" IN A {prod_host_ip}")
-                web_records.append(f"dev.{subdomain_name}".strip('.') + f" IN A {dev_host_ip}")
-                web_records.append(f"www.dev.{subdomain_name}".strip('.') + f" IN A {dev_host_ip}")
-
-            conf_local.append(utils.format_tpl("dns/local.tpl", {"domain": zone_name}))
+            conf_local.append(utils.format_tpl("dns/local.tpl", {"zone": zone_name}))
             zone_conf = utils.format_tpl("dns/zone.tpl", {
+                "zone": zone_name,
                 "serial": int(time.time()),
-                "dns_domain": "lucamatei.net",
-                "dns_ip": dima.domains.get(dima.domains.get(zone_name)).dns.ip,
-                "mail_domain": "lucamatei.net",
-                "mail_ip": dima.domains.get(dima.domains.get(zone_name)).mail.ip,
-                "prod_host_ip": prod_host_ip,
+                "glue": master.glue,
+                "dns_ip": self.ip,  # Create NS records when you'll have multiple NSs
+                "mail_ip": mail.ip,
                 "web_records": '\n'.join(web_records),
                 "mail_records": '\n'.join(mail_records),
                 })
@@ -2376,8 +2375,8 @@ class Host(lmObj, HostServices):
             domain_id = -1
             option_ids = 3,
 
-            query = "insert into web.webs (lmobj, domain, dev_port, prod_port, prod_state, modules, langs, themes, default_lang, default_theme, options) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
-            params = dima.lmobjs[lmid], domain_id, self.next_port(), self.next_port(), 0, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], option_ids,
+            query = "insert into web.webs (lmobj, domain, ssl_due, port, state, modules, langs, themes, default_lang, default_theme, options) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
+            params = dima.lmobjs[lmid], domain, None, self.next_port(), 1, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], option_ids,
 
             if dima.db.execute(query, params)[0][0]:
                 log(f"{name if name else (alias if alias else lmid)} web app created!", console=True)
@@ -2455,6 +2454,7 @@ class Host(lmObj, HostServices):
                 cmd("mkdir " + self.mnt_dir)
 
             if not self.is_mounted():
+                self.knock()
                 cmd(f"sshfs -p {self.ssh_port} -o allow_other,identityfile={utils.ssh_dir}{self.lmid} dima@{self.ip}:/home/dima {self.mnt_dir}")
                 log(f"'{self.name}' mounted at {utils.now()}", console=True)
             else:
@@ -2496,6 +2496,9 @@ class Host(lmObj, HostServices):
     @authorize
     def update_resources(self):
         log(f"Updating resources for '{self.name}' ...", console=True)
+        if not utils.isfile(utils.res_dir, host=self.lmid):
+            cmd(f"mkdir {utils.res_dir}", host=self.lmid)
+
         if self.dbid != dima.host_dbid:
             cmd(f"rm -r {utils.res_dir}web/", host=self.lmid)
             self.send_file(utils.res_dir + "web/", utils.res_dir + "web/")
@@ -2560,14 +2563,14 @@ class Host(lmObj, HostServices):
             hosts = []
 
             # Web apps
-            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj;"
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, net.domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj;"
             db_webs = [list(h) for h in dima.db.execute(query, params)]
 
             for web in db_webs:
                 append_web(web)
         else:
             host_entries = ""
-            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj and c.name=%s;"
+            query = "select a.ip, b.ip, c.name, d.lmid from host.hosts a, host.hosts b, net.domains c, lmobjs d, web.webs e, project.projects f where a.lmobj = f.prod_host and b.lmobj = f.dev_host and c.id = e.domain and d.id = e.lmobj and d.id = f.lmobj and c.name=%s;"
             #params = utils.webs.assets_domain,
             #web = list(dima.db.execute(query, params)[0])
 
@@ -2873,30 +2876,18 @@ class Host(lmObj, HostServices):
             self.generate_knock_seq()
 
 class Domain:
-    def __init__(self, dbid):
-        self.dbid = dbid
-
-        query = "select name, ssl_due, dhcp, dns, mail from domains where id=%s;"
-        params = self.dbid,
-        self.name, self.ssl_due, self.dhcp_id, self.dns_id, self.mail_id = dima.db.execute(query, params)[0]
-
-        self.dhcp = None
-        self.dns = None
-        self.mail = None
-
-        if not self.name.startswith("dev."):
-            try:
-                self.dev = dima.domains.get(dima.domains.get("dev." + self.name))
-            except:
-                self.dev = None
-        else:
-            self.dev = None
+    pass
 
 class DHCP:
     pass
 
-class DNS:
-    pass
+class DNS(lmObj):
+    def __init__(self, dbid):
+        lmObj.__init__(self, dbid)
+
+        query = "select glue, master, slaves from net.dnss where lmobj=%s;"
+        params = self.dbid,
+        self.glue, self.master_id, self.slave_ids = dima.db.execute(query, params)[0]
 
 class Mail:
     pass
@@ -3089,13 +3080,13 @@ class Web(Project):
     def __init__(self, dbid):
         Project.__init__(self, dbid)
 
-        query = "select domain, dev_port, prod_port, prod_state, modules, langs, themes, default_lang, default_theme, options from web.webs where lmobj=%s;"
+        query = "select domain, ssl_due, port, state, modules, langs, themes, default_lang, default_theme, options from web.webs where lmobj=%s;"
         params = dbid,
-        self.domain_id, self.dev_port, self.prod_port, self.prod_state, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.option_ids = dima.db.execute(query, params)[0]
+        self.domain, self.ssl_due, self.port, self.state, self.module_ids, self.lang_ids, self.theme_ids, self.default_lang_id, self.default_theme_id, self.option_ids = dima.db.execute(query, params)[0]
 
+        self.dev_domain = "dev." + self.domain
         self.global_html = {}
         self.css_classes = {}
-        self.domain = dima.domains.get(self.domain_id)
         self.modules = {}
         for m_id in self.module_ids:
             m_name = utils.webs.modules[m_id]
@@ -3113,40 +3104,40 @@ class Web(Project):
         self.default_theme = utils.projects.themes[self.default_theme_id]
         self.options = [utils.projects.options[o] for o in self.option_ids]
 
-        self.prod_ssl_dir = utils.ssl_dir + self.domain.name + '/'
-        self.dev_ssl_dir = utils.ssl_dir + self.domain.dev.name + '/'
+        self.prod_ssl_dir = utils.ssl_dir + self.domain + '/'
+        self.dev_ssl_dir = utils.ssl_dir + self.dev_domain + '/'
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
 
         self.db = Db(self.lmid, self.dbid, self.dev_host)
-        if self.prod_state == 5:
+        if self.state == 5:
             self.prod_db = Db(self.lmid, self.dbid, self.prod_host)
         else:
             self.prod_db = None
 
     @authorize
-    def check(self):
+    def check(self, env:'env'='dev'):
         self.check_project()
 
-        for env in ("dev", "prod"):
-            port = self.env_var(env, "port")
-            host_id = self.env_var(env, "host_id")
-            host = self.env_var(env, "host")
-            domain = self.env_var(env, "domain")
+        host_id = self.env_var(env, "host_id")
+        host = self.env_var(env, "host")
+        domain = self.env_var(env, "domain")
 
-            # Assign a process port
-            if not port:
-                self.assign_port()
+        # Assign a process port
+        if not self.port:
+            self.assign_port()
+            self.config(env)
 
-            # Create log files
-            if not utils.isfile(self.log_file, host=host):
-                cmd(f"touch {self.log_file}", host=host)
-                cmd(f"sudo chown www-data:www-data {self.log_file}", host=host)
+        # Create log files
+        if not utils.isfile(self.log_file, host=host):
+            cmd(f"touch {self.log_file}", host=host)
+            cmd(f"sudo chown www-data:www-data {self.log_file}", host=host)
 
-        if not utils.isfile(self.app_dir + "db/db_pass.txt", host=self.dev_host):
-            self.build("dev")
+        if env == 'đev':
+            if not utils.isfile(self.app_dir + "db/db_pass.txt", host=self.dev_host):
+                self.build("dev")
 
-        self.check_db()
+            self.check_db()
 
     @authorize
     def check_db(self):
@@ -3166,7 +3157,7 @@ class Web(Project):
 
         if utils.isfile(self.repo_dir, host=host):
             if not confirm:
-                if not utils.confirm(f"Are you sure you want to rebuild '{domain.name}'?"):
+                if not utils.confirm(f"Are you sure you want to rebuild '{domain}'?"):
                     log("Aborted", console=True)
                     return
 
@@ -3179,7 +3170,7 @@ class Web(Project):
                 # db_pass = utils.read(db_pass_path, host=self.prod_host)
                 cmd(f"rm -r " + self.repo_dir, host=host)
 
-        log(f"Building '{domain.name}' ...", console=True)
+        log(f"Building '{domain}' ...", console=True)
 
         dir_tree = (
             "src/",
@@ -3215,7 +3206,7 @@ class Web(Project):
         self.default(env)
         self.generate_ssl(env)
 
-        log(f"Built '{domain.name}'", console=True)
+        log(f"Built '{domain}'", console=True)
 
     @authorize
     def default(self, env:'env'="dev", confirm:'bool'=False):
@@ -3229,11 +3220,11 @@ class Web(Project):
         domain = self.env_var(env, "domain")
 
         if not confirm:
-            if not utils.confirm(f"Are you sure you want to format '{domain.name}'?"):
+            if not utils.confirm(f"Are you sure you want to format '{domain}'?"):
                 log("Aborted", console=True)
                 return
 
-        log(f"Setting '{domain.name}' to 'Hello World' ...", console=True)
+        log(f"Setting '{domain}' to 'Hello World' ...", console=True)
 
         settings = {
             "lmid": self.lmid,
@@ -3254,7 +3245,7 @@ class Web(Project):
         dima.pools.get(host_id).restart_supervisor()
         dima.pools.get(host_id).restart_nginx()
 
-        log(f"Set '{domain.name}' to 'Hello World'", console=True)
+        log(f"Set '{domain}' to 'Hello World'", console=True)
 
     @authorize
     def default_db(self, env:"env"="dev", confirm:'bool'=False):
@@ -3262,11 +3253,11 @@ class Web(Project):
         domain = self.env_var(env, "domain")
 
         if not confirm:
-            if not utils.confirm(f"Are you sure you want to format '{domain.name}' database?"):
+            if not utils.confirm(f"Are you sure you want to format '{domain}' database?"):
                 log("Aborted", console=True)
                 return
 
-        log(f"Formatting '{domain.name}' database ...", console=True)
+        log(f"Formatting '{domain}' database ...", console=True)
 
         if env == "dev":
             host_struct_file = utils.src_dir + "assets/web/app/db/struct.ast"
@@ -3305,7 +3296,7 @@ class Web(Project):
         params = modules
         db.execute(query, params)
 
-        log(f"Formatted '{domain.name}' database ...", console=True)
+        log(f"Formatted '{domain}' database ...", console=True)
 
     @authorize
     def default_html(self, confirm:'bool'=False, hello:'bool'=False):
@@ -3315,7 +3306,7 @@ class Web(Project):
         # To do: Copy img dir from default assets for http pages
 
         if not confirm:
-            if not utils.confirm(f"Are you sure you want to format '{self.domain.dev.name}' HTML?"):
+            if not utils.confirm(f"Are you sure you want to format '{self.dev_domain}' HTML?"):
                 log("Aborted", console=True)
                 return
 
@@ -3325,7 +3316,7 @@ class Web(Project):
         dest_img = self.repo_dir + "src/assets/img/"
 
         if hello:
-            log(f"Setting '{self.domain.dev.name}' to 'Hello World' ...", console=True)
+            log(f"Setting '{self.dev_domain}' to 'Hello World' ...", console=True)
             cmd(f"rm -r " + dest_html, host=self.dev_host)
             cmd(f"rm -r " + dest_img, host=self.dev_host)
 
@@ -3336,18 +3327,18 @@ class Web(Project):
                 dima.pools.get(self.dev_host_id).send_file(src_html, dest_html)
                 dima.pools.get(self.dev_host_id).send_file(src_img, dest_img)
 
-            log(f"Set '{self.domain.dev.name}' to 'Hello World.'", console=True)
+            log(f"Set '{self.dev_domain}' to 'Hello World.'", console=True)
 
         else:
             # WARNING: THIS ONLY DELETES THE FILES, IT DOESN'T COPY
-            log(f"Setting '{self.domain.dev.name}' Global HTML to 'Hello World' ...", console=True)
+            log(f"Setting '{self.dev_domain}' Global HTML to 'Hello World' ...", console=True)
             cmd(f"rm -r {self.app_dir}html/*.yml", host=self.dev_host)
             if self.dev_host_id == dima.host_dbid:
                 utils.copy(src_html + "*.yml", dest_html)
             else:
                 dima.pools.get(self.dev_host_id).send_file(dest_html + "*.yml", dest_html)
 
-            log(f"Set '{self.domain.dev.name}' Global HTML to 'Hello World'", console=True)
+            log(f"Set '{self.dev_domain}' Global HTML to 'Hello World'", console=True)
 
         self.update_html(global_html=True)
 
@@ -3356,7 +3347,7 @@ class Web(Project):
         domain = self.env_var(env, "domain")
         db = self.env_var(env, "db")
 
-        log(f"Updating Global HTML for '{domain.name}' ...", console=True)
+        log(f"Updating Global HTML for '{domain}' ...", console=True)
 
         self.global_html = {}
         var_files = utils.get_files(self.html_dir + "_fractions/*.yml", host=self.dev_host)
@@ -3416,12 +3407,12 @@ class Web(Project):
             db.execute(query, params)
 
             app_header = utils.format_tpl(self.yml2html("app-header.yml", lang), {
-                "domain": domain.name,
+                "domain": domain,
                 })
 
             app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
                 "copyright_year": datetime.now().year,
-                "copyright_name": '.'.join(self.domain.name.split(".")[-2:]),
+                "copyright_name": '.'.join(utils.nets.get_zone(domain)),
                 })
 
             self.global_html[lang]["app-wrapper"] = "<!doctype html>" + utils.format_tpl(self.yml2html("app-wrapper.yml", lang), {
@@ -3431,13 +3422,13 @@ class Web(Project):
                 "name": self.name,
                 "hide_all": self.yml2html("hide-all.yml", lang),
                 "app_header": app_header,
-                "domain": domain.name,
+                "domain": domain,
                 "app_footer": app_footer,
                 "top_button": self.yml2html("top-button.yml", lang),
                 "cookies_notice": self.yml2html("cookies-notice.yml", lang),
                 })
 
-        log(f"Updated Global HTML for '{domain.name}'", console=True)
+        log(f"Updated Global HTML for '{domain}'", console=True)
 
     @authorize
     def update_html(self, env:"env"="dev", section:'str'= "", global_html:'bool'=False):
@@ -3452,7 +3443,7 @@ class Web(Project):
             db.format_table("fractions")
             self.update_global_html(env)
 
-        log(f"Updating HTML for '{domain.name}' ...", console=True)
+        log(f"Updating HTML for '{domain}' ...", console=True)
         method_ids = dict(db.execute("select name, id from methods;"))
 
         # Erase current html
@@ -3535,7 +3526,7 @@ class Web(Project):
         for section in section_dirs:
             solve_section(self.html_dir + section + '/', section, 0)
 
-        log(f"Updated HTML for '{domain.name}'", console=True)
+        log(f"Updated HTML for '{domain}'", console=True)
         self.restart(env)
 
     @authorize
@@ -3552,7 +3543,7 @@ class Web(Project):
             for i in range(len(classes)):
                 yield ''.join(random.SystemRandom().choice(string.ascii_letters) for _ in range(8))
 
-        log(f"Updating CSS for '{domain.name}' ...", console=True)
+        log(f"Updating CSS for '{domain}' ...", console=True)
 
         scss = utils.join_modules(
             ("palettes.scss",
@@ -3596,7 +3587,7 @@ class Web(Project):
         else:
             utils.write(self.repo_dir + "src/assets/css/app.css", css, host=host)
 
-        log(f"Updated CSS for '{domain.name}'", console=True)
+        log(f"Updated CSS for '{domain}'", console=True)
 
     @authorize
     def generate_ssl(self, env:'env'="dev"):
@@ -3612,27 +3603,27 @@ class Web(Project):
             cmd("sudo mkdir " + ssl_dir, host=host)
 
         # Production certificates
-        #log(f"Generating Let's Encrypt SSL certs for {self.domain.dev.name}. This may take a while ...", console=True)
+        #log(f"Generating Let's Encrypt SSL certs for {domain}. This may take a while ...", console=True)
 
-        log(f"Generating SSL certificates for '{domain.name}'. This may take a while ...", console=True)
-        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain.name}"', host=host)
+        log(f"Generating SSL certificates for '{domain}'. This may take a while ...", console=True)
+        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain}"', host=host)
 
-        query = f"update domains set ssl_due=%s where id=%s;"
-        params = datetime.now() + timedelta(3*365/12-3), domain.dbid,
+        query = f"update web.webs set ssl_due=%s where id=%s;"
+        params = datetime.now() + timedelta(3*365/12-3), self.dbid,
         dima.db.execute(query, params)
 
-        log(f"Generated SSL certificates for '{domain.name}'", console=True)
+        log(f"Generated SSL certificates for '{domain}'", console=True)
 
     @authorize
     def change_state(self, new_state:'web_state', confirm:'bool'=False):
         if utils.isfile(self.repo_dir, host=self.prod_host):
             if not confirm:
-                if not utils.confirm(f"Are you sure you want to change current production state for '{self.domain.name}' to {utils.webs.states[new_state]}?"):
+                if not utils.confirm(f"Are you sure you want to change current production state for '{self.domain}' to {utils.webs.states[new_state]}?"):
                     log("Aborted", console=True)
                     return
 
-        log(f"Changing '{self.domain.name}' state to {utils.webs.states[new_state]} ...", console=True)
-        self.prod_state = new_state
+        log(f"Changing '{self.domain}' state to {utils.webs.states[new_state]} ...", console=True)
+        self.state = new_state
 
         if new_state == 1:
             # Remove production config files for nginx and supervisor
@@ -3652,15 +3643,15 @@ class Web(Project):
         elif new_state == 5:
             self.build("prod", confirm=True)
 
-        dima.db.execute("update web.webs set prod_state=%s where lmobj=%s", (new_state, self.dbid))
-        log(f"Changed '{self.domain.name}' state to {utils.webs.states[new_state]}.", console=True)
+        dima.db.execute("update web.webs set state=%s where lmobj=%s", (new_state, self.dbid))
+        log(f"Changed '{self.domain}' state to {utils.webs.states[new_state]}.", console=True)
 
     @authorize
     def update_js(self, env:"env"="dev"):
         # To do: add manual files
         host = self.env_var(env, "host")
         domain = self.env_var(env, "domain")
-        log(f"Updating JS for '{domain.name}' ...", console=True)
+        log(f"Updating JS for '{domain}' ...", console=True)
 
         cmd(f"rm {self.repo_dir}src/assets/js/*.js", host=host)
         src_js_dir = utils.src_dir + "assets/web/assets/js/"
@@ -3671,7 +3662,7 @@ class Web(Project):
                 host=host
                 )
 
-        log(f"Updated JS for '{domain.name}'", console=True)
+        log(f"Updated JS for '{domain}'", console=True)
 
     @authorize
     def update_py(self, env:"env"="dev", restart:'bool'=False):
@@ -3679,7 +3670,7 @@ class Web(Project):
         domain = self.env_var(env, "domain")
 
         # Joins .py files from main host and sends the result on the remote host
-        log(f"Updating source code for '{domain.name}' ...", console=True)
+        log(f"Updating source code for '{domain}' ...", console=True)
         utils.join_modules((
             "utils/utils.py",
             "app.py",
@@ -3701,32 +3692,32 @@ class Web(Project):
             file_host = host)
 
         if restart: self.restart(env)
-        log(f"Updated source code for '{domain.name}'", console=True)
+        log(f"Updated source code for '{domain}'", console=True)
 
     @authorize
-    def assign_port(self, env:"env"="dev"):
-        log(f"Assigning {env} port to '{domain.name}' ...", console=True)
-        setattr(self, env + "_port", dima.pools.get(host_id).next_port())
-        port = self.env_var(env, "port")
+    def assign_port(self):
+        log(f"Assigning port to '{self.domain}' ...", console=True)
 
-        query = f"update web.webs set {env}_port=%s where lmobj=%s;"
+        port = dima.pools.get(host_id).next_port()
+        query = f"update web.webs set port=%s where lmobj=%s return 1;"
         params = port, self.dbid,
         dima.db.execute(query, params)
 
-        log(f"Assigned {env} port to '{domain.name}'", console=True)
-        print(port)
-        self.config(env)
+        # To do: Check if has returned 1
+        self.port = port
+
+        log(f"Assigned port to '{self.domain}'", console=True)
+        print(self.port)
 
     @authorize
     def config_uwsgi(self, env:'env'="dev", restart:'bool'=False):
         host = self.env_var(env, "host")
         domain = self.env_var(env, "domain")
-        port = self.env_var(env, "port")
 
-        log(f"Configuring uWSGI for '{domain.name}' ...", console=True)
+        log(f"Configuring uWSGI for '{domain}' ...", console=True)
 
         uwsgi_config = utils.format_tpl("web/app/uwsgi.tpl", {
-            "port": str(port),
+            "port": self.port,
             "app_dir": self.app_dir,
             "projects_dir": utils.projects_dir,
             "lmid": self.lmid,
@@ -3735,12 +3726,12 @@ class Web(Project):
         utils.write(self.app_dir + "uwsgi.ini", uwsgi_config, host=host)
 
         if restart: self.restart(env)
-        log(f"Configured uWSGI for '{domain.name}'", console=True)
+        log(f"Configured uWSGI for '{domain}'", console=True)
 
     @authorize
     def config_supervisor(self, env:'env'="dev", restart:'bool'=False):
         supervisor_file = f"/etc/supervisor/conf.d/{self.lmid}.conf"
-        if env == "prod" and self.prod_state == 0:
+        if env == "prod" and self.state == 0:
             if utils.isfile(supervisor_file, host=self.prod_host):
                 cmd(f"sudo rm {supervisor_file}", host=self.prod_host)
             else:
@@ -3750,7 +3741,7 @@ class Web(Project):
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
 
-        log(f"Configuring Supervisor for '{domain.name}' ...", console=True)
+        log(f"Configuring Supervisor for '{domain}' ...", console=True)
         supervisor_config = utils.format_tpl("web/app/supervisor.tpl", {
             "lmid": self.lmid,
             "projects_dir": utils.projects_dir,
@@ -3759,12 +3750,12 @@ class Web(Project):
         utils.write(supervisor_file, supervisor_config, host=host)
 
         if restart: dima.pools.get(host_id).restart_supervisor()
-        log(f"Configured Supervisor for '{domain.name}'", console=True)
+        log(f"Configured Supervisor for '{domain}'", console=True)
 
     @authorize
     def config_nginx(self, env:'env'="dev", restart:'bool'=False):
         nginx_file = f"/etc/nginx/sites-enabled/{self.lmid}"
-        if env == "prod" and self.prod_state == 0:
+        if env == "prod" and self.state == 0:
             if utils.isfile(nginx_file, host=self.prod_host):
                 cmd(f"sudo rm {nginx_file}", host=self.prod_host)
             else:
@@ -3776,9 +3767,8 @@ class Web(Project):
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
         ssl_dir = self.env_var(env, "ssl_dir")
-        port = self.env_var(env, "port")
 
-        log(f"Configuring Nginx for '{domain.name}' ...", console=True)
+        log(f"Configuring Nginx for '{domain}' ...", console=True)
 
         manual = self.app_dir + "manual/nginx.tpl"
         if utils.isfile(manual, host=self.dev_host, quiet=True):
@@ -3787,20 +3777,20 @@ class Web(Project):
             tpl = "web/app/nginx.tpl"
 
         nginx_config = utils.format_tpl(tpl, {
-            "domain": domain.name,
+            "domain": domain,
             "ssl_dir": ssl_dir,
             "dima_ssl_dir": utils.ssl_dir,
             "ocsp": "off" if env == "đev" else "on",
             "projects_dir": utils.projects_dir,
             "res_dir": utils.res_dir,
             "repo_dir": self.repo_dir,
-            "port": port,
+            "port": self.port,
             "lmid": self.lmid
             })
         utils.write(nginx_file, nginx_config, host=host)
 
         if restart: dima.pools.get(host_id).restart_nginx()
-        log(f"Configured Nginx for '{domain.name}'", console=True)
+        log(f"Configured Nginx for '{domain}'", console=True)
 
     @authorize
     def config(self, env:'env'="dev", restart:'bool'=False):
@@ -3810,28 +3800,23 @@ class Web(Project):
 
     @authorize
     def restart(self, env:'env'="dev"):
-        if env == "prod" and self.prod_state != 5:
+        if env == "prod" and self.state != 5:
             log("No web app is running on production!", level=4, console=True)
             return
 
         host = self.env_var(env, "host")
         domain = self.env_var(env, "domain")
 
-        log(f"Restarting '{domain.name}' ...", console=True)
+        log(f"Restarting '{domain}' ...", console=True)
         # To do: Save log file
         cmd(f"sudo rm /var/log/supervisor/{self.lmid}.err.log;", host=host)
         cmd(f"sudo supervisorctl restart {self.lmid}", host=host)
-        log(f"Restarted '{domain.name}'", console=True)
+        log(f"Restarted '{domain}'", console=True)
 
     @authorize
     def env_var(self, env, name):
         if name == "db" and env == "dev":
             return getattr(self, name)
-        elif name == "domain":
-            if env == "dev":
-                return self.domain.dev
-            else:
-                return self.domain
         else:
             return getattr(self, env + "_" + name)
 
@@ -4381,7 +4366,7 @@ class GUI:
             elif v[0] == "web_state":
                 widgets[p + "_var"] = tk.StringVar(frame)
                 opts = [s[1] for s in sorted(utils.webs.states.items(), key = lambda e: e[0])]
-                current_state = utils.webs.states.get(dima.pools.get(dima.lmobjs.get(lmid)).prod_state)
+                current_state = utils.webs.states.get(dima.pools.get(dima.lmobjs.get(lmid)).state)
                 widgets[p] = ttk.OptionMenu(frame, widgets[p + "_var"], current_state, *opts)
 
             widgets[p].pack(side=tk.LEFT, padx=[0, 8])
@@ -4480,23 +4465,18 @@ class GUI:
 
     def set_web_details(self, *args):
         lmid = self.widgets["web_lmid_str"].get()
-        pool = dima.pools[dima.lmobjs[lmid]]
+        pool = dima.pools.get(dima.lmobjs.get(lmid))
 
-        try: dssl_date = utils.format_date(pool.domain.dev.ssl_due, "%d %b %Y")
-        except: dssl_date = "NaN"
-
-        try: pssl_date = utils.format_date(pool.domain.ssl_due, "%d %b %Y")
-        except: pssl_date = "NaN"
+        try: ssl_date = utils.format_date(pool.ssl_due, "%d %b %Y")
+        except: ssl_date = "NaN"
 
         self.widgets["web_id_str"].set(pool.lmid)
-        self.widgets["web_ddomain_str"].set(f"{pool.domain.dev.name}:{pool.dev_port}")
-        self.widgets["web_pdomain_str"].set(f"{pool.domain.name}:{pool.prod_port}")
+        self.widgets["web_domain_str"].set(f"{pool.domain}:{pool.port}")
         self.widgets["web_dlang_str"].set(pool.default_lang)
         self.widgets["web_dtheme_str"].set(pool.default_theme)
 
         self.widgets["web_alias_str"].set(pool.alias)
-        self.widgets["web_dssl_str"].set(dssl_date)
-        self.widgets["web_pssl_str"].set(pssl_date)
+        self.widgets["web_ssl_str"].set(ssl_date)
         self.widgets["web_langs_str"].set(', '.join([utils.projects.langs[l] for l in pool.lang_ids]))
         self.widgets["web_themes_str"].set(', '.join(pool.themes))
 
