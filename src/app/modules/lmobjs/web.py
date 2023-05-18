@@ -26,8 +26,6 @@ class Web(Project):
         self.default_theme = utils.projects.themes[self.default_theme_id]
         self.options = [utils.projects.options[o] for o in self.option_ids]
 
-        self.prod_ssl_dir = utils.ssl_dir + self.domain + '/'
-        self.dev_ssl_dir = utils.ssl_dir + self.dev_domain + '/'
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
 
@@ -334,7 +332,7 @@ class Web(Project):
 
             app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
                 "copyright_year": datetime.now().year,
-                "copyright_name": '.'.join(utils.nets.get_zone(domain)),
+                "copyright_name": '.'.join(utils.nets.get_zone_name(domain)),
                 })
 
             self.global_html[lang]["app-wrapper"] = "<!doctype html>" + utils.format_tpl(self.yml2html("app-wrapper.yml", lang), {
@@ -512,29 +510,59 @@ class Web(Project):
         log(f"Updated CSS for '{domain}'", console=True)
 
     @authorize
-    def generate_ssl(self, env:'env'="dev"):
+    def generate_ssl(self, self_signed:'bool'=False):
         """
-            Certificates will be created on Dima's host and pasted to designated server
+            Generates and places certificates for:
+                example.com
+                www.example.com
+                dev.example.com
+                www.dev.example.com
         """
 
-        host = self.env_var(env, "host")
-        ssl_dir = self.env_var(env, "ssl_dir")
-        domain = self.env_var(env, "domain")
+        for prefix in ("", "www.", "dev.", "www.dev."):
+            domain = prefix + self.domain
+            ssl_dir = utils.ssl_dir + domain + '/'
 
-        if not utils.isfile(ssl_dir, host=host):
-            cmd("sudo mkdir " + ssl_dir, host=host)
+            if prefix.endswith("dev."):
+                host = self.dev_host
+                host_id = self.dev_host_id
+            else:
+                host = self.prod_host
+                host_id = self.prod_host_id
 
-        # Production certificates
-        #log(f"Generating Let's Encrypt SSL certs for {domain}. This may take a while ...", console=True)
+            if not utils.isfile(ssl_dir, host=host):
+                cmd(f"sudo mkdir {ssl_dir}", host=host)
 
-        log(f"Generating SSL certificates for '{domain}'. This may take a while ...", console=True)
-        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain}"', host=host)
+            if self_signed:
+                log(f"Generating Self-Signed SSL certificates for '{domain}'. This may take a while ...", console=True)
+
+                cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain}"', host=host)
+
+                log(f"Generated Self-Signed SSL certificates for '{domain}'", console=True)
+
+            else:
+                log(f"Generating Let's Encrypt SSL certs for {domain}. This may take a while ...", console=True)
+
+                master_id = dima.pools.get(utils.nets.get_zone(self.domain).get("pub_dns")).master_id
+                master_lmid = dima.pools.get(master_id).lmid
+
+                utils.write(utils.tmp_dir + "ssl-pre.sh", f"#!/bin/bash\ndima {master_lmid} add acme $CERTBOT_VALIDATION {domain}")
+                utils.write(utils.tmp_dir + "ssl-post.sh", f"#!/bin/bash\ndima {master_lmid} config dns")
+
+                cmd(f"sudo chmod +x {utils.tmp_dir}ssl-pre.sh {utils.tmp_dir}ssl-post.sh")
+
+                output = cmd(f"sudo certbot certonly --manual --non-interactive --manual-auth-hook {utils.tmp_dir}ssl-pre.sh --manual-cleanup-hook {utils.tmp_dir}ssl-post.sh --agree-tos --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --rsa-key-size 4096 -d {domain}", catch=True)
+
+                dima.pools.get(host_id).send_file(f"/etc/letsencrypt/live/{domain}/fullchain.pem", f"{ssl_dir}pubkey.pem")
+                dima.pools.get(host_id).send_file(f"/etc/letsencrypt/live/{domain}/privkey.pem", f"{ssl_dir}privkey.pem")
+
+                log(f"Generated Let's Encrypt SSL certificates for '{domain}'", console=True)
+
+        dima.pools.get(host_id).restart_nginx()
 
         query = f"update web.webs set ssl_due=%s where id=%s;"
         params = datetime.now() + timedelta(3*365/12-3), self.dbid,
         dima.db.execute(query, params)
-
-        log(f"Generated SSL certificates for '{domain}'", console=True)
 
     @authorize
     def change_state(self, new_state:'web_state', confirm:'bool'=False):
@@ -688,7 +716,6 @@ class Web(Project):
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
-        ssl_dir = self.env_var(env, "ssl_dir")
 
         log(f"Configuring Nginx for '{domain}' ...", console=True)
 
@@ -700,8 +727,7 @@ class Web(Project):
 
         nginx_config = utils.format_tpl(tpl, {
             "domain": domain,
-            "ssl_dir": ssl_dir,
-            "dima_ssl_dir": utils.ssl_dir,
+            "ssl_dir": utils.ssl_dir,
             "ocsp": "off" if env == "đev" else "on",
             "projects_dir": utils.projects_dir,
             "res_dir": utils.res_dir,

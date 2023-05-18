@@ -1,17 +1,16 @@
 server {
     listen 80;
-    server_name %DOMAIN%;
+    server_name %DOMAIN% www.%DOMAIN%;
     return 301 https://%DOMAIN%$request_uri;
 }
 
 server {
-    listen 80;
     listen 443 ssl http2;
     server_name www.%DOMAIN%;
     keepalive_timeout 70;
 
-    ssl_certificate      %SSL_DIR%pubkey.pem; # fullchain.pem
-    ssl_certificate_key  %SSL_DIR%privkey.pem; # privkey.pem
+    ssl_certificate      %SSL_DIR%www.%DOMAIN%/pubkey.pem; # fullchain.pem
+    ssl_certificate_key  %SSL_DIR%www.%DOMAIN%/privkey.pem; # privkey.pem
     ssl_protocols TLSv1.3;
 
     ssl_prefer_server_ciphers on;
@@ -21,12 +20,12 @@ server {
     ssl_session_cache shared:SSL:10m;
     ssl_session_tickets off;
 
-    ssl_dhparam %DIMA_SSL_DIR%dhparam.pem;
+    ssl_dhparam %SSL_DIR%dhparam.pem;
     ssl_ecdh_curve secp521r1:secp384r1;
 
     ssl_stapling %OCSP%;
     ssl_stapling_verify %OCSP%;
-    ssl_trusted_certificate %SSL_DIR%pubkey.pem; # fullchain.pem
+    ssl_trusted_certificate %SSL_DIR%www.%DOMAIN%/pubkey.pem; # fullchain.pem
     resolver 1.1.1.1 1.0.0.1 [2606:4700:4700::1111] [2606:4700:4700::1001] valid=300s;
     resolver_timeout 5s;
 
@@ -38,8 +37,8 @@ server {
     server_name %DOMAIN%;
     keepalive_timeout 70;
 
-    ssl_certificate      %SSL_DIR%pubkey.pem; # fullchain.pem
-    ssl_certificate_key  %SSL_DIR%privkey.pem; # privkey.pem
+    ssl_certificate      %SSL_DIR%%DOMAIN%/pubkey.pem; # fullchain.pem
+    ssl_certificate_key  %SSL_DIR%%DOMAIN%/privkey.pem; # privkey.pem
     ssl_protocols TLSv1.3;
 
     ssl_prefer_server_ciphers on;
@@ -49,12 +48,12 @@ server {
     ssl_session_cache shared:SSL:10m;
     ssl_session_tickets off;
 
-    ssl_dhparam %DIMA_SSL_DIR%dhparam.pem;
+    ssl_dhparam %SSL_DIR%dhparam.pem;
     ssl_ecdh_curve secp521r1:secp384r1;
 
     ssl_stapling %OCSP%;
     ssl_stapling_verify %OCSP%;
-    ssl_trusted_certificate %SSL_DIR%pubkey.pem; # fullchain.pem
+    ssl_trusted_certificate %SSL_DIR%%DOMAIN%/pubkey.pem; # fullchain.pem
     resolver 1.1.1.1 1.0.0.1 [2606:4700:4700::1111] [2606:4700:4700::1001] valid=300s;
     resolver_timeout 5s;
 
@@ -64,13 +63,13 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header X-Xss-Protection "1; mode=block" always;
 
-    error_page 403                /http/403;
-    error_page 404                /http/404;
-    error_page 500 502 503 504    /http/50x;
-
     location /http/ {
         internal;
     }
+
+    error_page 403                /http/403;
+    error_page 404                /http/404;
+    error_page 500 502 503 504    /http/50x;
 
     if ($request_method !~ ^(GET|HEAD|POST)$ ) {
         return 405;

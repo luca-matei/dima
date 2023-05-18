@@ -50,7 +50,7 @@ class Dima:
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
-        self.db.rebuild()
+        #self.db.rebuild()
 
         self.load_database()
 

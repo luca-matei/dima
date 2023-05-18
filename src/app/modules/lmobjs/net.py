@@ -10,7 +10,7 @@ class Net(lmObj):
         self.ip = str(self.obj[0])
         self.broadcast = self.obj[-1]
 
-        self.dns_id = utils.nets.zones[utils.nets.get_zone(self.domain)].get("priv_dns" if self.domain.startswith("home.") else "pub_dns")
+        self.dns_id = utils.nets.get_zone(self.domain).get("priv_dns" if self.domain.startswith("home.") else "pub_dns")
 
     def get_ip(self):
         # Get machine's ips

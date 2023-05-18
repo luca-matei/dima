@@ -551,7 +551,7 @@ class Dima:
 
         log("Phase 4: Loading database ...")
         self.db = Db(self.lmid)
-        self.db.rebuild()
+        #self.db.rebuild()
 
         self.load_database()
 
@@ -1147,8 +1147,12 @@ class Db:
 class NetUtils:
     zones = {}
 
-    def get_zone(self, domain:'str'):
+    def get_zone_name(self, domain:'str'):
         return '.'.join(domain.split(".")[-2:])
+
+    def get_zone(self, domain:'str'):
+        name = self.get_zone_name(domain)
+        return self.zones.get(name)
 
     def in_subnets(self):
         subnets = []
@@ -1476,7 +1480,7 @@ class Net(lmObj):
         self.ip = str(self.obj[0])
         self.broadcast = self.obj[-1]
 
-        self.dns_id = utils.nets.zones[utils.nets.get_zone(self.domain)].get("priv_dns" if self.domain.startswith("home.") else "pub_dns")
+        self.dns_id = utils.nets.get_zone(self.domain).get("priv_dns" if self.domain.startswith("home.") else "pub_dns")
 
     def get_ip(self):
         # Get machine's ips
@@ -1643,7 +1647,13 @@ class HostServices:
     # DNS
 
     @authorize
-    def config_dns(self):
+    def add_acme(self, code:'str', domain:'str'):
+        print("ACME CHALLENGE: " + domain + " " + code)
+        self.config_dns((domain, code))
+        time.sleep(5)
+
+    @authorize
+    def config_dns(self, acme:'list'=[]):
         # https://wiki.debian.org/Bind9#Introduction
 
         if "dns" not in self.services:
@@ -1657,7 +1667,6 @@ class HostServices:
         for zone_name, zone in utils.nets.zones.items():
             pub_master = dima.pools.get(zone.get("pub_dns"))
             priv_master = dima.pools.get(zone.get("priv_dns"))
-
             if self.dbid == pub_master.master_id:
                 public = True
                 master = pub_master
@@ -1693,6 +1702,9 @@ class HostServices:
                     host_ip = dima.pools.get(web.dev_host_id).ip
                     web_records.append(f"dev.{subdomain_name}".strip('.') + f" IN A {host_ip}")
                     web_records.append(f"www.dev.{subdomain_name}".strip('.') + f" IN A {host_ip}")
+
+            if acme and utils.nets.get_zone_name(acme[0]) == zone_name:
+                web_records.append(f'_acme-challenge.{acme[0]}. 300 IN TXT "{acme[1]}"')
 
             conf_local.append(utils.format_tpl("dns/local.tpl", {"zone": zone_name}))
             zone_conf = utils.format_tpl("dns/zone.tpl", {
@@ -2627,6 +2639,9 @@ class Host(lmObj, HostServices):
         if "web" in self.services or "db" in self.services:
             packages += "postgresql", "libpq-dev",
 
+        if "ssl" in self.services:
+            packages += "snapd",
+
         if "ssh_server" in self.services:
             packages += "openssh-server",
 
@@ -2655,6 +2670,12 @@ class Host(lmObj, HostServices):
                 cmd(f"sudo apt install {package} -y", catch=True, host=self.lmid)
             else:
                 log(f"'{package}' is already installed!", console=True)
+
+        if "ssl" in self.services:
+            cmd("sudo snap install core", host=self.lmid)
+            cmd("sudo snap install hello-world", host=self.lmid)
+            cmd("sudo snap install --classic certbot", host=self.lmid)
+            cmd("sudo ln -s /snap/bin/certbot /usr/bin/certbot", host=self.lmid)
 
         log(f"Installed dependencies on '{self.name}' ...", console=True)
 
@@ -2815,18 +2836,32 @@ class Host(lmObj, HostServices):
     @authorize
     def send_file(self, src_path:'str', dest_path:'str', owner:'str'="root:root"):
         is_dir = src_path.endswith('/')
+        tmp_path = utils.tmp_dir + "restricted" + ('/' if is_dir else '')
+
+        if utils.isfile(tmp_path):
+            cmd(f"sudo rm{' -r' if is_dir else ''} {tmp_path}")
+
+        if src_path.startswith("/etc/"):
+            start_path = tmp_path
+            cmd(f"sudo cp{' -r' if is_dir else ''} {src_path} {start_path}")
+            cmd(f"sudo chown dima:dima {final_path}")
+        else:
+            start_path = src_path
 
         final_path = None
         if dest_path.startswith("/etc/"):
             final_path = dest_path
-            dest_path = utils.tmp_dir + 'restricted' + ('/' if is_dir else '')
+            dest_path = tmp_path
 
         self.knock()
-        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path.rstrip('/')} dima@{self.lmid}:{dest_path.rstrip('/')}", catch=True)
+        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {start_path.rstrip('/')} dima@{self.lmid}:{dest_path.rstrip('/')}", catch=True)
 
         if final_path:
             cmd(f"sudo mv {dest_path} {final_path}", host=self.lmid)
             cmd(f"sudo chown {owner} {final_path}", host=self.lmid)
+
+        if utils.isfile(tmp_path):
+            cmd(f"sudo rm{' -r' if is_dir else ''} {tmp_path}")
 
     @authorize
     def retrieve_file(self, src_path:'str', dest_path:'str'):
@@ -3104,8 +3139,6 @@ class Web(Project):
         self.default_theme = utils.projects.themes[self.default_theme_id]
         self.options = [utils.projects.options[o] for o in self.option_ids]
 
-        self.prod_ssl_dir = utils.ssl_dir + self.domain + '/'
-        self.dev_ssl_dir = utils.ssl_dir + self.dev_domain + '/'
         self.app_dir = self.repo_dir + "src/app/"
         self.html_dir = self.app_dir + "html/"
 
@@ -3412,7 +3445,7 @@ class Web(Project):
 
             app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
                 "copyright_year": datetime.now().year,
-                "copyright_name": '.'.join(utils.nets.get_zone(domain)),
+                "copyright_name": '.'.join(utils.nets.get_zone_name(domain)),
                 })
 
             self.global_html[lang]["app-wrapper"] = "<!doctype html>" + utils.format_tpl(self.yml2html("app-wrapper.yml", lang), {
@@ -3590,29 +3623,59 @@ class Web(Project):
         log(f"Updated CSS for '{domain}'", console=True)
 
     @authorize
-    def generate_ssl(self, env:'env'="dev"):
+    def generate_ssl(self, self_signed:'bool'=False):
         """
-            Certificates will be created on Dima's host and pasted to designated server
+            Generates and places certificates for:
+                example.com
+                www.example.com
+                dev.example.com
+                www.dev.example.com
         """
 
-        host = self.env_var(env, "host")
-        ssl_dir = self.env_var(env, "ssl_dir")
-        domain = self.env_var(env, "domain")
+        for prefix in ("", "www.", "dev.", "www.dev."):
+            domain = prefix + self.domain
+            ssl_dir = utils.ssl_dir + domain + '/'
 
-        if not utils.isfile(ssl_dir, host=host):
-            cmd("sudo mkdir " + ssl_dir, host=host)
+            if prefix.endswith("dev."):
+                host = self.dev_host
+                host_id = self.dev_host_id
+            else:
+                host = self.prod_host
+                host_id = self.prod_host_id
 
-        # Production certificates
-        #log(f"Generating Let's Encrypt SSL certs for {domain}. This may take a while ...", console=True)
+            if not utils.isfile(ssl_dir, host=host):
+                cmd(f"sudo mkdir {ssl_dir}", host=host)
 
-        log(f"Generating SSL certificates for '{domain}'. This may take a while ...", console=True)
-        cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain}"', host=host)
+            if self_signed:
+                log(f"Generating Self-Signed SSL certificates for '{domain}'. This may take a while ...", console=True)
+
+                cmd(f'sudo openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout {ssl_dir}privkey.pem -out {ssl_dir}pubkey.pem -subj "/C=RO/ST=Bucharest/L=Bucharest/O={dima.domain}/CN={domain}"', host=host)
+
+                log(f"Generated Self-Signed SSL certificates for '{domain}'", console=True)
+
+            else:
+                log(f"Generating Let's Encrypt SSL certs for {domain}. This may take a while ...", console=True)
+
+                master_id = dima.pools.get(utils.nets.get_zone(self.domain).get("pub_dns")).master_id
+                master_lmid = dima.pools.get(master_id).lmid
+
+                utils.write(utils.tmp_dir + "ssl-pre.sh", f"#!/bin/bash\ndima {master_lmid} add acme $CERTBOT_VALIDATION {domain}")
+                utils.write(utils.tmp_dir + "ssl-post.sh", f"#!/bin/bash\ndima {master_lmid} config dns")
+
+                cmd(f"sudo chmod +x {utils.tmp_dir}ssl-pre.sh {utils.tmp_dir}ssl-post.sh")
+
+                output = cmd(f"sudo certbot certonly --manual --non-interactive --manual-auth-hook {utils.tmp_dir}ssl-pre.sh --manual-cleanup-hook {utils.tmp_dir}ssl-post.sh --agree-tos --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory --rsa-key-size 4096 -d {domain}", catch=True)
+
+                dima.pools.get(host_id).send_file(f"/etc/letsencrypt/live/{domain}/fullchain.pem", f"{ssl_dir}pubkey.pem")
+                dima.pools.get(host_id).send_file(f"/etc/letsencrypt/live/{domain}/privkey.pem", f"{ssl_dir}privkey.pem")
+
+                log(f"Generated Let's Encrypt SSL certificates for '{domain}'", console=True)
+
+        dima.pools.get(host_id).restart_nginx()
 
         query = f"update web.webs set ssl_due=%s where id=%s;"
         params = datetime.now() + timedelta(3*365/12-3), self.dbid,
         dima.db.execute(query, params)
-
-        log(f"Generated SSL certificates for '{domain}'", console=True)
 
     @authorize
     def change_state(self, new_state:'web_state', confirm:'bool'=False):
@@ -3766,7 +3829,6 @@ class Web(Project):
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
         domain = self.env_var(env, "domain")
-        ssl_dir = self.env_var(env, "ssl_dir")
 
         log(f"Configuring Nginx for '{domain}' ...", console=True)
 
@@ -3778,8 +3840,7 @@ class Web(Project):
 
         nginx_config = utils.format_tpl(tpl, {
             "domain": domain,
-            "ssl_dir": ssl_dir,
-            "dima_ssl_dir": utils.ssl_dir,
+            "ssl_dir": utils.ssl_dir,
             "ocsp": "off" if env == "đev" else "on",
             "projects_dir": utils.projects_dir,
             "res_dir": utils.res_dir,

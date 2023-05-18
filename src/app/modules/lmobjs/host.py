@@ -136,7 +136,13 @@ class HostServices:
     # DNS
 
     @authorize
-    def config_dns(self):
+    def add_acme(self, code:'str', domain:'str'):
+        print("ACME CHALLENGE: " + domain + " " + code)
+        self.config_dns((domain, code))
+        time.sleep(5)
+
+    @authorize
+    def config_dns(self, acme:'list'=[]):
         # https://wiki.debian.org/Bind9#Introduction
 
         if "dns" not in self.services:
@@ -150,7 +156,6 @@ class HostServices:
         for zone_name, zone in utils.nets.zones.items():
             pub_master = dima.pools.get(zone.get("pub_dns"))
             priv_master = dima.pools.get(zone.get("priv_dns"))
-
             if self.dbid == pub_master.master_id:
                 public = True
                 master = pub_master
@@ -186,6 +191,9 @@ class HostServices:
                     host_ip = dima.pools.get(web.dev_host_id).ip
                     web_records.append(f"dev.{subdomain_name}".strip('.') + f" IN A {host_ip}")
                     web_records.append(f"www.dev.{subdomain_name}".strip('.') + f" IN A {host_ip}")
+
+            if acme and utils.nets.get_zone_name(acme[0]) == zone_name:
+                web_records.append(f'_acme-challenge.{acme[0]}. 300 IN TXT "{acme[1]}"')
 
             conf_local.append(utils.format_tpl("dns/local.tpl", {"zone": zone_name}))
             zone_conf = utils.format_tpl("dns/zone.tpl", {
@@ -1120,6 +1128,9 @@ class Host(lmObj, HostServices):
         if "web" in self.services or "db" in self.services:
             packages += "postgresql", "libpq-dev",
 
+        if "ssl" in self.services:
+            packages += "snapd",
+
         if "ssh_server" in self.services:
             packages += "openssh-server",
 
@@ -1148,6 +1159,12 @@ class Host(lmObj, HostServices):
                 cmd(f"sudo apt install {package} -y", catch=True, host=self.lmid)
             else:
                 log(f"'{package}' is already installed!", console=True)
+
+        if "ssl" in self.services:
+            cmd("sudo snap install core", host=self.lmid)
+            cmd("sudo snap install hello-world", host=self.lmid)
+            cmd("sudo snap install --classic certbot", host=self.lmid)
+            cmd("sudo ln -s /snap/bin/certbot /usr/bin/certbot", host=self.lmid)
 
         log(f"Installed dependencies on '{self.name}' ...", console=True)
 
@@ -1308,18 +1325,32 @@ class Host(lmObj, HostServices):
     @authorize
     def send_file(self, src_path:'str', dest_path:'str', owner:'str'="root:root"):
         is_dir = src_path.endswith('/')
+        tmp_path = utils.tmp_dir + "restricted" + ('/' if is_dir else '')
+
+        if utils.isfile(tmp_path):
+            cmd(f"sudo rm{' -r' if is_dir else ''} {tmp_path}")
+
+        if src_path.startswith("/etc/"):
+            start_path = tmp_path
+            cmd(f"sudo cp{' -r' if is_dir else ''} {src_path} {start_path}")
+            cmd(f"sudo chown dima:dima {final_path}")
+        else:
+            start_path = src_path
 
         final_path = None
         if dest_path.startswith("/etc/"):
             final_path = dest_path
-            dest_path = utils.tmp_dir + 'restricted' + ('/' if is_dir else '')
+            dest_path = tmp_path
 
         self.knock()
-        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {src_path.rstrip('/')} dima@{self.lmid}:{dest_path.rstrip('/')}", catch=True)
+        cmd(f"scp {'-r ' if is_dir else ''}-P {self.ssh_port} -o identityfile={utils.ssh_dir}{self.lmid} {start_path.rstrip('/')} dima@{self.lmid}:{dest_path.rstrip('/')}", catch=True)
 
         if final_path:
             cmd(f"sudo mv {dest_path} {final_path}", host=self.lmid)
             cmd(f"sudo chown {owner} {final_path}", host=self.lmid)
+
+        if utils.isfile(tmp_path):
+            cmd(f"sudo rm{' -r' if is_dir else ''} {tmp_path}")
 
     @authorize
     def retrieve_file(self, src_path:'str', dest_path:'str'):

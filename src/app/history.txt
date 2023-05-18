@@ -265,3 +265,21 @@ lm14 ping
 lm14 config dns 
 lm11 config dns 
 lm1 save 
+lm7 save --message="Updated files"
+lm14 ping 
+lm5 generate ssl 
+lm11 add acme hello.lucamatei.net _34jZ7Gb8xj3nUuJpBdtwU17-Do6wshFTdILny_-o0g
+lm11 config dns
+lm11 add acme hello.lucamatei.net IanSGW6b1A_RLl0jeGQn2j_98ozG_XLGN-xVC3blCVA
+lm5 generate ssl 
+lm11 add acme MCyLWi55xHYWTAY8p0nRsOk4p9UTkmFsVHVxL5uZhB0 hello.lucamatei.net
+lm11 config dns
+lm11 add acme DCc1qArkVOQpIsKJdKpaJSfCja6F4EVowmfvWOQXnaI www.hello.lucamatei.net
+lm11 add acme uyKHiWSYgIwyCLHxC9Qsxu6PF_qpnK9SNMyurSdQXTs dev.hello.lucamatei.net
+lm11 add acme 5Ybm4jDv6H6OkDUG1AzaHiXDaRkg0NNqDZ3ufkU-zcY www.dev.hello.lucamatei.net
+lm11 config dns
+lm5 config nginx --env=dev
+lm5 generate ssl 
+lm8 ping 
+lm6 ping 
+lm1 save --message="Updated files"
