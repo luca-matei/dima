@@ -1,103 +1,3 @@
-lm10 create ssh_key --for_gitlab=0
-lm10 ping 
-lm4 config ssh_client 
-lm10 install dependencies 
-lm10 setup 
-lm10 ping 
-lm4 config ssh_client 
-lm8 ping 
-lm8 setup 
-lm5 change state 
-lm5 change state --new_state=5 --confirm=1
-lm7 change state --new_state=5 --confirm=1
-lm7 restart --env=dev
-lm7 restart --env=prod
-lm8 restart nginx 
-lm8 restart supervisor 
-lm1 save
-lm5 save --message="Updated files"
-lm7 save --message="Updated files"
-lm10 setup 
-lm10 install dependencies 
-lm5 change state --new_state=5 --confirm=1
-lm11 create ssh_key 
-lm4 config ssh_client 
-lm11 setup 
-lm14 create ssh_key 
-lm14 ping 
-lm14 setup 
-lm14 config dhcp 
-lm1 save 
-lm14 config dns 
-lm14 restart dns 
-lm14 status dns 
-lm1 save 
-
-lm8 config firewall 
-
-lm8 ping 
-t
-lm10 setup 
-lm11 setup 
-lm11 ping 
-lm14 config dns 
-lm5 change state --new_state=5 --confirm=1
-lm5 update html --env=prod --global_html=1
-lm5 default db --env=prod --confirm=1
-lm7 change state --new_state=5 --confirm=1
-lm8 test 
-lm6 test 
-lm4 config ssh_client 
-lm4 config firewall 
-lm1 save
-lm6 config firewall 
-lm6 ping 
-lm1 save 
-lm8 config firewall 
-lm8 ping 
-lm14 config dns 
-lm7 change state --new_state=5 --confirm=1
-lm6 config firewall 
-lm8 config firewall 
-lm14 config firewall 
-lm14 ping 
-lm6 ping 
-lm6 config firewall 
-lm8 config firewall 
-lm8 ping 
-lm14 ping 
-lm4 ping 
-lm14 start dns 
-lm7 change state --new_state=5 --confirm=1
-lm8 config postgres 
-lm6 config postgres 
-lm6 config firewall 
-lm6 ping 
-lm8 config firewall 
-lm14 config firewall 
-lm14 ping 
-lm8 ping 
-lm7 change state --new_state=5 --confirm=1
-lm14 reboot 
-lm6 config firewall 
-lm8 config firewall 
-lm14 config firewall 
-lm6 restart supervisor 
-lm8 restart supervisor 
-lm7 change state --new_state=5 --confirm=1
-lm8 ping 
-lm7 default db --env=prod
-lm1 save --message="Updated files"
-lm14 ping 
-lm6 config firewall 
-lm6 ping 
-lm7 change state --new_state=5 --confirm=1
-lm14 config firewall 
-lm1 save 
-lm6 ping 
-lm14 config dhcp 
-lm1 save --message="Updated files"
-lm14 config dns lm14 restart dns 
 lm14 config dns 
 lm8 setup 
 lm8 ping 
@@ -259,3 +159,101 @@ lm11 add acme dQiK8tM7n5G15rim80Ee48UtpPYUkg6HIes1VS_TE6s dev.lucamatei.xyz
 lm11 config dns
 lm11 add acme 5BDltQfZcPBn4MTfPoJSgXPzQ72vgSeULj2DbNo48rE www.dev.lucamatei.xyz
 lm1 save 
+lm2 save --message="Updated files"
+lm9 save --message="Updated files"
+lm9 update html --env=dev --global_html=1
+lm2 update html --env=dev --global_html=1
+lm5 update html --env=dev --global_html=1
+lm6 create web --domain=lucamatei.net --modules=static --langs=en --themes=light --default_lang=en --default_theme=light
+lm17 build --message="Updated files"
+lm17 build --env=dev --confirm=1
+lm11 config dns
+lm11 add acme I88KTmOyxIMoIn19pU7Fv5mLcNLkHVybVIwZeuyGaKo www.lucamatei.net
+lm11 add acme 4X9yMI_4ZSpfEfWbGIDqd4UFRVkrHfX-a7Dm0llZ8rA dev.lucamatei.net
+lm11 add acme pEWdy6tVBZNGBlsISKYXQLVrsufaTHAwTZqT2vYpB-c www.dev.lucamatei.net
+lm11 config dns
+lm14 config dns 
+lm17 generate ssl 
+lm11 add acme aTUZFDJrTLmvWlg80rkMmRhSp6b0utakS7-GyOfa3vk lucamatei.net
+lm11 config dns
+lm17 check --env=dev
+lm17 restart --env=dev
+lm5 restart --env=prod
+lm6 mount 
+lm5 update html --env=dev --global_html=1
+lm2 update html --env=dev --global_html=1
+lm7 update html --env=dev --global_html=1
+lm10 restart supervisor 
+lm10 create web --domain=digitalmarmot.com --modules=static --langs=en --themes=light --default_lang=en --default_theme=light
+lm6 create web --domain=digitalmarmot.com --name="Digital Marmot" --modules=static --langs=en --themes=light --default_lang=en --default_theme=light
+lm19 check --env=dev
+lm19 build --env=dev --confirm=1
+lm11 add acme ziRQdZNyZhq2HbUVkT2uLKfaYNMrFXYk9bkdyAnUET0 digitalmarmot.com
+lm11 config dns
+lm11 add acme DWa1VRze3LTSfjyg6AYbGV6i2h8AoXU6ZnDGLkaLsY0 www.dev.digitalmarmot.com
+lm19 generate ssl 
+lm11 add acme oz45yCPs15R1PAiwdsVg7ws4_83-DCYkzqbDdwhwBnQ www.digitalmarmot.com
+lm11 config dns
+lm19 config --env=dev --restart=1
+lm14 config dns 
+lm19 restart --env=dev
+lm19 assign port lm19 config --env=dev --restart=1
+lm17 assign port 
+lm17 config --env=dev --restart=1
+lm6 ping 
+lm19 generate ssl 
+lm11 config dns 
+lm11 add acme 43fme_B0UuaDxbw39ezl32Ncwkgq0S-lfOvcO8_EcOU www.digitalmarmot.com
+lm11 config dns
+lm11 add acme ydXpIEpcCnDCbOBDYGK6VusPLxGsqZZGSG_oB_btfts dev.digitalmarmot.com
+lm10 ping 
+lm19 update html --env=dev --global_html=1
+lm17 update html --env=dev --global_html=1
+lm9 update html --env=dev --global_html=1
+lm7 update html --env=dev --global_html=1
+lm5 update html --env=dev --global_html=1
+lm2 update html --env=dev --global_html=1
+lm19 update html --env=dev --global_html=1
+lm19 save --message="Updated files"
+lm19 change state --new_state=5 --confirm=1
+lm19 check --env=prod
+lm19 restart --env=dev
+lm10 restart supervisor 
+lm10 mount 
+lm10 restart nginx 
+lm7 update html --env=dev --global_html=1
+lm7 update html --env=prod --global_html=1
+lm19 update html --env=dev --global_html=1
+lm19 update html --env=prod --global_html=1
+lm6 create web --domain=lucamatei.org --name=ORG --modules=static --langs=en --themes=light --default_lang=en --default_theme=light
+lm18 build --message="Updated files"
+lm18 build --env=dev
+lm11 add acme 7KD7jUPNocUB6IJuxZUgEQmxuGGik8ha_IzjmbG04o8 lucamatei.org
+lm11 config dns
+lm18 check --env=dev
+lm18 generate ssl 
+lm11 add acme XxEuF4ykPQ-pzZak9_TPvBqSDd-Eey5RzQ5TGcUuffs www.lucamatei.org
+lm11 config dns
+lm11 add acme Q8siEQsoNrwgWRYnPEQOonF0zq6xH5LK2T2mSeh6njc dev.lucamatei.org
+lm11 add acme UB01N1DqL_QkDDbnFK1dKhfcRyUJn7sfD0g1RCXs0to www.dev.lucamatei.org
+lm14 config dns 
+lm18 update html --env=dev --global_html=1
+lm18 restart --env=dev
+lm10 restart nginx 
+lm6 restart nginx 
+lm18 update html --env=dev --global_html=1
+lm14 config dns 
+lm18 assign port 
+lm18 config --env=dev --restart=1
+lm18 update html --env=dev
+lm18 change state --new_state=5 --confirm=1
+lm18 check --env=prod
+lm10 restart supervisor 
+lm18 save --message="Updated files"
+lm17 save --message="Updated files"
+lm19 save --message="Updated files"
+lm9 save --message="Updated files"
+lm7 save --message="Updated files"
+lm5 save --message="Updated files"
+lm2 save --message="Updated files"
+lm1 save --message="Updated files"

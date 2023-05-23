@@ -41,7 +41,7 @@ html:
             content: "%NAME%"
         meta:
             property: "og:url"
-            content: "%OG_URL%"
+            content: "%PERMALINK%"
         meta:
             property: "og:locale"
             content: "%LANG%"
@@ -59,7 +59,7 @@ html:
             content: "summary_large_image"
         meta:
             property: "twitter:url"
-            content: "%OG_URL%"
+            content: "%PERMALINK%"
         meta:
             property: "twitter:locale"
             content: "%LANG%"

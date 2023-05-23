@@ -1,7 +1,7 @@
 div:
     id: "lmid-app-header"
     div:
-        class: "lmtpl-notice lmbg-orange"
+        class: "lmtpl-alert lmt-c"
         noscript:
             text:
                 en: "To avoid possible errors, please allow JavaScript to run in your browser."
@@ -13,7 +13,7 @@ div:
             id: "lmid-nav-check"
 
         a:
-            href: "https://%DOMAIN%"
+            href: ""
             text:
                 en: "Hello World"
 

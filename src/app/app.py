@@ -418,7 +418,7 @@ class Utils:
                         f_text = f_heading
 
                     f_required = """<span>*</span>""" if required else ""
-                    tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"lmgrow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
+                    tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"lmgrow\"></span><a href="https://digitalmarmot.com/{lang}/docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
 
                 if tag == "lminput":
                     tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}{f_disabled}>""")
@@ -2372,6 +2372,9 @@ class Host(lmObj, HostServices):
     # Web
     @authorize
     def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=("static",), langs:'list'=("en",), themes:'list'=("light",), default_lang:'str'="en", default_theme:'str'="light", options:'list'=()):
+        if self.env == "prod":
+            log("Can't create a project on a production machine!", level=4, console=True)
+            return
 
         #if dima.domains.get(domain):
             #log("Domain already exists!", level=4, console=True)
@@ -2385,7 +2388,7 @@ class Host(lmObj, HostServices):
             lang_ids = [x for x in [utils.projects.langs.get(l, 0) for l in langs] if x]
             theme_ids = [x for x in [utils.projects.themes.get(t, 0) for t in themes] if x]
 
-            option_ids = 3,
+            option_ids = [3,]
 
             query = "insert into web.webs (lmobj, domain, ssl_due, port, state, modules, langs, themes, default_lang, default_theme, options) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
             params = dima.lmobjs[lmid], domain, None, self.next_port(), 1, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], option_ids,
@@ -3433,6 +3436,7 @@ class Web(Project):
             guest_drop_html = utils.format_tpl(self.yml2html("guest-drop.yml", lang), {
                 "lang_selector": lang_selector,
                 "theme_selector": theme_selector,
+                "lang": lang,
                 })
             guest_drop_html = utils.replace_multiple(guest_drop_html, css_classes)
             params = "guest-drop", self.langs[lang], guest_drop_html,
@@ -3445,13 +3449,14 @@ class Web(Project):
             app_footer = utils.format_tpl(self.yml2html("app-footer.yml", lang), {
                 "copyright_year": datetime.now().year,
                 "copyright_name": utils.nets.get_zone_name(domain),
+                "lang": lang,
                 })
 
             self.global_html[lang]["app-wrapper"] = "<!doctype html>" + utils.format_tpl(self.yml2html("app-wrapper.yml", lang), {
                 "lang": lang,
                 "default_theme": str(self.default_theme_id),
                 "alt": ''.join([f'<link rel="alternate" href="/{l}/%PERMALINK%" hreflang="{l}"' for l in langs if l != lang]),
-                "name": self.name,
+                "name": self.domain,
                 "hide_all": self.yml2html("hide-all.yml", lang),
                 "app_header": app_header,
                 "domain": domain,
@@ -3526,13 +3531,11 @@ class Web(Project):
                     # To do: format title
 
                     description = meta["description"].get(lang, meta["description"][self.default_lang])
-                    og_url = ""
-                    og_image = ""
+                    og_image = f"/assets/img/og-{lang}.jpg"
 
                     html = utils.format_tpl(self.global_html[lang]["app-wrapper"], {
                         "title": title,
                         "description": description,
-                        "og_url": og_url,
                         "og_image": og_image,
                         "aside": aside,
                         "body": body,

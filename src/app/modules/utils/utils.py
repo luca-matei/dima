@@ -418,7 +418,7 @@ class Utils:
                         f_text = f_heading
 
                     f_required = """<span>*</span>""" if required else ""
-                    tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"lmgrow\"></span><a href="docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
+                    tag_html.append(f"""<h6><span>{f_text}</span>{f_required}<span class=\"lmgrow\"></span><a href="https://digitalmarmot.com/{lang}/docs/forms#{attrs.get('type')}"><i class=\"fa fa-circle-info\"></i></a></h6>""")
 
                 if tag == "lminput":
                     tag_html.append(f"""<input type=\"{f_type}\"{f_placeholder}{f_minlen}{f_maxlen}{f_disabled}>""")

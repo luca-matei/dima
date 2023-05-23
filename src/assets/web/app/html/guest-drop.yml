@@ -2,7 +2,7 @@ div:
     id: "lmid-guest-drop"
     class: "lmtpl-drop-r"
     a:
-        href: "sign-in"
+        href: "https://digitalmarmot.com/%LANG%/sign-in"
         text:
             en: "Sign In"
             ro: "Conectare"

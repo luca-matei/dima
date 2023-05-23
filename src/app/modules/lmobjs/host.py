@@ -861,6 +861,9 @@ class Host(lmObj, HostServices):
     # Web
     @authorize
     def create_web(self, domain:'str', name:'str'="", description:'str'="", alias:'str'="", modules:'list'=("static",), langs:'list'=("en",), themes:'list'=("light",), default_lang:'str'="en", default_theme:'str'="light", options:'list'=()):
+        if self.env == "prod":
+            log("Can't create a project on a production machine!", level=4, console=True)
+            return
 
         #if dima.domains.get(domain):
             #log("Domain already exists!", level=4, console=True)
@@ -874,7 +877,7 @@ class Host(lmObj, HostServices):
             lang_ids = [x for x in [utils.projects.langs.get(l, 0) for l in langs] if x]
             theme_ids = [x for x in [utils.projects.themes.get(t, 0) for t in themes] if x]
 
-            option_ids = 3,
+            option_ids = [3,]
 
             query = "insert into web.webs (lmobj, domain, ssl_due, port, state, modules, langs, themes, default_lang, default_theme, options) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id;"
             params = dima.lmobjs[lmid], domain, None, self.next_port(), 1, module_ids, lang_ids, theme_ids, utils.projects.langs[default_lang], utils.projects.themes[default_theme], option_ids,
