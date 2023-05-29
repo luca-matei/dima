@@ -257,3 +257,18 @@ lm7 save --message="Updated files"
 lm5 save --message="Updated files"
 lm2 save --message="Updated files"
 lm1 save --message="Updated files"
+lm2 update html --env=dev --global_html=1
+lm2 config --env=dev --restart=1
+lm2 update html --env=dev
+lm2 save --message="Updated files"
+lm6 mount 
+lm18 config --env=prod --restart=1
+lm9 config --env=prod --restart=1
+lm10 ping 
+lm6 mount 
+lm5 update html --env=dev --global_html=1
+lm2 update html --env=dev --global_html=1
+lm2 update html --env=dev
+lm1 save --env=dev
+lm2 save --message="Updated files"
+lm1 save --message="Updated files"

@@ -389,6 +389,8 @@ class Web(Project):
 
                 if name.startswith("lm_"):
                     continue
+                else:
+                    name = name.replace("_", "-")
 
                 yml_meta, yml = utils.read(section_dir + page, host=self.dev_host).split("----")
                 meta = []
@@ -681,11 +683,11 @@ class Web(Project):
     @authorize
     def config_supervisor(self, env:'env'="dev", restart:'bool'=False):
         supervisor_file = f"/etc/supervisor/conf.d/{self.lmid}.conf"
-        if env == "prod" and self.state == 0:
+        if env == "prod" and self.state == 1:
             if utils.isfile(supervisor_file, host=self.prod_host):
                 cmd(f"sudo rm {supervisor_file}", host=self.prod_host)
             else:
-                log(f"Production state is set to 0. Change state to make the web app available to the internet.", level=4, console=True)
+                log(f"Production state is set to 'Invisible'. Change state to make the web app available to the internet.", level=4, console=True)
 
         host = self.env_var(env, "host")
         host_id = self.env_var(env, "host_id")
@@ -705,11 +707,11 @@ class Web(Project):
     @authorize
     def config_nginx(self, env:'env'="dev", restart:'bool'=False):
         nginx_file = f"/etc/nginx/sites-enabled/{self.lmid}"
-        if env == "prod" and self.state == 0:
+        if env == "prod" and self.state == 1:
             if utils.isfile(nginx_file, host=self.prod_host):
                 cmd(f"sudo rm {nginx_file}", host=self.prod_host)
             else:
-                log(f"Production state is set to 0. Change state to make the web app available to the internet.", level=4, console=True)
+                log(f"Production state is set to 'Invisible'. Change state to make the web app available to the internet.", level=4, console=True)
 
             return
 

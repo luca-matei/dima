@@ -306,7 +306,7 @@
         ("lm7", "lucamatei.eu", "", 19680, 5, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
         ("lm9", "lucamatei.xyz", "", 29636, 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
         ("lm17", "lucamatei.net", "", 24246, 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
-        ("lm18", "lucamatei.org", "", 16724, 1, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
+        ("lm18", "lucamatei.org", "", 16724, 5, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
         ("lm19", "digitalmarmot.com", "", 23889, 5, ("static",), ("en", "ro",), ("light", "dark",), "en", "dark", ("animations",)),
         )),
     )),
