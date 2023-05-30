@@ -334,9 +334,26 @@ class Utils:
         if yml.endswith(".yml"): yml = self.read(yml, host=host)
         boxes = yaml.YAML(typ="safe").load(yml)
         html5 = ""
-        tags = "lm_", "lminput", "lmtextarea",
+        tags = "lm_", "lminput", "lmtextarea",    # Proprietary tags
+
+        def get_lang_value(attr_value):
+            """
+            Gets the value tied to the language in case of texts, links, images etc.
+            """
+
+            if isinstance(attr_value, list):
+                texts = dict(attr_value)
+                text = texts.get(lang, texts.get(default_lang))
+            else:
+                text = attr_value
+
+            return text
 
         def solve_box(data):
+            """
+            Recursively creates a HTML element
+            """
+
             html = ""
 
             tag = data[0]
@@ -350,26 +367,28 @@ class Utils:
             # Solve properties
             if properties != None:
                 for prop in properties:
-                    if prop[0] in self.html_tags + tags:
+                    attr_name = prop[0]
+                    attr_value = prop[1]
+
+                    if attr_name in self.html_tags + tags:
                         box_html += solve_box(prop)
 
-                    elif prop[0] == "id":
-                        if tag in ("h1", "h2", "h3", "h4", "h5", "h6", "span") and prop[1].startswith("lmperma-"):
-                            header_permalink = prop[1].replace("lmperma-", "")
+                    elif attr_name == "id":
+                        if tag in ("h1", "h2", "h3", "h4", "h5", "h6", "span") and attr_value.startswith("lmperma-"):
+                            header_permalink = attr_value.replace("lmperma-", "")
                             attrs.append(("id", header_permalink))
                         else:
                             attrs.append(list(prop))
 
-                    elif prop[0] == "text":
-                        if type(prop[1]) == list:
-                            texts = dict(prop[1])
-                            text = texts.get(lang, texts.get(default_lang))
+                    elif attr_name == "text":
+                        text = get_lang_value(attr_value)
 
-                            if tag not in ("a", "i", "button", "span", "h1", "h2", "h3", "h4", "h5", "h6"):
+                        if tag in ("div", "lm_", "aside", "section", "article", "main"):
+                            if tag == "lm_" and text.isupper() and text.startswith("%") and text.endswith("%"):
+                                pass
+
+                            else:
                                 text = self.md2html(text)
-
-                        else:
-                            text = prop[1]
 
                         if header_permalink:
                             text = "<span>" + text + f"</span><a href='%PERMALINK%#{header_permalink}'><i class='fa fa-link'></i></a>"
@@ -379,11 +398,20 @@ class Utils:
                             "@": "<i class='fa fa-at'></i>"
                             })
 
+                    elif attr_name == "href":
+                        href = get_lang_value(attr_value)
+
+                        attrs.append(["href", href])
+
+                        if tag == "a" and attr_value.startswith(("http://", "https://")):
+                            attrs.append(["target", "_blank"])
+                            attrs.append(["rel", "noopener noreferrer"])
+
                     else:
                         attrs.append(list(prop))
 
             attrs = dict(attrs)
-            custom = attrs.pop("custom", "")
+            custom = attrs.pop("custom", "")    # Attributes starting with "data-"
 
             if tag in ("lminput", "lmtextarea"):
                 f_data = utils.webs.fields.get(attrs.get('type'), {})

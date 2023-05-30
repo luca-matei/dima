@@ -17,7 +17,6 @@ class Task():
 
         elif obj.startswith("utils"):
             getattr(getattr(utils, obj.split('.')[1]), act)(**params)
-
         elif obj == "dima":
             getattr(dima, act)(**params)
 

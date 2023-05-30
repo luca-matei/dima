@@ -5,6 +5,7 @@ class Db:
         self.host = host
         self.db_dir = utils.projects_dir + lmid + "/src/app/db/"
         self.port_file = utils.projects_dir + "pg_port.txt"
+        self.conn = None
 
         if self.lmid == dima.app_lmid:
             self.dev_host = dima.host_lmid
@@ -12,12 +13,6 @@ class Db:
         else:
             self.dev_host = dima.lmobjs.get(dima.db.execute("select dev_host from project.projects where lmobj=%s;", (dbid,))[0][0])[0]
             self.host_id = dima.lmobjs.get(host)
-
-        try:
-            self.port = int(utils.read(self.port_file, host=host))
-            self.connect()
-        except:
-            self.check()
 
     @authorize
     def check(self):
@@ -41,6 +36,11 @@ class Db:
 
     @authorize
     def connect(self):
+        try:
+            self.port = int(utils.read(self.port_file, host=self.host))
+        except:
+            self.check()
+
         try:
             if self.host and self.host != dima.host_lmid:
                 ip = dima.pools.get(self.host_id).ip
@@ -228,6 +228,9 @@ class Db:
     def execute(self, query, params=()):
         a = inspect.currentframe()
         self.call_info = list(inspect.getframeinfo(a.f_back)[:3])
+
+        if not self.conn:
+            self.connect()
 
         data = ()
         for tries in range(2):

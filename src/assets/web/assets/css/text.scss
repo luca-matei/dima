@@ -20,9 +20,9 @@ $text-aligns: (
 }
 
 $text-sizes: (
-    s: 0.8rem,
-    m: 1.8rem,
-    l: 2.2rem,
+    sm: 0.8rem,
+    md: 1.8rem,
+    lg: 2.2rem,
     xl: 2.8rem,
     xxl: 3.2rem,
     extra-xxl: 8rem
@@ -31,9 +31,16 @@ $text-sizes: (
 @each $size, $value in $text-sizes {
     .lmf-#{$size} {
         font-size: $value;
-        line-height: 1;
-        &::after {
-            display: none;
+        @if $size != "s" {
+            font-weight: 600;
+            color: var(--txt-2);
+        }
+
+        @if $size in ("xxl", "extra-xxl") {
+            line-height: 1;
+            &::after {
+                display: none;
+            }
         }
     }
 }
