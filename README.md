@@ -1,56 +1,14 @@
+# Digital Marmot / Dima
 
-# dima
+This tool is a complete Python-based solution for building and deploying virtual machines, networks, and web apps in a home lab. It features a command line interface with history and a Tkinter GUI, offering over 65 commands.
 
-Description.  
-Visit [lucamatei.eu/projects/dima](https://) for more.
+It can configure and manage Git repositories, uWSGI servers, Nginx web servers, Let’s Encrypt SSL certificates, system services, Bind DNS servers, DHCP servers, SSH keys, GPG keys, PostgreSQL servers, nftables firewalls (with geo-blocking and port knocking), development, staging, and production environments, as well as preseed Debian virtual machines. Configurations are based on a custom templating system, with every setting carefully selected by me.
 
-## TO DO
-- separate host, dev / test / prod machines, guest devices from main network in dhcp
+Websites are built on a custom web framework based on the WSGI application. They support multilingual content using a YAML-based CMS for managing static, blog, and gallery content.
 
-## Prerequisites
-Create a Gitlab REST API token from your [Gitlab profile](https://gitlab.com/-/profile/personal_access_tokens). Save it as you have to feed it later when it prompts.
+The frontend of the websites uses a SCSS-based library for multimedia structure, spacing, color palettes, UI components, and animations.
 
-
-## Installation
-
-```
-$ sudo apt install git
-$ git clone https://gitlab.com/lucamatei/lm1.git
-$ cd ./lm1    # Move to repository root
-```
-
-Non-sudo
-```
-$ su    # Change to root
-# ./init    # Run init script with root priviledges
-```
-
-With sudo
-```
-$ sudo ./init
-```
-
-## Usage
-Command line
-```
-$ dima <action> <object> <parameters>
-```
-
-Interactive
-```
-$ dima
-> <action> <object> <parameters>
-
-> q    # to quit
-> h    # for help
-```
-
-GUI  
-```
-$ dima setup gui
-```
-Then visit [dima.example.com](https://) where "example.com" is your home domain.
-
-## Permission system
-dima belongs to [@lucamatei](https://gitlab.com/lucamatei) gitlab account.  
-dima uses a REST API token from your gitlab account to save the projects.
+Notes:
+- Project was imported from [my Gitlab](https://gitlab.com/lucamatei).
+- It's currently in the process of being updated and documented.
+- Tokens and IPs found in the code are obsolete (I know it's bad practice).
